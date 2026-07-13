@@ -263,11 +263,22 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             MeshyGameAssets assets = new MeshyGameAssets
             {
-                Bean = PrepareGenericMeshyModel("GG_Pickup_Bean"),
-                Burrito = PrepareGenericMeshyModel("GG_Pickup_Burrito"),
+                Bean = PrepareGenericMeshyModelWithKey(
+                    "GG_Pickup_Bean",
+                    "GG_Pickup_Bean_Optimized",
+                    "GG_Pickup_Bean"),
+                Burrito = PrepareGenericMeshyModelWithKey(
+                    "GG_Pickup_Burrito",
+                    "GG_Pickup_Burrito_Optimized",
+                    "GG_Pickup_Burrito"),
                 Soda = PrepareGenericMeshyModel("GG_Pickup_SodaCan", "GG_Pickup_Soda", "GG_Pickup_SodaCan_LP"),
                 BananaBunch = PrepareGenericMeshyModel("GG_Pickup_BananaBunch"),
-                Vine = PrepareGenericMeshyModel("GG_Vine_Medium_Glow", "GG_Vine_Short_Glow", "GG_Vine_Long_Glow", "GG_Vine_Short_Glow_LP"),
+                Vine = PrepareGenericMeshyModelWithKey(
+                    "GG_Vine_Medium_Glow",
+                    "GG_Vine_Short_Glow_LP",
+                    "GG_Vine_Medium_Glow",
+                    "GG_Vine_Short_Glow",
+                    "GG_Vine_Long_Glow"),
                 ThornLog = PrepareGenericMeshyModel("GG_Hazard_ThornLog_LP", "GG_Hazard_ThornLog"),
                 SpikyStump = PrepareGenericMeshyModel("GG_Hazard_SpikyStump"),
                 MudGeyser = PrepareGenericMeshyModel("GG_Hazard_MudGeyser", "GG_Hazard_MudGeyser_L"),
@@ -293,19 +304,25 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
         private static ModelVisualAsset PrepareGenericMeshyModel(params string[] keys)
         {
-            string assetPath = FindMeshyModelPath(keys);
+            string key = keys != null && keys.Length > 0 ? keys[0] : "";
+            return PrepareGenericMeshyModelWithKey(key, keys);
+        }
+
+        private static ModelVisualAsset PrepareGenericMeshyModelWithKey(string key, params string[] searchKeys)
+        {
+            string assetPath = FindMeshyModelPath(searchKeys);
             if (string.IsNullOrEmpty(assetPath))
             {
-                return new ModelVisualAsset { Key = keys != null && keys.Length > 0 ? keys[0] : "" };
+                return new ModelVisualAsset { Key = key };
             }
 
             ConfigureGenericMeshyModelImporter(assetPath);
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
-            Material material = CreateGenericMeshyMaterial(assetPath, keys[0]);
+            Material material = CreateGenericMeshyMaterial(assetPath, key);
 
             return new ModelVisualAsset
             {
-                Key = keys[0],
+                Key = key,
                 ModelPrefab = prefab,
                 Material = material,
                 AssetPath = assetPath

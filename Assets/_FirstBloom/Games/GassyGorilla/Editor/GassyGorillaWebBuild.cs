@@ -13,6 +13,30 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string BuildFolderName = "Builds/WebGLPhone";
         private const string MobilePresentationMarker = "gg-orientation-gate";
 
+        private const string BrowserQaBridge = @"                window.ggUnityInstance = unityInstance;
+                var ggQaParameters = new URLSearchParams(window.location.search);
+                var ggQaSmokeRun = ggQaParameters.has(""qa-smoke"");
+                if (ggQaParameters.has(""qa-autoplay"") || ggQaSmokeRun) {
+                  window.setTimeout(() => unityInstance.SendMessage(""Manager_MainMenu"", ""Play""), 250);
+                }
+                if (ggQaSmokeRun) {
+                  window.setTimeout(() => {
+                    var ggQaTapsRemaining = 48;
+                    var ggQaTap = () => {
+                      var rect = canvas.getBoundingClientRect();
+                      var x = rect.left + rect.width * 0.42;
+                      var y = rect.top + rect.height * 0.52;
+                      var down = new MouseEvent(""mousedown"", { bubbles: true, clientX: x, clientY: y, button: 0, buttons: 1 });
+                      var up = new MouseEvent(""mouseup"", { bubbles: true, clientX: x, clientY: y, button: 0, buttons: 0 });
+                      canvas.dispatchEvent(down);
+                      canvas.dispatchEvent(up);
+                      ggQaTapsRemaining--;
+                      if (ggQaTapsRemaining > 0) window.setTimeout(ggQaTap, 650);
+                    };
+                    ggQaTap();
+                  }, 1650);
+                }";
+
         private const string MobileOrientationMarkup = @"    <div id=""gg-orientation-gate"" aria-hidden=""true"">
       <div class=""gg-orientation-content"">
         <div class=""gg-orientation-brand"">GASSY GORILLA</div>
@@ -179,6 +203,7 @@ body.gg-portrait-active #unity-container {
             GassyGorillaSceneSimplifier.ApplySceneCleanup();
             GassyGorillaWebAssetOptimizer.ApplyWebGlImportSettings();
             GassyGorillaParticleRepair.RepairProjectAssets();
+            GassyGorillaPerformanceAudit.ValidateRuntimeGeometryBudgets();
 
             string projectRoot = Directory.GetParent(Application.dataPath).FullName;
             string outputPath = Path.Combine(projectRoot, BuildFolderName);
@@ -284,6 +309,13 @@ body.gg-portrait-active #unity-container {
                 "      // config.autoSyncPersistentDataPath = true;",
                 "      config.autoSyncPersistentDataPath = true;",
                 "persistent data autosync"
+            );
+            html = ReplaceRequired(
+                html,
+                "              }).then((unityInstance) => {",
+                "              }).then((unityInstance) => {" + Environment.NewLine
+                + BrowserQaBridge,
+                "browser QA bridge"
             );
             File.WriteAllText(indexPath, NormalizeLineEndings(html));
 
