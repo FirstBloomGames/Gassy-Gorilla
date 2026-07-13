@@ -1,0 +1,835 @@
+using System;
+using System.Collections;
+using FirstBloom.ArcadeFramework.Audio;
+using FirstBloom.ArcadeFramework.Camera;
+using FirstBloom.ArcadeFramework.Core;
+using FirstBloom.ArcadeFramework.Input;
+using FirstBloom.ArcadeFramework.VFX;
+using UnityEngine;
+
+namespace FirstBloom.Games.GassyGorilla
+{
+    [RequireComponent(typeof(Rigidbody2D))]
+    public class GorillaController : MonoBehaviour
+    {
+        [Header("Movement")]
+        [SerializeField] private float forwardSpeed = 4.65f;
+        [SerializeField] private float fartBoostVelocity = 5.95f;
+        [SerializeField] private float boostForwardKick = 0.58f;
+        [SerializeField] private float boostForwardKickDuration = 0.18f;
+        [SerializeField] private float horizontalCruiseReturn = 2.4f;
+        [SerializeField] private float maxVerticalSpeed = 7.35f;
+        [SerializeField] private float gravityScale = 1.5f;
+        [SerializeField] private float boostCooldown = 0.08f;
+        [SerializeField] private float boostInputBuffer = 0.1f;
+        [SerializeField] private float boostFallRecovery = 0.34f;
+        [SerializeField] private float boostUpwardCarry = 0.16f;
+        [SerializeField] private float maxBoostVerticalBonus = 1.1f;
+
+        [Header("Fuel")]
+        [SerializeField] private float maxFuel = 100f;
+        [SerializeField] private float fuelDrainPerBoost = 18f;
+        [SerializeField] private float passiveRefillPerSecond;
+        [SerializeField] private float failedBoostFeedbackCooldown = 0.35f;
+
+        [Header("Swinging")]
+        [SerializeField] private float swingAngleDegrees = 16f;
+        [SerializeField] private float swingSpeed = 2.8f;
+        [SerializeField] private Vector2 vineReleaseVelocity = new Vector2(7.35f, 4.75f);
+        [SerializeField] private float swingEntryArcHeight = 0.14f;
+        [SerializeField] private float swingEntryBlendDuration = 0.13f;
+        [SerializeField] private float swingEntryOvershoot = 0.04f;
+        [SerializeField] private float maxSwingHoldDuration = 0.72f;
+        [SerializeField] private float releaseForwardTimingBonus = 0.82f;
+        [SerializeField] private float releaseLiftTimingBonus = 0.64f;
+        [SerializeField] private float vineSlowMoScale = 0.88f;
+        [SerializeField] private float vineSlowMoDuration = 0.07f;
+
+        [Header("Polish")]
+        [SerializeField] private Transform visualRoot;
+        [SerializeField] private ParticleSystem fartPuff;
+        [SerializeField] private ParticleSystem fartShockwaveBurst;
+        [SerializeField] private ParticleSystem fartSparkBurst;
+        [SerializeField] private ParticleSystem speedLineBurst;
+        [SerializeField] private Renderer fartCloudRenderer;
+        [SerializeField] private Renderer fartCoreRenderer;
+        [SerializeField] private Renderer fartRingRenderer;
+        [SerializeField] private Renderer[] fartAccentRenderers;
+        [SerializeField] private SmoothCameraFollow2D cameraFollow;
+
+        private Rigidbody2D body;
+        private GassyGorillaGameManager gameManager;
+        private bool inputEnabled = true;
+        private float nextBoostTime;
+        private float bufferedBoostUntil;
+        private float originalGravityScale;
+        private Coroutine squashRoutine;
+        private Coroutine fartCloudRoutine;
+        private MaterialPropertyBlock fartCloudPropertyBlock;
+        private float forwardKickTimer;
+        private float nextFailedBoostFeedbackTime;
+        private VineSwingTrigger currentVine;
+        private Transform swingPivot;
+        private Vector3 swingRestOffset;
+        private Vector3 swingEntryStartPosition;
+        private float swingAttachTime;
+        private float swingTimer;
+        private float currentSwingAngleDegrees;
+
+        public event Action<float, float> FuelChanged;
+        public event Action Boosted;
+        public event Action BoostFailed;
+        public event Action VineGrabbed;
+        public event Action VineReleased;
+
+        public float CurrentFuel { get; private set; }
+        public float MaxFuel { get { return maxFuel; } }
+        public bool IsSwinging { get; private set; }
+
+        private void Awake()
+        {
+            body = GetComponent<Rigidbody2D>();
+            gameManager = FindAnyObjectByType<GassyGorillaGameManager>();
+
+            if (visualRoot == null)
+            {
+                visualRoot = transform;
+            }
+
+            originalGravityScale = gravityScale;
+            body.gravityScale = gravityScale;
+        }
+
+        private void Start()
+        {
+            CurrentFuel = maxFuel;
+            NotifyFuelChanged();
+            HideFartCloud();
+        }
+
+        private void Update()
+        {
+            if (!inputEnabled || gameManager == null || !gameManager.IsRunActive)
+            {
+                return;
+            }
+
+            if (IsSwinging)
+            {
+                UpdateSwingPose();
+            }
+            else if (passiveRefillPerSecond > 0f)
+            {
+                RefillFuel(passiveRefillPerSecond * Time.deltaTime, false);
+            }
+
+            if (!IsSwinging)
+            {
+                UpdateAirTilt();
+            }
+
+            if (OneTouchInput.WasPressedThisFrame(true, true))
+            {
+                if (IsSwinging)
+                {
+                    bufferedBoostUntil = 0f;
+                    ReleaseFromVine();
+                }
+                else
+                {
+                    bool boosted = TryFartBoost();
+                    if (!boosted && Time.time < nextBoostTime && CurrentFuel >= fuelDrainPerBoost)
+                    {
+                        bufferedBoostUntil = Time.time + boostInputBuffer;
+                    }
+                }
+            }
+
+            if (!IsSwinging && bufferedBoostUntil > 0f)
+            {
+                if (Time.time > bufferedBoostUntil)
+                {
+                    bufferedBoostUntil = 0f;
+                }
+                else if (Time.time >= nextBoostTime)
+                {
+                    bufferedBoostUntil = 0f;
+                    TryFartBoost();
+                }
+            }
+        }
+
+        private void FixedUpdate()
+        {
+            if (gameManager == null || !gameManager.IsRunActive || IsSwinging)
+            {
+                return;
+            }
+
+            Vector2 velocity = GetVelocity();
+            float targetForwardSpeed = forwardSpeed;
+            if (forwardKickTimer > 0f)
+            {
+                forwardKickTimer -= Time.fixedDeltaTime;
+                targetForwardSpeed += boostForwardKick;
+            }
+
+            velocity.x = velocity.x < targetForwardSpeed
+                ? targetForwardSpeed
+                : Mathf.MoveTowards(velocity.x, targetForwardSpeed, horizontalCruiseReturn * Time.fixedDeltaTime);
+            velocity.y = Mathf.Clamp(velocity.y, -maxVerticalSpeed, maxVerticalSpeed);
+            SetVelocity(velocity);
+        }
+
+        public void SetInputEnabled(bool enabled)
+        {
+            inputEnabled = enabled;
+        }
+
+        public bool TryFartBoost()
+        {
+            if (Time.time < nextBoostTime)
+            {
+                return false;
+            }
+
+            if (CurrentFuel < fuelDrainPerBoost)
+            {
+                HandleBoostFailed();
+                return false;
+            }
+
+            nextBoostTime = Time.time + boostCooldown;
+            forwardKickTimer = boostForwardKickDuration;
+            bufferedBoostUntil = 0f;
+            CurrentFuel = Mathf.Max(0f, CurrentFuel - fuelDrainPerBoost);
+            NotifyFuelChanged();
+
+            Vector2 velocity = GetVelocity();
+            velocity.x = Mathf.Max(velocity.x, forwardSpeed + boostForwardKick);
+            float verticalBonus = velocity.y < 0f
+                ? Mathf.Min(maxBoostVerticalBonus, -velocity.y * boostFallRecovery)
+                : Mathf.Min(maxBoostVerticalBonus * 0.55f, velocity.y * boostUpwardCarry);
+            velocity.y = Mathf.Min(maxVerticalSpeed, fartBoostVelocity + verticalBonus);
+            SetVelocity(velocity);
+
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.Boost);
+            }
+
+            if (fartPuff != null)
+            {
+                fartPuff.Play();
+            }
+
+            if (fartShockwaveBurst != null)
+            {
+                fartShockwaveBurst.Play();
+            }
+
+            if (fartSparkBurst != null)
+            {
+                fartSparkBurst.Play();
+            }
+
+            ShowFartCloudBurst();
+            PlaySpeedLines();
+
+            if (cameraFollow != null)
+            {
+                cameraFollow.Shake(0.08f, 0.16f);
+                cameraFollow.AddActionLookahead(new Vector2(0.22f, 0.08f), 0.08f);
+            }
+
+            PlaySquash(new Vector3(1.12f, 0.88f, 1f), 0.11f);
+            if (Boosted != null)
+            {
+                Boosted.Invoke();
+            }
+
+            return true;
+        }
+
+        private void HandleBoostFailed()
+        {
+            if (Time.time < nextFailedBoostFeedbackTime)
+            {
+                return;
+            }
+
+            nextFailedBoostFeedbackTime = Time.time + failedBoostFeedbackCooldown;
+
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.UiClick);
+            }
+
+            if (cameraFollow != null)
+            {
+                cameraFollow.Shake(0.05f, 0.09f);
+            }
+
+            PlaySquash(new Vector3(0.94f, 1.04f, 1f), 0.08f);
+
+            if (BoostFailed != null)
+            {
+                BoostFailed.Invoke();
+            }
+        }
+
+        public void RefillFuel(float amount, bool playPickupPolish = true)
+        {
+            if (amount <= 0f)
+            {
+                return;
+            }
+
+            CurrentFuel = Mathf.Clamp(CurrentFuel + amount, 0f, maxFuel);
+            NotifyFuelChanged();
+
+            if (playPickupPolish)
+            {
+                PlaySquash(new Vector3(1.08f, 1.08f, 1f), 0.12f);
+            }
+        }
+
+        public bool TryAttachToVine(VineSwingTrigger vine)
+        {
+            if (vine == null || IsSwinging || gameManager == null || !gameManager.IsRunActive)
+            {
+                return false;
+            }
+
+            currentVine = vine;
+            swingPivot = vine.PivotPoint;
+            Transform grabPoint = vine.GrabPoint;
+
+            Vector3 snapPosition = grabPoint != null ? grabPoint.position : vine.transform.position;
+
+            swingEntryStartPosition = transform.position;
+            Vector3 pivotPosition = swingPivot != null ? swingPivot.position : vine.transform.position;
+            Vector3 caughtOffset = snapPosition - pivotPosition;
+            float swingRadius = caughtOffset.magnitude;
+            if (swingRadius < 0.5f)
+            {
+                swingRadius = 1.5f;
+            }
+
+            swingRestOffset = Vector3.down * swingRadius;
+
+            float entryAngle = Mathf.Atan2(caughtOffset.x, -caughtOffset.y) * Mathf.Rad2Deg;
+            currentSwingAngleDegrees = Mathf.Clamp(entryAngle, -swingAngleDegrees * 0.9f, swingAngleDegrees * 0.9f);
+            float normalizedEntryAngle = swingAngleDegrees <= 0.01f
+                ? 0f
+                : Mathf.Clamp(currentSwingAngleDegrees / swingAngleDegrees, -0.98f, 0.98f);
+
+            swingAttachTime = Time.time;
+            swingTimer = Mathf.Asin(normalizedEntryAngle);
+            IsSwinging = true;
+
+            body.bodyType = RigidbodyType2D.Kinematic;
+            body.gravityScale = 0f;
+            SetVelocity(Vector2.zero);
+            transform.rotation = Quaternion.identity;
+            if (visualRoot != null)
+            {
+                visualRoot.localRotation = Quaternion.Euler(0f, 0f, currentSwingAngleDegrees);
+            }
+
+            currentVine.NotifyGrabbed();
+
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.VineGrab);
+            }
+
+            if (ArcadeTimeController.Instance != null)
+            {
+                ArcadeTimeController.Instance.PlaySlowMotion(vineSlowMoScale, vineSlowMoDuration);
+            }
+
+            if (cameraFollow != null)
+            {
+                cameraFollow.Shake(0.12f, 0.18f);
+                cameraFollow.AddActionLookahead(new Vector2(0.28f, 0.18f), 0.1f);
+            }
+
+            PlaySquash(new Vector3(0.94f, 1.12f, 1f), 0.15f);
+            if (VineGrabbed != null)
+            {
+                VineGrabbed.Invoke();
+            }
+
+            return true;
+        }
+
+        public void ReleaseFromVine()
+        {
+            if (!IsSwinging)
+            {
+                return;
+            }
+
+            IsSwinging = false;
+            transform.rotation = Quaternion.identity;
+            body.bodyType = RigidbodyType2D.Dynamic;
+            body.gravityScale = originalGravityScale;
+
+            Vector2 releaseVelocity = CalculateVineReleaseVelocity();
+            releaseVelocity.x = Mathf.Max(releaseVelocity.x, forwardSpeed + 1.75f);
+            SetVelocity(releaseVelocity);
+
+            if (currentVine != null)
+            {
+                currentVine.NotifyReleased();
+                currentVine = null;
+            }
+
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.VineRelease);
+            }
+
+            if (cameraFollow != null)
+            {
+                cameraFollow.Shake(0.16f, 0.2f);
+                cameraFollow.AddActionLookahead(new Vector2(0.72f, 0.24f), 0.18f);
+            }
+
+            PlaySquash(new Vector3(1.16f, 0.9f, 1f), 0.14f);
+            PlaySpeedLines();
+            if (VineReleased != null)
+            {
+                VineReleased.Invoke();
+            }
+        }
+
+        public void PrepareForIntro()
+        {
+            IsSwinging = false;
+            inputEnabled = false;
+            currentVine = null;
+            body.bodyType = RigidbodyType2D.Kinematic;
+            body.gravityScale = 0f;
+            SetVelocity(Vector2.zero);
+            transform.rotation = Quaternion.identity;
+            HideFartCloud();
+            if (visualRoot != null)
+            {
+                visualRoot.localRotation = Quaternion.identity;
+                visualRoot.localScale = Vector3.one;
+            }
+        }
+
+        public void BeginRun()
+        {
+            IsSwinging = false;
+            inputEnabled = true;
+            body.bodyType = RigidbodyType2D.Dynamic;
+            body.gravityScale = originalGravityScale;
+            SetVelocity(Vector2.zero);
+        }
+
+        public void StopForGameOver()
+        {
+            StopForGameOver(float.NegativeInfinity);
+        }
+
+        public void StopForGameOver(float minimumRestY)
+        {
+            IsSwinging = false;
+            inputEnabled = false;
+            currentVine = null;
+            body.bodyType = RigidbodyType2D.Kinematic;
+            body.gravityScale = 0f;
+            SetVelocity(Vector2.zero);
+            if (!float.IsNegativeInfinity(minimumRestY) && transform.position.y < minimumRestY)
+            {
+                transform.position = new Vector3(transform.position.x, minimumRestY, transform.position.z);
+            }
+
+            if (squashRoutine != null)
+            {
+                StopCoroutine(squashRoutine);
+                squashRoutine = null;
+            }
+
+            HideFartCloud();
+            if (visualRoot != null)
+            {
+                visualRoot.localRotation = Quaternion.identity;
+                visualRoot.localScale = Vector3.one;
+            }
+        }
+
+        private void OnArcadeHazardHit(ArcadeHazard hazard)
+        {
+            if (gameManager != null)
+            {
+                gameManager.GameOver("Hit " + hazard.name);
+            }
+        }
+
+        private void UpdateSwingPose()
+        {
+            if (swingPivot == null)
+            {
+                ReleaseFromVine();
+                return;
+            }
+
+            swingTimer += Time.deltaTime * swingSpeed;
+            float heldTime = Time.time - swingAttachTime;
+            if (maxSwingHoldDuration > 0f && heldTime >= maxSwingHoldDuration)
+            {
+                ReleaseFromVine();
+                return;
+            }
+
+            currentSwingAngleDegrees = Mathf.Sin(swingTimer) * swingAngleDegrees;
+            Quaternion swingRotation = Quaternion.Euler(0f, 0f, currentSwingAngleDegrees);
+            Vector3 targetPosition = swingPivot.position + swingRotation * swingRestOffset;
+            float rawBlend = swingEntryBlendDuration <= 0f ? 1f : Mathf.Clamp01((Time.time - swingAttachTime) / swingEntryBlendDuration);
+            float blend = EaseOutBack(rawBlend, swingEntryOvershoot);
+            float entryArc = Mathf.Sin(rawBlend * Mathf.PI) * swingEntryArcHeight;
+            transform.position = Vector3.LerpUnclamped(swingEntryStartPosition, targetPosition, blend) + Vector3.up * entryArc;
+            transform.rotation = Quaternion.identity;
+
+            if (currentVine != null)
+            {
+                currentVine.DriveOccupiedSwing(currentSwingAngleDegrees);
+            }
+
+            if (visualRoot != null)
+            {
+                visualRoot.localRotation = Quaternion.Euler(0f, 0f, currentSwingAngleDegrees);
+            }
+        }
+
+        private Vector2 CalculateVineReleaseVelocity()
+        {
+            float forwardTiming = Mathf.Clamp01(Mathf.Cos(swingTimer));
+            float upwardTiming = swingAngleDegrees <= 0.01f
+                ? 0f
+                : Mathf.Clamp01(currentSwingAngleDegrees / swingAngleDegrees);
+            Vector2 releaseVelocity = vineReleaseVelocity;
+            releaseVelocity.x += forwardTiming * releaseForwardTimingBonus;
+            releaseVelocity.y += upwardTiming * releaseLiftTimingBonus;
+            releaseVelocity.y = Mathf.Clamp(releaseVelocity.y, 1.2f, maxVerticalSpeed);
+            return releaseVelocity;
+        }
+
+        private static float EaseOutBack(float t, float overshoot)
+        {
+            t = Mathf.Clamp01(t) - 1f;
+            float strength = 1f + overshoot * 4f;
+            return 1f + t * t * ((strength + 1f) * t + strength);
+        }
+
+        private void UpdateAirTilt()
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            float verticalVelocity = GetVelocity().y;
+            float targetAngle = Mathf.Clamp(-verticalVelocity * 3.2f, -16f, 18f);
+            Quaternion targetRotation = Quaternion.Euler(0f, 0f, targetAngle);
+            visualRoot.localRotation = Quaternion.Slerp(visualRoot.localRotation, targetRotation, 10f * Time.deltaTime);
+        }
+
+        private void PlaySquash(Vector3 targetScale, float duration)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            if (squashRoutine != null)
+            {
+                StopCoroutine(squashRoutine);
+            }
+
+            squashRoutine = StartCoroutine(SquashRoutine(targetScale, duration));
+        }
+
+        private IEnumerator SquashRoutine(Vector3 targetScale, float duration)
+        {
+            Vector3 original = Vector3.one;
+            float halfDuration = Mathf.Max(0.02f, duration * 0.5f);
+            float elapsed = 0f;
+
+            while (elapsed < halfDuration)
+            {
+                elapsed += Time.deltaTime;
+                visualRoot.localScale = Vector3.Lerp(original, targetScale, elapsed / halfDuration);
+                yield return null;
+            }
+
+            elapsed = 0f;
+            while (elapsed < halfDuration)
+            {
+                elapsed += Time.deltaTime;
+                visualRoot.localScale = Vector3.Lerp(targetScale, original, elapsed / halfDuration);
+                yield return null;
+            }
+
+            visualRoot.localScale = original;
+            squashRoutine = null;
+        }
+
+        private void ShowFartCloudBurst()
+        {
+            if (fartCloudRenderer == null)
+            {
+                return;
+            }
+
+            if (fartCloudRoutine != null)
+            {
+                StopCoroutine(fartCloudRoutine);
+            }
+
+            fartCloudRoutine = StartCoroutine(FartCloudBurstRoutine());
+        }
+
+        private void PlaySpeedLines()
+        {
+            if (speedLineBurst != null)
+            {
+                speedLineBurst.Play();
+            }
+        }
+
+        private IEnumerator FartCloudBurstRoutine()
+        {
+            Transform cloud = fartCloudRenderer.transform;
+            Vector3 basePosition = cloud.localPosition;
+            Vector3 baseScale = cloud.localScale;
+            Transform core = fartCoreRenderer != null ? fartCoreRenderer.transform : null;
+            Vector3 corePosition = core != null ? core.localPosition : Vector3.zero;
+            Vector3 coreScale = core != null ? core.localScale : Vector3.one;
+            Transform ring = fartRingRenderer != null ? fartRingRenderer.transform : null;
+            Vector3 ringPosition = ring != null ? ring.localPosition : Vector3.zero;
+            Vector3 ringScale = ring != null ? ring.localScale : Vector3.one;
+            Vector3[] accentPositions = CaptureRendererPositions(fartAccentRenderers);
+            Vector3[] accentScales = CaptureRendererScales(fartAccentRenderers);
+
+            SetRendererEnabled(fartCloudRenderer, true);
+            SetRendererEnabled(fartCoreRenderer, true);
+            SetRendererEnabled(fartRingRenderer, true);
+            SetRendererEnabled(fartAccentRenderers, true);
+
+            const float duration = 0.34f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = 1f - Mathf.Pow(1f - t, 3f);
+                float pop = Mathf.Sin(Mathf.Clamp01(t * 1.35f) * Mathf.PI);
+
+                cloud.localPosition = basePosition + new Vector3(-0.26f * eased, 0.05f * pop, 0f);
+                cloud.localScale = Vector3.Lerp(baseScale * 0.62f, baseScale * 1.42f, eased);
+                SetFartCloudColor(fartCloudRenderer, new Color(0.66f, 1f, 0.42f, Mathf.Lerp(0.95f, 0f, eased)));
+
+                if (core != null)
+                {
+                    core.localPosition = corePosition + new Vector3(-0.1f * eased, -0.01f * pop, 0f);
+                    core.localScale = Vector3.Lerp(coreScale * 0.56f, coreScale * 1.18f, eased);
+                    SetFartCloudColor(fartCoreRenderer, new Color(0.98f, 1f, 0.52f, Mathf.Lerp(0.95f, 0f, Mathf.Clamp01(t * 1.25f))));
+                }
+
+                if (ring != null)
+                {
+                    ring.localPosition = ringPosition + new Vector3(-0.34f * eased, 0.01f * pop, 0f);
+                    ring.localScale = Vector3.Lerp(ringScale * 0.36f, ringScale * 2.05f, eased);
+                    SetFartCloudColor(fartRingRenderer, new Color(0.78f, 1f, 0.26f, Mathf.Lerp(0.7f, 0f, eased)));
+                }
+
+                AnimateAccentRenderers(accentPositions, accentScales, eased, pop);
+                yield return null;
+            }
+
+            cloud.localPosition = basePosition;
+            cloud.localScale = baseScale;
+            if (core != null)
+            {
+                core.localPosition = corePosition;
+                core.localScale = coreScale;
+            }
+
+            if (ring != null)
+            {
+                ring.localPosition = ringPosition;
+                ring.localScale = ringScale;
+            }
+
+            RestoreAccentRenderers(accentPositions, accentScales);
+            SetRendererEnabled(fartCloudRenderer, false);
+            SetRendererEnabled(fartCoreRenderer, false);
+            SetRendererEnabled(fartRingRenderer, false);
+            SetRendererEnabled(fartAccentRenderers, false);
+            fartCloudRoutine = null;
+        }
+
+        private void HideFartCloud()
+        {
+            if (fartCloudRoutine != null)
+            {
+                StopCoroutine(fartCloudRoutine);
+                fartCloudRoutine = null;
+            }
+
+            SetFartCloudColor(fartCloudRenderer, new Color(0.68f, 1f, 0.47f, 0f));
+            SetFartCloudColor(fartCoreRenderer, new Color(0.98f, 1f, 0.52f, 0f));
+            SetFartCloudColor(fartRingRenderer, new Color(0.78f, 1f, 0.26f, 0f));
+            SetRendererEnabled(fartCloudRenderer, false);
+            SetRendererEnabled(fartCoreRenderer, false);
+            SetRendererEnabled(fartRingRenderer, false);
+            SetRendererEnabled(fartAccentRenderers, false);
+        }
+
+        private void SetFartCloudColor(Renderer targetRenderer, Color color)
+        {
+            if (targetRenderer == null)
+            {
+                return;
+            }
+
+            if (fartCloudPropertyBlock == null)
+            {
+                fartCloudPropertyBlock = new MaterialPropertyBlock();
+            }
+
+            targetRenderer.GetPropertyBlock(fartCloudPropertyBlock);
+            fartCloudPropertyBlock.SetColor("_BaseColor", color);
+            fartCloudPropertyBlock.SetColor("_Color", color);
+            targetRenderer.SetPropertyBlock(fartCloudPropertyBlock);
+        }
+
+        private Vector3[] CaptureRendererPositions(Renderer[] renderers)
+        {
+            if (renderers == null)
+            {
+                return null;
+            }
+
+            Vector3[] positions = new Vector3[renderers.Length];
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                positions[i] = renderers[i] != null ? renderers[i].transform.localPosition : Vector3.zero;
+            }
+
+            return positions;
+        }
+
+        private Vector3[] CaptureRendererScales(Renderer[] renderers)
+        {
+            if (renderers == null)
+            {
+                return null;
+            }
+
+            Vector3[] scales = new Vector3[renderers.Length];
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                scales[i] = renderers[i] != null ? renderers[i].transform.localScale : Vector3.one;
+            }
+
+            return scales;
+        }
+
+        private void AnimateAccentRenderers(Vector3[] basePositions, Vector3[] baseScales, float eased, float pop)
+        {
+            if (fartAccentRenderers == null || basePositions == null || baseScales == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < fartAccentRenderers.Length; i++)
+            {
+                Renderer accent = fartAccentRenderers[i];
+                if (accent == null)
+                {
+                    continue;
+                }
+
+                float side = i % 2 == 0 ? 1f : -1f;
+                float lift = 0.07f + i * 0.018f;
+                accent.transform.localPosition = basePositions[i] + new Vector3(-0.18f * eased, side * lift * pop, 0f);
+                accent.transform.localScale = Vector3.Lerp(baseScales[i] * 0.55f, baseScales[i] * (1.08f + i * 0.06f), eased);
+                SetFartCloudColor(accent, new Color(0.72f, 1f, 0.44f, Mathf.Lerp(0.62f, 0f, eased)));
+            }
+        }
+
+        private void RestoreAccentRenderers(Vector3[] basePositions, Vector3[] baseScales)
+        {
+            if (fartAccentRenderers == null || basePositions == null || baseScales == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < fartAccentRenderers.Length; i++)
+            {
+                if (fartAccentRenderers[i] == null)
+                {
+                    continue;
+                }
+
+                fartAccentRenderers[i].transform.localPosition = basePositions[i];
+                fartAccentRenderers[i].transform.localScale = baseScales[i];
+            }
+        }
+
+        private static void SetRendererEnabled(Renderer renderer, bool enabled)
+        {
+            if (renderer != null)
+            {
+                renderer.enabled = enabled;
+            }
+        }
+
+        private static void SetRendererEnabled(Renderer[] renderers, bool enabled)
+        {
+            if (renderers == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                SetRendererEnabled(renderers[i], enabled);
+            }
+        }
+
+        private void NotifyFuelChanged()
+        {
+            if (FuelChanged != null)
+            {
+                FuelChanged.Invoke(CurrentFuel, maxFuel);
+            }
+        }
+
+        private Vector2 GetVelocity()
+        {
+#if UNITY_6000_0_OR_NEWER
+            return body.linearVelocity;
+#else
+            return body.velocity;
+#endif
+        }
+
+        private void SetVelocity(Vector2 velocity)
+        {
+#if UNITY_6000_0_OR_NEWER
+            body.linearVelocity = velocity;
+#else
+            body.velocity = velocity;
+#endif
+        }
+    }
+}
