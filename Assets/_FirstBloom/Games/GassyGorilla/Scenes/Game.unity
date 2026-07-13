@@ -5435,7 +5435,7 @@ MonoBehaviour:
   runChunkDirector: {fileID: 949169581}
   cameraFollow: {fileID: 1028539287}
   sceneCamera: {fileID: 1028539286}
-  deathY: -2.2
+  deathY: -1.72
   gameOverRestY: -1.72
   playCameraIntro: 1
   introDuration: 1.15
