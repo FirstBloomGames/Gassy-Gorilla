@@ -32,7 +32,7 @@ namespace FirstBloom.Games.GassyGorilla
 
         [Header("Lagoon Finish")]
         [SerializeField] private LagoonFinishPresentation lagoonFinishPresentation;
-        [SerializeField] private float lagoonResultRevealDelay = 0.42f;
+        [SerializeField] private float lagoonResultRevealDelay = 0.68f;
         [SerializeField] private float hazardResultRevealDelay = 0.08f;
 
         [Header("Camera Beats")]

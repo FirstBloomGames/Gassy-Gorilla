@@ -1561,11 +1561,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             Material reflectionMaterial = CreateColorMaterial(
                 "GG_LagoonReflection_3D",
-                new Color(0.02f, 0.16f, 0.16f, 0.29f),
+                new Color(0.02f, 0.16f, 0.16f, 0.78f),
                 true);
             Material rippleMaterial = CreateColorMaterial(
                 "GG_LagoonRipple_3D",
-                new Color(0.68f, 1f, 0.9f, 0.42f),
+                new Color(0.68f, 1f, 0.9f, 0.85f),
                 true);
 
             GameObject reflectionRoot = new GameObject("Lagoon Reflection 3D");
@@ -1637,7 +1637,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetFloat(presentation, "impactWorldZ", -0.2f);
             SetFloat(presentation, "rippleDuration", 0.72f);
             SetFloat(presentation, "rippleStagger", 0.1f);
-            SetFloat(presentation, "rippleExpansion", 4.2f);
+            SetFloat(presentation, "rippleExpansion", 5.2f);
         }
 
         private static GameObject BuildPickupPrefab(string name, FoodPickupType type, float refill, ModelVisualAsset modelAsset, float modelHeight, string primitiveKind)
@@ -1931,7 +1931,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(gameManager, "lagoonFinishPresentation", gorilla.GetComponent<LagoonFinishPresentation>());
             SetFloat(gameManager, "deathY", -1.72f);
             SetFloat(gameManager, "gameOverRestY", -1.72f);
-            SetFloat(gameManager, "lagoonResultRevealDelay", 0.42f);
+            SetFloat(gameManager, "lagoonResultRevealDelay", 0.68f);
             SetFloat(gameManager, "hazardResultRevealDelay", 0.08f);
             SetFloat(gameManager, "introDuration", 1.15f);
             SetFloat(gameManager, "introStartZoom", 2.85f);
@@ -3705,24 +3705,24 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             main.playOnAwake = false;
             main.useUnscaledTime = true;
             main.duration = 0.28f;
-            main.maxParticles = 24;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.34f, 0.66f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(2.5f, 4.8f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.07f, 0.18f);
+            main.maxParticles = 30;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.4f, 0.78f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(3.4f, 6.4f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.11f, 0.26f);
             main.startColor = new ParticleSystem.MinMaxGradient(
                 new Color(0.76f, 1f, 0.92f, 0.9f),
                 new Color(0.2f, 0.82f, 0.76f, 0.82f));
-            main.gravityModifier = 0.85f;
+            main.gravityModifier = 0.75f;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
 
             ParticleSystem.EmissionModule emission = particles.emission;
             emission.rateOverTime = 0f;
-            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 22) });
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 28) });
 
             ParticleSystem.ShapeModule shape = particles.shape;
             shape.shapeType = ParticleSystemShapeType.Cone;
-            shape.angle = 31f;
-            shape.radius = 0.32f;
+            shape.angle = 38f;
+            shape.radius = 0.36f;
             shape.rotation = new Vector3(-90f, 0f, 0f);
 
             ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particles.colorOverLifetime;
@@ -3744,24 +3744,24 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             main.playOnAwake = false;
             main.useUnscaledTime = true;
             main.duration = 0.24f;
-            main.maxParticles = 18;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.42f, 0.82f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(3.4f, 6.2f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.035f, 0.1f);
+            main.maxParticles = 20;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.44f, 0.86f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(4.4f, 7.8f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.13f);
             main.startColor = new ParticleSystem.MinMaxGradient(
                 new Color(0.92f, 1f, 0.96f, 0.96f),
                 new Color(0.34f, 0.9f, 0.84f, 0.8f));
-            main.gravityModifier = 1.15f;
+            main.gravityModifier = 1f;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
 
             ParticleSystem.EmissionModule emission = particles.emission;
             emission.rateOverTime = 0f;
-            emission.SetBursts(new[] { new ParticleSystem.Burst(0.035f, 16) });
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0.035f, 20) });
 
             ParticleSystem.ShapeModule shape = particles.shape;
             shape.shapeType = ParticleSystemShapeType.Cone;
-            shape.angle = 46f;
-            shape.radius = 0.2f;
+            shape.angle = 52f;
+            shape.radius = 0.24f;
             shape.rotation = new Vector3(-90f, 0f, 0f);
 
             ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particles.colorOverLifetime;

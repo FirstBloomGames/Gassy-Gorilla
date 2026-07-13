@@ -19,7 +19,7 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float reflectionFullAlphaHeight = 0.75f;
         [SerializeField] private float reflectionFadeHeight = 4.7f;
         [SerializeField] private float reflectionImpactFadeDuration = 0.22f;
-        [SerializeField] private Color reflectionColor = new Color(0.02f, 0.16f, 0.16f, 0.29f);
+        [SerializeField] private Color reflectionColor = new Color(0.02f, 0.16f, 0.16f, 0.46f);
 
         [Header("Water Impact")]
         [SerializeField] private Transform impactRoot;
@@ -29,8 +29,8 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float impactWorldZ = -0.2f;
         [SerializeField] private float rippleDuration = 0.72f;
         [SerializeField] private float rippleStagger = 0.1f;
-        [SerializeField] private float rippleExpansion = 4.2f;
-        [SerializeField] private Color rippleColor = new Color(0.68f, 1f, 0.9f, 0.42f);
+        [SerializeField] private float rippleExpansion = 5.2f;
+        [SerializeField] private Color rippleColor = new Color(0.68f, 1f, 0.9f, 0.58f);
 
         private MaterialPropertyBlock propertyBlock;
         private Vector3 reflectionBaseScale = Vector3.one;
