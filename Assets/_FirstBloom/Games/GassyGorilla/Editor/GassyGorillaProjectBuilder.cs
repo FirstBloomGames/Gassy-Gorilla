@@ -1515,6 +1515,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(modelVisual, "modelRoot", modelRoot);
             SetObject(modelVisual, "animator", modelAnimator);
             SetObject(modelVisual, "velocitySource", body);
+            SetObject(modelVisual, "bodyCollider", collider);
             SetFloat(modelVisual, "crossFadeDuration", 0.065f);
             SetFloat(modelVisual, "boostPoseHold", 0.24f);
             SetFloat(modelVisual, "releasePoseHold", 0.42f);
@@ -1524,6 +1525,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetFloat(modelVisual, "boostStartTime", 0.1f);
             SetFloat(modelVisual, "swingStartTime", 0.38f);
             SetFloat(modelVisual, "releaseStartTime", 0.2f);
+            SetBool(modelVisual, "lockSwingPose", true);
+            SetFloat(modelVisual, "swingGripPoseNormalizedTime", 0.38f);
+            SetVector2(modelVisual, "gripTargetOffset", Vector2.zero);
             SetFloat(modelVisual, "swingLeanDegrees", 0.5f);
             SetFloat(modelVisual, "swingPosePulseDegrees", 1.1f);
             SetFloat(modelVisual, "travelYawDegrees", -42f);

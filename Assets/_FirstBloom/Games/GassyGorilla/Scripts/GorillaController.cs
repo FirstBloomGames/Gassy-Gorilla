@@ -97,6 +97,18 @@ namespace FirstBloom.Games.GassyGorilla
         public float CurrentSwingAngleDegrees { get { return currentSwingAngleDegrees; } }
         public float CurrentReleasePower { get { return currentReleasePower; } }
         public Vector2 CurrentSwingVelocity { get { return currentSwingVelocity; } }
+        public Vector3 CurrentVineGripPosition
+        {
+            get
+            {
+                if (IsSwinging && currentVine != null)
+                {
+                    return currentVine.GrabPoint.position;
+                }
+
+                return transform.position;
+            }
+        }
 
         private void Awake()
         {
@@ -507,18 +519,24 @@ namespace FirstBloom.Games.GassyGorilla
             currentSwingVelocity = CalculateSwingVelocity();
             currentReleasePower = CalculateReleasePower();
             Quaternion swingRotation = Quaternion.Euler(0f, 0f, currentSwingAngleDegrees);
-            Vector3 targetPosition = swingPivot.position + swingRotation * swingRestOffset;
+
+            Vector3 targetPosition;
+            if (currentVine != null)
+            {
+                currentVine.DriveOccupiedSwing(currentSwingAngleDegrees);
+                currentVine.SetReleasePower(currentReleasePower);
+                targetPosition = currentVine.GrabPoint.position;
+            }
+            else
+            {
+                targetPosition = swingPivot.position + swingRotation * swingRestOffset;
+            }
+
             float rawBlend = swingEntryBlendDuration <= 0f ? 1f : Mathf.Clamp01((Time.time - swingAttachTime) / swingEntryBlendDuration);
             float blend = EaseOutBack(rawBlend, swingEntryOvershoot);
             float entryArc = Mathf.Sin(rawBlend * Mathf.PI) * swingEntryArcHeight;
             transform.position = Vector3.LerpUnclamped(swingEntryStartPosition, targetPosition, blend) + Vector3.up * entryArc;
             transform.rotation = Quaternion.identity;
-
-            if (currentVine != null)
-            {
-                currentVine.DriveOccupiedSwing(currentSwingAngleDegrees);
-                currentVine.SetReleasePower(currentReleasePower);
-            }
 
             if (visualRoot != null)
             {

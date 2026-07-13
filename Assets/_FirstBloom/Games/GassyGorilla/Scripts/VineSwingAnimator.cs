@@ -11,7 +11,7 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float glowPulseSpeed = 5f;
         [SerializeField] private float occupiedFollowTime = 0.055f;
         [SerializeField] private float releaseReturnTime = 0.32f;
-        [SerializeField] private float maxOccupiedDegrees = 18f;
+        [SerializeField] private float maxOccupiedDegrees = 35f;
         [SerializeField] private Color launchReadyColor = new Color(1f, 0.88f, 0.25f, 0.82f);
 
         private Color[] baseGlowColors;
@@ -52,10 +52,17 @@ namespace FirstBloom.Games.GassyGorilla
         {
             if (vineVisual != null)
             {
-                float ambientSway = Mathf.Sin(Time.time * swaySpeed + transform.position.x) * swayDegrees;
-                float targetDegrees = occupied ? occupiedTargetDegrees : ambientSway;
-                float smoothTime = occupied ? occupiedFollowTime : releaseReturnTime;
-                currentDegrees = Mathf.SmoothDampAngle(currentDegrees, targetDegrees, ref angularVelocity, smoothTime, 360f, Time.deltaTime);
+                if (occupied)
+                {
+                    currentDegrees = occupiedTargetDegrees;
+                    angularVelocity = 0f;
+                }
+                else
+                {
+                    float ambientSway = Mathf.Sin(Time.time * swaySpeed + transform.position.x) * swayDegrees;
+                    currentDegrees = Mathf.SmoothDampAngle(currentDegrees, ambientSway, ref angularVelocity, releaseReturnTime, 360f, Time.deltaTime);
+                }
+
                 vineVisual.localRotation = Quaternion.Euler(0f, 0f, currentDegrees);
             }
 
@@ -97,6 +104,13 @@ namespace FirstBloom.Games.GassyGorilla
         {
             occupied = true;
             occupiedTargetDegrees = Mathf.Clamp(angleDegrees, -maxOccupiedDegrees, maxOccupiedDegrees);
+            currentDegrees = occupiedTargetDegrees;
+            angularVelocity = 0f;
+
+            if (vineVisual != null)
+            {
+                vineVisual.localRotation = Quaternion.Euler(0f, 0f, currentDegrees);
+            }
         }
 
         public void SetReleasePower(float power)

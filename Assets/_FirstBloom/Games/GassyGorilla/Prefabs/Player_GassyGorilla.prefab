@@ -5213,6 +5213,7 @@ MonoBehaviour:
   modelRoot: {fileID: 672422670256193715}
   animator: {fileID: 6124632310517579891}
   velocitySource: {fileID: 6602424835211201600}
+  bodyCollider: {fileID: 2537737687594561736}
   idleState: Idle
   cruiseState: Run
   boostState: Boost
@@ -5227,6 +5228,11 @@ MonoBehaviour:
   boostStartTime: 0.1
   swingStartTime: 0.38
   releaseStartTime: 0.2
+  lockSwingPose: 1
+  swingGripPoseNormalizedTime: 0.38
+  leftHandBoneName: LeftHand
+  rightHandBoneName: RightHand
+  gripTargetOffset: {x: 0, y: 0}
   boostPoseHold: 0.24
   releasePoseHold: 0.42
   failedPoseHold: 0.1

@@ -17,6 +17,7 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private GameObject modelRoot;
         [SerializeField] private Animator animator;
         [SerializeField] private Rigidbody2D velocitySource;
+        [SerializeField] private Collider2D bodyCollider;
 
         [Header("Animator States")]
         [SerializeField] private string idleState = "Idle";
@@ -35,6 +36,13 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float boostStartTime = 0.1f;
         [SerializeField] private float swingStartTime = 0.38f;
         [SerializeField] private float releaseStartTime = 0.2f;
+
+        [Header("Vine Grip Lock")]
+        [SerializeField] private bool lockSwingPose = true;
+        [SerializeField, Range(0f, 1f)] private float swingGripPoseNormalizedTime = 0.38f;
+        [SerializeField] private string leftHandBoneName = "LeftHand";
+        [SerializeField] private string rightHandBoneName = "RightHand";
+        [SerializeField] private Vector2 gripTargetOffset;
 
         [Header("Animation Polish")]
         [SerializeField] private float boostPoseHold = 0.2f;
@@ -63,6 +71,8 @@ namespace FirstBloom.Games.GassyGorilla
         private Renderer[] modelRenderers;
         private Vector3 modelBaseScale = Vector3.one;
         private Quaternion modelBaseRotation = Quaternion.identity;
+        private Vector3 modelBaseLocalPosition;
+        private Vector2 bodyColliderBaseOffset;
         private Vector3 currentScaleMultiplier = Vector3.one;
         private Vector3 targetScaleMultiplier = Vector3.one;
         private float currentLeanDegrees;
@@ -72,6 +82,10 @@ namespace FirstBloom.Games.GassyGorilla
         private float temporaryPoseUntil;
         private TemporaryPose temporaryPose;
         private string currentState;
+        private Transform leftHand;
+        private Transform rightHand;
+        private bool swingPoseLocked;
+        private bool gripLockActive;
 
         private void Awake()
         {
@@ -85,6 +99,11 @@ namespace FirstBloom.Games.GassyGorilla
                 velocitySource = gorilla.GetComponent<Rigidbody2D>();
             }
 
+            if (bodyCollider == null && gorilla != null)
+            {
+                bodyCollider = gorilla.GetComponent<Collider2D>();
+            }
+
             if (animator == null && modelRoot != null)
             {
                 animator = modelRoot.GetComponentInChildren<Animator>(true);
@@ -95,8 +114,15 @@ namespace FirstBloom.Games.GassyGorilla
                 modelRenderers = modelRoot.GetComponentsInChildren<Renderer>(true);
                 modelBaseScale = modelRoot.transform.localScale;
                 modelBaseRotation = modelRoot.transform.localRotation;
+                modelBaseLocalPosition = modelRoot.transform.localPosition;
                 currentYawDegrees = travelYawDegrees;
                 targetYawDegrees = travelYawDegrees;
+                ResolveGripBones();
+            }
+
+            if (bodyCollider != null)
+            {
+                bodyColliderBaseOffset = bodyCollider.offset;
             }
         }
 
@@ -120,6 +146,8 @@ namespace FirstBloom.Games.GassyGorilla
                 gorilla.VineReleased -= HandleVineReleased;
                 gorilla.BoostFailed -= HandleBoostFailed;
             }
+
+            ResetGripVisual();
         }
 
         private void Start()
@@ -138,7 +166,15 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 temporaryPose = TemporaryPose.None;
                 temporaryPoseUntil = 0f;
-                PlayStateWithFallback(swingState, boostState, false, swingAnimationSpeed);
+                if (lockSwingPose)
+                {
+                    PlayLockedPoseWithFallback(swingState, boostState, swingGripPoseNormalizedTime);
+                }
+                else
+                {
+                    PlayStateWithFallback(swingState, boostState, false, swingAnimationSpeed);
+                }
+
                 float swingPulse = Mathf.Sin(Time.time * 5.8f) * swingPosePulseDegrees;
                 SetPoseTarget(swingScale, swingLeanDegrees + swingPulse, swingYawDegrees);
                 ApplySmoothedPose();
@@ -157,6 +193,23 @@ namespace FirstBloom.Games.GassyGorilla
             ApplySmoothedPose();
         }
 
+        private void LateUpdate()
+        {
+            if (!HasRenderableModel())
+            {
+                return;
+            }
+
+            if (gorilla != null && gorilla.IsSwinging)
+            {
+                AlignHandsToVineGrip();
+            }
+            else if (gripLockActive)
+            {
+                ReleaseGripPreservingWorldPose();
+            }
+        }
+
         private void HandleBoosted()
         {
             temporaryPose = TemporaryPose.Boost;
@@ -169,12 +222,21 @@ namespace FirstBloom.Games.GassyGorilla
         {
             temporaryPose = TemporaryPose.None;
             temporaryPoseUntil = 0f;
-            PlayStateWithFallback(swingState, boostState, true, swingAnimationSpeed, swingStartTime);
+            if (lockSwingPose)
+            {
+                PlayLockedPoseWithFallback(swingState, boostState, swingGripPoseNormalizedTime);
+            }
+            else
+            {
+                PlayStateWithFallback(swingState, boostState, true, swingAnimationSpeed, swingStartTime);
+            }
+
             SetPoseTarget(swingScale, swingLeanDegrees, swingYawDegrees);
         }
 
         private void HandleVineReleased()
         {
+            ReleaseGripPreservingWorldPose();
             temporaryPose = TemporaryPose.Release;
             temporaryPoseUntil = Time.time + releasePoseHold;
             if (!PlayState(releaseState, true, releaseAnimationSpeed, releaseStartTime))
@@ -233,6 +295,45 @@ namespace FirstBloom.Games.GassyGorilla
             return PlayState(fallbackState, forceRestart, speed, startTime);
         }
 
+        private bool PlayLockedPoseWithFallback(string primaryState, string fallbackState, float normalizedTime)
+        {
+            if (PlayLockedPose(primaryState, normalizedTime))
+            {
+                return true;
+            }
+
+            return PlayLockedPose(fallbackState, normalizedTime);
+        }
+
+        private bool PlayLockedPose(string stateName, float normalizedTime)
+        {
+            if (string.IsNullOrEmpty(stateName) || animator == null || animator.runtimeAnimatorController == null)
+            {
+                return false;
+            }
+
+            int stateHash = Animator.StringToHash(stateName);
+            if (!animator.HasState(0, stateHash))
+            {
+                return false;
+            }
+
+            if (!swingPoseLocked || currentState != stateName)
+            {
+                currentState = stateName;
+                animator.speed = 0f;
+                animator.Play(stateHash, 0, Mathf.Clamp01(normalizedTime));
+                animator.Update(0f);
+                swingPoseLocked = true;
+            }
+            else
+            {
+                animator.speed = 0f;
+            }
+
+            return true;
+        }
+
         private bool PlayState(string stateName, bool forceRestart, float speed, float startTime = 0f)
         {
             if (string.IsNullOrEmpty(stateName) || animator == null || animator.runtimeAnimatorController == null)
@@ -248,14 +349,130 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (!forceRestart && currentState == stateName)
             {
+                swingPoseLocked = false;
                 animator.speed = speed;
                 return true;
             }
 
             currentState = stateName;
+            swingPoseLocked = false;
             animator.speed = speed;
             animator.CrossFadeInFixedTime(stateHash, crossFadeDuration, 0, Mathf.Max(0f, startTime));
             return true;
+        }
+
+        private void AlignHandsToVineGrip()
+        {
+            if (modelRoot == null || gorilla == null || !ResolveGripBones())
+            {
+                return;
+            }
+
+            Vector3 handCenter = (leftHand.position + rightHand.position) * 0.5f;
+            Vector3 gripPosition = gorilla.CurrentVineGripPosition;
+            gripPosition.x += gripTargetOffset.x;
+            gripPosition.y += gripTargetOffset.y;
+
+            Vector3 correction = gripPosition - handCenter;
+            correction.z = 0f;
+            modelRoot.transform.position += correction;
+            gripLockActive = true;
+            UpdateColliderForGrip();
+        }
+
+        private bool ResolveGripBones()
+        {
+            if (leftHand == null)
+            {
+                leftHand = FindDescendant(modelRoot != null ? modelRoot.transform : null, leftHandBoneName);
+            }
+
+            if (rightHand == null)
+            {
+                rightHand = FindDescendant(modelRoot != null ? modelRoot.transform : null, rightHandBoneName);
+            }
+
+            return leftHand != null && rightHand != null;
+        }
+
+        private static Transform FindDescendant(Transform root, string targetName)
+        {
+            if (root == null || string.IsNullOrEmpty(targetName))
+            {
+                return null;
+            }
+
+            Transform[] descendants = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < descendants.Length; i++)
+            {
+                string candidateName = descendants[i].name;
+                if (string.Equals(candidateName, targetName, System.StringComparison.OrdinalIgnoreCase)
+                    || candidateName.EndsWith(":" + targetName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return descendants[i];
+                }
+            }
+
+            return null;
+        }
+
+        private void UpdateColliderForGrip()
+        {
+            if (bodyCollider == null || gorilla == null || modelRoot == null || modelRoot.transform.parent == null)
+            {
+                return;
+            }
+
+            Vector3 baselineWorldPosition = modelRoot.transform.parent.TransformPoint(modelBaseLocalPosition);
+            Vector3 visualDelta = gorilla.transform.InverseTransformVector(modelRoot.transform.position - baselineWorldPosition);
+            bodyCollider.offset = bodyColliderBaseOffset + new Vector2(visualDelta.x, visualDelta.y);
+        }
+
+        private void ReleaseGripPreservingWorldPose()
+        {
+            if (!gripLockActive || modelRoot == null)
+            {
+                return;
+            }
+
+            Vector3 lockedModelPosition = modelRoot.transform.position;
+            modelRoot.transform.localPosition = modelBaseLocalPosition;
+            Vector3 bodyCorrection = lockedModelPosition - modelRoot.transform.position;
+            bodyCorrection.z = 0f;
+
+            if (gorilla != null)
+            {
+                Vector3 bodyPosition = gorilla.transform.position + bodyCorrection;
+                if (velocitySource != null)
+                {
+                    velocitySource.position = new Vector2(bodyPosition.x, bodyPosition.y);
+                }
+
+                gorilla.transform.position = bodyPosition;
+            }
+
+            if (bodyCollider != null)
+            {
+                bodyCollider.offset = bodyColliderBaseOffset;
+            }
+
+            gripLockActive = false;
+        }
+
+        private void ResetGripVisual()
+        {
+            if (modelRoot != null)
+            {
+                modelRoot.transform.localPosition = modelBaseLocalPosition;
+            }
+
+            if (bodyCollider != null)
+            {
+                bodyCollider.offset = bodyColliderBaseOffset;
+            }
+
+            gripLockActive = false;
+            swingPoseLocked = false;
         }
 
         private void SetPoseTarget(Vector3 scaleMultiplier, float leanDegrees, float yawDegrees)
