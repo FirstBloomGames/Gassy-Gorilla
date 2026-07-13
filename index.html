@@ -88,7 +88,7 @@
       var loaderUrl = buildUrl + "/5849e5519e880d433649e0177c9bc919.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/9b97284a0feac2a0ba088b134ae4f79a.data.unityweb",
+        dataUrl: buildUrl + "/e953d2f4fe0b304bf893ffa83c8f3fab.data.unityweb",
         frameworkUrl: buildUrl + "/6eedcc1a1461b4806d0d5c923c87c352.framework.js.unityweb",
         codeUrl: buildUrl + "/bbf4736eb72cfeb70246d817205b0f30.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
@@ -151,6 +151,29 @@
         createUnityInstance(canvas, config, (progress) => {
           document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
               }).then((unityInstance) => {
+                window.ggUnityInstance = unityInstance;
+                var ggQaParameters = new URLSearchParams(window.location.search);
+                var ggQaSmokeRun = ggQaParameters.has("qa-smoke");
+                if (ggQaParameters.has("qa-autoplay") || ggQaSmokeRun) {
+                  window.setTimeout(() => unityInstance.SendMessage("Manager_MainMenu", "Play"), 250);
+                }
+                if (ggQaSmokeRun) {
+                  window.setTimeout(() => {
+                    var ggQaTapsRemaining = 48;
+                    var ggQaTap = () => {
+                      var rect = canvas.getBoundingClientRect();
+                      var x = rect.left + rect.width * 0.42;
+                      var y = rect.top + rect.height * 0.52;
+                      var down = new MouseEvent("mousedown", { bubbles: true, clientX: x, clientY: y, button: 0, buttons: 1 });
+                      var up = new MouseEvent("mouseup", { bubbles: true, clientX: x, clientY: y, button: 0, buttons: 0 });
+                      canvas.dispatchEvent(down);
+                      canvas.dispatchEvent(up);
+                      ggQaTapsRemaining--;
+                      if (ggQaTapsRemaining > 0) window.setTimeout(ggQaTap, 650);
+                    };
+                    ggQaTap();
+                  }, 1650);
+                }
                 document.querySelector("#unity-loading-bar").style.display = "none";
                 document.querySelector("#unity-fullscreen-button").onclick = () => {
                   unityInstance.SetFullscreen(1);
