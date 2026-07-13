@@ -5280,8 +5280,8 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.66
-      minScalar: 0.34
+      scalar: 0.78
+      minScalar: 0.4
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -5333,8 +5333,8 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 4.8
-      minScalar: 2.5
+      scalar: 6.4
+      minScalar: 3.4
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -5451,8 +5451,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.18
-      minScalar: 0.07
+      scalar: 0.26
+      minScalar: 0.11
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -5768,14 +5768,14 @@ ParticleSystem:
         m_RotationOrder: 4
     randomizeRotationDirection: 0
     gravitySource: 0
-    maxNumParticles: 24
+    maxNumParticles: 30
     customEmitterVelocity: {x: 0, y: 0, z: 0}
     size3D: 0
     rotation3D: 0
     gravityModifier:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.85
+      scalar: 0.75
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -5829,7 +5829,7 @@ ParticleSystem:
     serializedVersion: 6
     enabled: 1
     type: 4
-    angle: 31
+    angle: 38
     length: 5
     boxThickness: {x: 0, y: 0, z: 0}
     radiusThickness: 1
@@ -5915,7 +5915,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 0.32
+      value: 0.36
       mode: 0
       spread: 0
       speed:
@@ -6144,7 +6144,7 @@ ParticleSystem:
       countCurve:
         serializedVersion: 2
         minMaxState: 0
-        scalar: 22
+        scalar: 28
         minScalar: 30
         maxCurve:
           serializedVersion: 2
@@ -15158,8 +15158,8 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.82
-      minScalar: 0.42
+      scalar: 0.86
+      minScalar: 0.44
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -15211,8 +15211,8 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 6.2
-      minScalar: 3.4
+      scalar: 7.8
+      minScalar: 4.4
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -15329,8 +15329,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.1
-      minScalar: 0.035
+      scalar: 0.13
+      minScalar: 0.05
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -15646,14 +15646,14 @@ ParticleSystem:
         m_RotationOrder: 4
     randomizeRotationDirection: 0
     gravitySource: 0
-    maxNumParticles: 18
+    maxNumParticles: 20
     customEmitterVelocity: {x: 0, y: 0, z: 0}
     size3D: 0
     rotation3D: 0
     gravityModifier:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 1.15
+      scalar: 1
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -15707,7 +15707,7 @@ ParticleSystem:
     serializedVersion: 6
     enabled: 1
     type: 4
-    angle: 46
+    angle: 52
     length: 5
     boxThickness: {x: 0, y: 0, z: 0}
     radiusThickness: 1
@@ -15793,7 +15793,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 0.2
+      value: 0.24
       mode: 0
       spread: 0
       speed:
@@ -16022,7 +16022,7 @@ ParticleSystem:
       countCurve:
         serializedVersion: 2
         minMaxState: 0
-        scalar: 16
+        scalar: 20
         minScalar: 30
         maxCurve:
           serializedVersion: 2
@@ -30888,7 +30888,7 @@ MonoBehaviour:
   reflectionFullAlphaHeight: 0.75
   reflectionFadeHeight: 4.7
   reflectionImpactFadeDuration: 0.22
-  reflectionColor: {r: 0.02, g: 0.16, b: 0.16, a: 0.29}
+  reflectionColor: {r: 0.02, g: 0.16, b: 0.16, a: 0.46}
   impactRoot: {fileID: 606031669873219713}
   impactParticles:
   - {fileID: 8122565203412787083}
@@ -30905,8 +30905,8 @@ MonoBehaviour:
   impactWorldZ: -0.2
   rippleDuration: 0.72
   rippleStagger: 0.1
-  rippleExpansion: 4.2
-  rippleColor: {r: 0.68, g: 1, b: 0.9, a: 0.42}
+  rippleExpansion: 5.2
+  rippleColor: {r: 0.68, g: 1, b: 0.9, a: 0.58}
 --- !u!1 &5469769911544359544
 GameObject:
   m_ObjectHideFlags: 0
@@ -36088,7 +36088,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: m_Controller
-      value: 
+      value:
       objectReference: {fileID: 9100000, guid: 727527168bc77964ba9604bb1c43f80a, type: 2}
     - target: {fileID: 5866666021909216657, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: m_CullingMode
@@ -36116,7 +36116,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8111781155169087978, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: 0d5f09d32667971428a28fb5da0ac850, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

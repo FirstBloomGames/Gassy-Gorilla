@@ -56,7 +56,7 @@ MonoBehaviour:
   deathY: -1.72
   gameOverRestY: -1.72
   lagoonFinishPresentation: {fileID: 0}
-  lagoonResultRevealDelay: 0.42
+  lagoonResultRevealDelay: 0.68
   hazardResultRevealDelay: 0.08
   playCameraIntro: 1
   introDuration: 1.15
