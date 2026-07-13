@@ -48,7 +48,8 @@ namespace FirstBloom.ArcadeFramework.Scoring
 
             if (useTargetX && distanceTarget != null)
             {
-                Distance = Mathf.Max(0f, (distanceTarget.position.x - startX) * distanceScale);
+                float forwardProgress = Mathf.Max(0f, (distanceTarget.position.x - startX) * distanceScale);
+                Distance = Mathf.Max(Distance, forwardProgress);
             }
             else
             {

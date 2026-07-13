@@ -31,6 +31,7 @@ namespace FirstBloom.ArcadeFramework.Camera
         private float shakeTimeRemaining;
         private float shakeDuration;
         private float shakeIntensity;
+        private float followSmoothingMultiplier = 1f;
 
         public Transform Target
         {
@@ -75,7 +76,8 @@ namespace FirstBloom.ArcadeFramework.Camera
                 desired.y = Mathf.Clamp(desired.y, minY, maxY);
             }
 
-            Vector3 position = Vector3.SmoothDamp(transform.position, desired, ref velocity, smoothTime);
+            float effectiveSmoothTime = Mathf.Max(0.01f, smoothTime * followSmoothingMultiplier);
+            Vector3 position = Vector3.SmoothDamp(transform.position, desired, ref velocity, effectiveSmoothTime);
 
             if (shakeTimeRemaining > 0f)
             {
@@ -122,6 +124,11 @@ namespace FirstBloom.ArcadeFramework.Camera
         public void SetVelocitySource(Rigidbody2D source)
         {
             velocitySource = source;
+        }
+
+        public void SetFollowSmoothingMultiplier(float multiplier)
+        {
+            followSmoothingMultiplier = Mathf.Max(0.25f, multiplier);
         }
 
         public void SnapToTarget()

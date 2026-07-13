@@ -1687,6 +1687,7 @@ MonoBehaviour:
   grabPoint: {fileID: 8769388392508209804}
   pivotPoint: {fileID: 8318196725766774176}
   visualRoot: {fileID: 8152406643011466594}
+  releasePowerCue: {fileID: 4439393038700075528}
   glowRenderers:
   - {fileID: 2008396916430767155}
   swingAnimator: {fileID: 597547040920899959}
@@ -1716,7 +1717,8 @@ MonoBehaviour:
   glowPulseSpeed: 5
   occupiedFollowTime: 0.055
   releaseReturnTime: 0.32
-  maxOccupiedDegrees: 18
+  maxOccupiedDegrees: 28
+  launchReadyColor: {r: 1, g: 0.88, b: 0.25, a: 0.82}
 --- !u!114 &8229651402892151393
 MonoBehaviour:
   m_ObjectHideFlags: 0

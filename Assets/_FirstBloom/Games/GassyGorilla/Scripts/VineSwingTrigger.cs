@@ -9,6 +9,7 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private Transform grabPoint;
         [SerializeField] private Transform pivotPoint;
         [SerializeField] private Transform visualRoot;
+        [SerializeField] private Transform releasePowerCue;
         [SerializeField] private Renderer[] glowRenderers;
         [SerializeField] private VineSwingAnimator swingAnimator;
         [SerializeField] private float regrabCooldown = 1.1f;
@@ -20,6 +21,7 @@ namespace FirstBloom.Games.GassyGorilla
 
         private float nextAvailableTime;
         private Vector3 baseVisualScale;
+        private Vector3 releasePowerCueBaseScale;
         private Coroutine punchRoutine;
         private MaterialPropertyBlock[] glowBlocks;
 
@@ -41,6 +43,11 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             baseVisualScale = visualRoot.localScale;
+            if (releasePowerCue != null)
+            {
+                releasePowerCueBaseScale = releasePowerCue.localScale;
+            }
+
             if (glowRenderers != null)
             {
                 glowBlocks = new MaterialPropertyBlock[glowRenderers.Length];
@@ -95,6 +102,7 @@ namespace FirstBloom.Games.GassyGorilla
                 swingAnimator.SetOccupied(true);
             }
 
+            SetReleasePower(0f);
             SetGlowColor(Color.white);
             PlayPunch(1f, grabPunchScale);
         }
@@ -107,6 +115,7 @@ namespace FirstBloom.Games.GassyGorilla
                 swingAnimator.SetOccupied(false);
             }
 
+            SetReleasePower(0f);
             SetGlowColor(usedColor);
             PlayPunch(grabPunchScale, 0.96f);
         }
@@ -116,6 +125,20 @@ namespace FirstBloom.Games.GassyGorilla
             if (swingAnimator != null)
             {
                 swingAnimator.DriveOccupiedSwing(angleDegrees);
+            }
+        }
+
+        public void SetReleasePower(float power)
+        {
+            float easedPower = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(power));
+            if (releasePowerCue != null)
+            {
+                releasePowerCue.localScale = releasePowerCueBaseScale * Mathf.Lerp(0.88f, 1.42f, easedPower);
+            }
+
+            if (swingAnimator != null)
+            {
+                swingAnimator.SetReleasePower(easedPower);
             }
         }
 

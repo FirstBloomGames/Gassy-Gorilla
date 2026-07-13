@@ -33,15 +33,21 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float failedBoostFeedbackCooldown = 0.35f;
 
         [Header("Swinging")]
-        [SerializeField] private float swingAngleDegrees = 16f;
-        [SerializeField] private float swingSpeed = 2.8f;
-        [SerializeField] private Vector2 vineReleaseVelocity = new Vector2(7.35f, 4.75f);
+        [SerializeField] private float swingAngleDegrees = 26f;
+        [SerializeField] private float swingSpeed = 2.35f;
+        [SerializeField] private Vector2 vineReleaseVelocity = new Vector2(4.7f, 2.4f);
         [SerializeField] private float swingEntryArcHeight = 0.14f;
         [SerializeField] private float swingEntryBlendDuration = 0.13f;
         [SerializeField] private float swingEntryOvershoot = 0.04f;
-        [SerializeField] private float maxSwingHoldDuration = 0.72f;
-        [SerializeField] private float releaseForwardTimingBonus = 0.82f;
-        [SerializeField] private float releaseLiftTimingBonus = 0.64f;
+        [SerializeField] private float swingMomentumInheritance = 0.55f;
+        [SerializeField] private float verticalMomentumInheritance = 0.38f;
+        [SerializeField] private float releaseReachForwardBonus = 5.25f;
+        [SerializeField] private float releaseReachLiftBonus = 2.7f;
+        [SerializeField] private float releasePowerExponent = 1.25f;
+        [SerializeField] private float returningReleasePowerScale = 0.58f;
+        [SerializeField] private float maxInheritedSwingSpeed = 8.5f;
+        [SerializeField] private float maxReleaseForwardSpeed = 11.8f;
+        [SerializeField] private float swingCameraSmoothingMultiplier = 1.85f;
         [SerializeField] private float vineSlowMoScale = 0.88f;
         [SerializeField] private float vineSlowMoDuration = 0.07f;
 
@@ -73,8 +79,11 @@ namespace FirstBloom.Games.GassyGorilla
         private Vector3 swingRestOffset;
         private Vector3 swingEntryStartPosition;
         private float swingAttachTime;
+        private float swingRadius;
         private float swingTimer;
         private float currentSwingAngleDegrees;
+        private float currentReleasePower;
+        private Vector2 currentSwingVelocity;
 
         public event Action<float, float> FuelChanged;
         public event Action Boosted;
@@ -85,6 +94,9 @@ namespace FirstBloom.Games.GassyGorilla
         public float CurrentFuel { get; private set; }
         public float MaxFuel { get { return maxFuel; } }
         public bool IsSwinging { get; private set; }
+        public float CurrentSwingAngleDegrees { get { return currentSwingAngleDegrees; } }
+        public float CurrentReleasePower { get { return currentReleasePower; } }
+        public Vector2 CurrentSwingVelocity { get { return currentSwingVelocity; } }
 
         private void Awake()
         {
@@ -310,7 +322,7 @@ namespace FirstBloom.Games.GassyGorilla
             swingEntryStartPosition = transform.position;
             Vector3 pivotPosition = swingPivot != null ? swingPivot.position : vine.transform.position;
             Vector3 caughtOffset = snapPosition - pivotPosition;
-            float swingRadius = caughtOffset.magnitude;
+            swingRadius = caughtOffset.magnitude;
             if (swingRadius < 0.5f)
             {
                 swingRadius = 1.5f;
@@ -326,6 +338,8 @@ namespace FirstBloom.Games.GassyGorilla
 
             swingAttachTime = Time.time;
             swingTimer = Mathf.Asin(normalizedEntryAngle);
+            currentReleasePower = CalculateReleasePower();
+            currentSwingVelocity = CalculateSwingVelocity();
             IsSwinging = true;
 
             body.bodyType = RigidbodyType2D.Kinematic;
@@ -351,6 +365,7 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (cameraFollow != null)
             {
+                cameraFollow.SetFollowSmoothingMultiplier(swingCameraSmoothingMultiplier);
                 cameraFollow.Shake(0.12f, 0.18f);
                 cameraFollow.AddActionLookahead(new Vector2(0.28f, 0.18f), 0.1f);
             }
@@ -371,13 +386,13 @@ namespace FirstBloom.Games.GassyGorilla
                 return;
             }
 
+            float releasePower = currentReleasePower;
+            Vector2 releaseVelocity = CalculateVineReleaseVelocity(releasePower);
+
             IsSwinging = false;
             transform.rotation = Quaternion.identity;
             body.bodyType = RigidbodyType2D.Dynamic;
             body.gravityScale = originalGravityScale;
-
-            Vector2 releaseVelocity = CalculateVineReleaseVelocity();
-            releaseVelocity.x = Mathf.Max(releaseVelocity.x, forwardSpeed + 1.75f);
             SetVelocity(releaseVelocity);
 
             if (currentVine != null)
@@ -386,6 +401,8 @@ namespace FirstBloom.Games.GassyGorilla
                 currentVine = null;
             }
 
+            swingPivot = null;
+
             if (ArcadeAudioManager.Instance != null)
             {
                 ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.VineRelease);
@@ -393,12 +410,17 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (cameraFollow != null)
             {
-                cameraFollow.Shake(0.16f, 0.2f);
-                cameraFollow.AddActionLookahead(new Vector2(0.72f, 0.24f), 0.18f);
+                cameraFollow.SetFollowSmoothingMultiplier(1f);
+                cameraFollow.Shake(Mathf.Lerp(0.1f, 0.2f, releasePower), 0.2f);
+                cameraFollow.AddActionLookahead(
+                    new Vector2(Mathf.Lerp(0.42f, 0.92f, releasePower), Mathf.Lerp(0.12f, 0.3f, releasePower)),
+                    0.2f);
             }
 
-            PlaySquash(new Vector3(1.16f, 0.9f, 1f), 0.14f);
+            PlaySquash(Vector3.Lerp(new Vector3(1.08f, 0.94f, 1f), new Vector3(1.2f, 0.86f, 1f), releasePower), 0.14f);
             PlaySpeedLines();
+            currentReleasePower = 0f;
+            currentSwingVelocity = Vector2.zero;
             if (VineReleased != null)
             {
                 VineReleased.Invoke();
@@ -407,9 +429,9 @@ namespace FirstBloom.Games.GassyGorilla
 
         public void PrepareForIntro()
         {
+            ResetSwingState();
             IsSwinging = false;
             inputEnabled = false;
-            currentVine = null;
             body.bodyType = RigidbodyType2D.Kinematic;
             body.gravityScale = 0f;
             SetVelocity(Vector2.zero);
@@ -424,6 +446,7 @@ namespace FirstBloom.Games.GassyGorilla
 
         public void BeginRun()
         {
+            ResetSwingState();
             IsSwinging = false;
             inputEnabled = true;
             body.bodyType = RigidbodyType2D.Dynamic;
@@ -438,9 +461,9 @@ namespace FirstBloom.Games.GassyGorilla
 
         public void StopForGameOver(float minimumRestY)
         {
+            ResetSwingState();
             IsSwinging = false;
             inputEnabled = false;
-            currentVine = null;
             body.bodyType = RigidbodyType2D.Kinematic;
             body.gravityScale = 0f;
             SetVelocity(Vector2.zero);
@@ -480,14 +503,9 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             swingTimer += Time.deltaTime * swingSpeed;
-            float heldTime = Time.time - swingAttachTime;
-            if (maxSwingHoldDuration > 0f && heldTime >= maxSwingHoldDuration)
-            {
-                ReleaseFromVine();
-                return;
-            }
-
             currentSwingAngleDegrees = Mathf.Sin(swingTimer) * swingAngleDegrees;
+            currentSwingVelocity = CalculateSwingVelocity();
+            currentReleasePower = CalculateReleasePower();
             Quaternion swingRotation = Quaternion.Euler(0f, 0f, currentSwingAngleDegrees);
             Vector3 targetPosition = swingPivot.position + swingRotation * swingRestOffset;
             float rawBlend = swingEntryBlendDuration <= 0f ? 1f : Mathf.Clamp01((Time.time - swingAttachTime) / swingEntryBlendDuration);
@@ -499,6 +517,7 @@ namespace FirstBloom.Games.GassyGorilla
             if (currentVine != null)
             {
                 currentVine.DriveOccupiedSwing(currentSwingAngleDegrees);
+                currentVine.SetReleasePower(currentReleasePower);
             }
 
             if (visualRoot != null)
@@ -507,17 +526,57 @@ namespace FirstBloom.Games.GassyGorilla
             }
         }
 
-        private Vector2 CalculateVineReleaseVelocity()
+        private Vector2 CalculateVineReleaseVelocity(float releasePower)
         {
-            float forwardTiming = Mathf.Clamp01(Mathf.Cos(swingTimer));
-            float upwardTiming = swingAngleDegrees <= 0.01f
-                ? 0f
-                : Mathf.Clamp01(currentSwingAngleDegrees / swingAngleDegrees);
+            float phaseDirection = Mathf.Cos(swingTimer);
+            float reachScale = phaseDirection < -0.08f ? returningReleasePowerScale : 1f;
+            float inheritedForward = Mathf.Clamp(currentSwingVelocity.x, 0f, maxInheritedSwingSpeed) * swingMomentumInheritance;
+            float inheritedLift = Mathf.Clamp(currentSwingVelocity.y, 0f, maxInheritedSwingSpeed) * verticalMomentumInheritance;
             Vector2 releaseVelocity = vineReleaseVelocity;
-            releaseVelocity.x += forwardTiming * releaseForwardTimingBonus;
-            releaseVelocity.y += upwardTiming * releaseLiftTimingBonus;
-            releaseVelocity.y = Mathf.Clamp(releaseVelocity.y, 1.2f, maxVerticalSpeed);
+            releaseVelocity.x += inheritedForward + releasePower * releaseReachForwardBonus * reachScale;
+            releaseVelocity.y += inheritedLift + releasePower * releaseReachLiftBonus * reachScale;
+            releaseVelocity.x = Mathf.Clamp(releaseVelocity.x, forwardSpeed + 0.35f, maxReleaseForwardSpeed);
+            releaseVelocity.y = Mathf.Clamp(releaseVelocity.y, 1.4f, maxVerticalSpeed);
             return releaseVelocity;
+        }
+
+        private float CalculateReleasePower()
+        {
+            if (swingAngleDegrees <= 0.01f)
+            {
+                return 0f;
+            }
+
+            float forwardReach = Mathf.Clamp01(currentSwingAngleDegrees / swingAngleDegrees);
+            return Mathf.Pow(Mathf.SmoothStep(0f, 1f, forwardReach), Mathf.Max(0.01f, releasePowerExponent));
+        }
+
+        private Vector2 CalculateSwingVelocity()
+        {
+            float angleRadians = currentSwingAngleDegrees * Mathf.Deg2Rad;
+            float angularVelocityRadians = swingAngleDegrees * Mathf.Deg2Rad * Mathf.Cos(swingTimer) * swingSpeed;
+            Vector2 velocity = new Vector2(
+                swingRadius * Mathf.Cos(angleRadians) * angularVelocityRadians,
+                swingRadius * Mathf.Sin(angleRadians) * angularVelocityRadians);
+            return Vector2.ClampMagnitude(velocity, maxInheritedSwingSpeed);
+        }
+
+        private void ResetSwingState()
+        {
+            if (currentVine != null)
+            {
+                currentVine.NotifyReleased();
+                currentVine = null;
+            }
+
+            currentReleasePower = 0f;
+            currentSwingVelocity = Vector2.zero;
+            swingPivot = null;
+            swingRadius = 0f;
+            if (cameraFollow != null)
+            {
+                cameraFollow.SetFollowSmoothingMultiplier(1f);
+            }
         }
 
         private static float EaseOutBack(float t, float overshoot)

@@ -15345,15 +15345,21 @@ MonoBehaviour:
   fuelDrainPerBoost: 17.5
   passiveRefillPerSecond: 0
   failedBoostFeedbackCooldown: 0.35
-  swingAngleDegrees: 16
-  swingSpeed: 2.8
-  vineReleaseVelocity: {x: 7.45, y: 4.85}
+  swingAngleDegrees: 26
+  swingSpeed: 2.35
+  vineReleaseVelocity: {x: 4.7, y: 2.4}
   swingEntryArcHeight: 0.15
   swingEntryBlendDuration: 0.14
   swingEntryOvershoot: 0.04
-  maxSwingHoldDuration: 0.72
-  releaseForwardTimingBonus: 0.85
-  releaseLiftTimingBonus: 0.68
+  swingMomentumInheritance: 0.55
+  verticalMomentumInheritance: 0.38
+  releaseReachForwardBonus: 5.25
+  releaseReachLiftBonus: 2.7
+  releasePowerExponent: 1.25
+  returningReleasePowerScale: 0.58
+  maxInheritedSwingSpeed: 8.5
+  maxReleaseForwardSpeed: 11.8
+  swingCameraSmoothingMultiplier: 1.85
   vineSlowMoScale: 0.93
   vineSlowMoDuration: 0.06
   visualRoot: {fileID: 1416821914066181379}

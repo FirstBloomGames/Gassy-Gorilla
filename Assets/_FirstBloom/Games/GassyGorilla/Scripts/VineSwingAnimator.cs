@@ -12,6 +12,7 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float occupiedFollowTime = 0.055f;
         [SerializeField] private float releaseReturnTime = 0.32f;
         [SerializeField] private float maxOccupiedDegrees = 18f;
+        [SerializeField] private Color launchReadyColor = new Color(1f, 0.88f, 0.25f, 0.82f);
 
         private Color[] baseGlowColors;
         private MaterialPropertyBlock[] glowBlocks;
@@ -19,6 +20,7 @@ namespace FirstBloom.Games.GassyGorilla
         private float occupiedTargetDegrees;
         private float currentDegrees;
         private float angularVelocity;
+        private float releasePower;
 
         public bool HasAmbientSway
         {
@@ -67,7 +69,10 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 if (glowRenderers[i] != null)
                 {
-                    Color color = baseGlowColors[i];
+                    Color baseColor = baseGlowColors[i];
+                    Color color = occupied
+                        ? Color.Lerp(baseColor, launchReadyColor, releasePower)
+                        : baseColor;
                     color.a *= pulse;
                     SetRendererColor(i, color);
                 }
@@ -82,12 +87,21 @@ namespace FirstBloom.Games.GassyGorilla
                 occupiedTargetDegrees = currentDegrees;
                 angularVelocity = 0f;
             }
+            else
+            {
+                releasePower = 0f;
+            }
         }
 
         public void DriveOccupiedSwing(float angleDegrees)
         {
             occupied = true;
             occupiedTargetDegrees = Mathf.Clamp(angleDegrees, -maxOccupiedDegrees, maxOccupiedDegrees);
+        }
+
+        public void SetReleasePower(float power)
+        {
+            releasePower = Mathf.Clamp01(power);
         }
 
         private Color ReadRendererColor(Renderer renderer)

@@ -99,14 +99,19 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void HandleVineGrabbed()
         {
-            if (overlay != null)
+            if (overlay != null && !sawVine)
             {
-                overlay.Show("TAP TO RELEASE", vineHold);
+                overlay.Show("TAP TO LAUNCH", vineHold);
             }
         }
 
         private void HandleVineReleased()
         {
+            if (overlay != null && !sawVine)
+            {
+                overlay.HideInstant();
+            }
+
             sawVine = true;
         }
     }

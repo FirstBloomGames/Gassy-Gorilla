@@ -1483,15 +1483,21 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetFloat(controller, "boostFallRecovery", 0.36f);
             SetFloat(controller, "maxBoostVerticalBonus", 1.15f);
             SetFloat(controller, "fuelDrainPerBoost", 17.5f);
-            SetFloat(controller, "swingAngleDegrees", 16f);
-            SetFloat(controller, "swingSpeed", 2.8f);
-            SetVector2(controller, "vineReleaseVelocity", new Vector2(7.45f, 4.85f));
+            SetFloat(controller, "swingAngleDegrees", 26f);
+            SetFloat(controller, "swingSpeed", 2.35f);
+            SetVector2(controller, "vineReleaseVelocity", new Vector2(4.7f, 2.4f));
             SetFloat(controller, "swingEntryArcHeight", 0.15f);
             SetFloat(controller, "swingEntryBlendDuration", 0.14f);
             SetFloat(controller, "swingEntryOvershoot", 0.04f);
-            SetFloat(controller, "maxSwingHoldDuration", 0.72f);
-            SetFloat(controller, "releaseForwardTimingBonus", 0.85f);
-            SetFloat(controller, "releaseLiftTimingBonus", 0.68f);
+            SetFloat(controller, "swingMomentumInheritance", 0.55f);
+            SetFloat(controller, "verticalMomentumInheritance", 0.38f);
+            SetFloat(controller, "releaseReachForwardBonus", 5.25f);
+            SetFloat(controller, "releaseReachLiftBonus", 2.7f);
+            SetFloat(controller, "releasePowerExponent", 1.25f);
+            SetFloat(controller, "returningReleasePowerScale", 0.58f);
+            SetFloat(controller, "maxInheritedSwingSpeed", 8.5f);
+            SetFloat(controller, "maxReleaseForwardSpeed", 11.8f);
+            SetFloat(controller, "swingCameraSmoothingMultiplier", 1.85f);
             SetFloat(controller, "vineSlowMoScale", 0.93f);
             SetFloat(controller, "vineSlowMoDuration", 0.06f);
             SetObject(controller, "visualRoot", visual.transform);
@@ -1621,6 +1627,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(swingTrigger, "grabPoint", grab.transform);
             SetObject(swingTrigger, "pivotPoint", pivot.transform);
             SetObject(swingTrigger, "visualRoot", visualRoot.transform);
+            SetObject(swingTrigger, "releasePowerCue", assistGlow.transform);
             SetObjectArray(swingTrigger, "glowRenderers", catchCueRenderers);
             SetFloat(swingTrigger, "catchRadius", 1.72f);
             SetFloat(swingTrigger, "grabPunchScale", 1.08f);
@@ -1632,7 +1639,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetFloat(animator, "swaySpeed", 0.78f);
             SetFloat(animator, "occupiedFollowTime", 0.055f);
             SetFloat(animator, "releaseReturnTime", 0.32f);
-            SetFloat(animator, "maxOccupiedDegrees", 18f);
+            SetFloat(animator, "maxOccupiedDegrees", 28f);
             SetObject(swingTrigger, "swingAnimator", animator);
 
             root.AddComponent<DestroyBehindTarget>();
