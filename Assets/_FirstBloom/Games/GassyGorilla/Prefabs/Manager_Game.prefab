@@ -53,8 +53,11 @@ MonoBehaviour:
   runChunkDirector: {fileID: 0}
   cameraFollow: {fileID: 0}
   sceneCamera: {fileID: 0}
-  deathY: -3.45
-  gameOverRestY: -2.82
+  deathY: -1.72
+  gameOverRestY: -1.72
+  lagoonFinishPresentation: {fileID: 0}
+  lagoonResultRevealDelay: 0.42
+  hazardResultRevealDelay: 0.08
   playCameraIntro: 1
   introDuration: 1.15
   introStartZoom: 2.85
