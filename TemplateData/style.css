@@ -14,3 +14,109 @@ body { padding: 0; margin: 0 }
 #unity-build-title { float: right; margin-right: 10px; line-height: 38px; font-family: arial; font-size: 18px }
 #unity-fullscreen-button { cursor:pointer; float: right; width: 38px; height: 38px; background: url('fullscreen-button.png') no-repeat center }
 #unity-warning { position: absolute; left: 50%; top: 5%; transform: translate(-50%); background: white; padding: 10px; display: none }
+
+
+/* Gassy Gorilla mobile orientation gate */
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #041b14;
+}
+
+#gg-orientation-gate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  box-sizing: border-box;
+  place-items: center;
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  overflow: hidden;
+  background: #063a2a;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+}
+
+body.gg-portrait-active #gg-orientation-gate {
+  display: grid;
+}
+
+body.gg-portrait-active #unity-container {
+  visibility: hidden;
+}
+
+.gg-orientation-content {
+  display: grid;
+  width: min(82vw, 340px);
+  justify-items: center;
+  gap: 14px;
+}
+
+.gg-orientation-brand {
+  color: #70e6ef;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.gg-phone-rotation {
+  position: relative;
+  width: 52px;
+  height: 86px;
+  margin: 12px 0 16px;
+  border: 4px solid #f9d85f;
+  border-radius: 8px;
+  box-sizing: border-box;
+  animation: gg-rotate-phone 2.8s ease-in-out infinite alternate;
+}
+
+.gg-phone-rotation::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 15px;
+  height: 3px;
+  border-radius: 2px;
+  background: #f9d85f;
+  transform: translateX(-50%);
+}
+
+.gg-phone-rotation span {
+  position: absolute;
+  inset: 13px 7px 8px;
+  border: 2px solid #70e6ef;
+  border-radius: 3px;
+  background: #0b5a40;
+}
+
+.gg-orientation-content h1 {
+  margin: 0;
+  color: #f9d85f;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.gg-orientation-content p {
+  margin: 0;
+  max-width: 280px;
+  color: #ffffff;
+  font-size: 17px;
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+@keyframes gg-rotate-phone {
+  0%, 18% { transform: rotate(0deg); }
+  72%, 100% { transform: rotate(90deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-phone-rotation {
+    animation: none;
+    transform: rotate(90deg);
+  }
+}

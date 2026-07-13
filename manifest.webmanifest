@@ -1,0 +1,10 @@
+{
+  "name": "Gassy Gorilla",
+  "short_name": "Gassy Gorilla",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#041b14",
+  "theme_color": "#063a2a"
+}

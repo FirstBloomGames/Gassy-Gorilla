@@ -3,11 +3,24 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity Web Player | GassyGorilla</title>
+    <title>Gassy Gorilla | First Bloom Games</title>
+    <meta name="theme-color" content="#063a2a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Gassy Gorilla">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
   </head>
   <body style="overscroll-behavior:none; touch-action:none;">
+    <div id="gg-orientation-gate" aria-hidden="true">
+      <div class="gg-orientation-content">
+        <div class="gg-orientation-brand">GASSY GORILLA</div>
+        <div class="gg-phone-rotation" aria-hidden="true"><span></span></div>
+        <h1>ROTATE TO PLAY</h1>
+        <p>Turn your phone sideways for the full jungle.</p>
+      </div>
+    </div>
     <div id="unity-container" class="unity-desktop">
       <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
       <div id="unity-loading-bar">
@@ -20,10 +33,30 @@
       <div id="unity-footer">
         <div id="unity-logo-title-footer"></div>
         <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">GassyGorilla</div>
+        <div id="unity-build-title">Gassy Gorilla</div>
       </div>
     </div>
     <script>
+      var ggForceMobilePreview = new URLSearchParams(window.location.search).has("mobile-preview");
+      var ggIsMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || ggForceMobilePreview;
+      var ggOrientationTimer = 0;
+
+      function ggUpdateOrientationGate() {
+        var portrait = window.innerHeight > window.innerWidth;
+        var gateIsActive = ggIsMobileDevice && portrait;
+        var gate = document.querySelector("#gg-orientation-gate");
+
+        document.body.classList.toggle("gg-portrait-active", gateIsActive);
+        if (gate) gate.setAttribute("aria-hidden", gateIsActive ? "false" : "true");
+      }
+
+      window.addEventListener("resize", ggUpdateOrientationGate);
+      window.addEventListener("orientationchange", function() {
+        window.clearTimeout(ggOrientationTimer);
+        ggOrientationTimer = window.setTimeout(ggUpdateOrientationGate, 120);
+      });
+      ggUpdateOrientationGate();
+
       var canvas = document.querySelector("#unity-canvas");
 
       // Shows a temporary message banner/ribbon for a few seconds, or
@@ -55,12 +88,12 @@
       var loaderUrl = buildUrl + "/20fbc2434217990f36e56d494c7993bd.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/f8b60554d570890458bbafba267605d3.data.unityweb",
+        dataUrl: buildUrl + "/de3d987ece6ae8f512261f34cb351097.data.unityweb",
         frameworkUrl: buildUrl + "/6eedcc1a1461b4806d0d5c923c87c352.framework.js.unityweb",
         codeUrl: buildUrl + "/1938785b42a81131b109966692f90461.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        productName: "GassyGorilla",
+        companyName: "First Bloom Games",
+        productName: "Gassy Gorilla",
         productVersion: "1.0",
         showBanner: unityShowBanner,
         // errorHandler: function(err, url, line) {
@@ -81,13 +114,13 @@
       // If you would like all file writes inside Unity Application.persistentDataPath
       // directory to automatically persist so that the contents are remembered when
       // the user revisits the site the next time, uncomment the following line:
-      // config.autoSyncPersistentDataPath = true;
+      config.autoSyncPersistentDataPath = true;
       // This autosyncing is currently not the default behavior to avoid regressing
       // existing user projects that might rely on the earlier manual
       // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
       // expected to change.
 
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      if (ggIsMobileDevice) {
         // Mobile device style: fill the whole browser client area with the game canvas:
 
         var meta = document.createElement('meta');
@@ -107,6 +140,8 @@
         canvas.style.width = "960px";
         canvas.style.height = "600px";
       }
+
+      ggUpdateOrientationGate();
 
       document.querySelector("#unity-loading-bar").style.display = "block";
 
