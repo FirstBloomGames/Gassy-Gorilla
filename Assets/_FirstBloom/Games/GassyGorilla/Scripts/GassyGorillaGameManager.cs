@@ -357,7 +357,7 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (bestDistanceText != null)
             {
-                bestDistanceText.text = value;
+                bestDistanceText.text = "BEST  " + value;
             }
 
             if (hudBestDistanceText != null)

@@ -34,11 +34,6 @@ MonoBehaviour:
     localScale: {x: 1, y: 1, z: 1}
   - prefab: {fileID: 6224503674251131827, guid: 9e1b26558741d87469832ed2d4038da5, type: 3}
     kind: 0
-    localPosition: {x: 3.45, y: 1.65, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    localScale: {x: 1, y: 1, z: 1}
-  - prefab: {fileID: 6224503674251131827, guid: 9e1b26558741d87469832ed2d4038da5, type: 3}
-    kind: 0
-    localPosition: {x: 5.15, y: 1.15, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 7}
+    localPosition: {x: 4.9, y: 1.45, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 6}
     localScale: {x: 1, y: 1, z: 1}

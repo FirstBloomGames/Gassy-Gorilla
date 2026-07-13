@@ -15,8 +15,8 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float catchRadius = 1.45f;
         [SerializeField] private float grabPunchDuration = 0.18f;
         [SerializeField] private float grabPunchScale = 1.12f;
-        [SerializeField] private Color readyColor = new Color(0.45f, 1f, 0.25f, 1f);
-        [SerializeField] private Color usedColor = new Color(0.22f, 0.5f, 0.2f, 0.65f);
+        [SerializeField] private Color readyColor = new Color(0.45f, 1f, 0.25f, 0.58f);
+        [SerializeField] private Color usedColor = new Color(0.22f, 0.5f, 0.2f, 0.28f);
 
         private float nextAvailableTime;
         private Vector3 baseVisualScale;

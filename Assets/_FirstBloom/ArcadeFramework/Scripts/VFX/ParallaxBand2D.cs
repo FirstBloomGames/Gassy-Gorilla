@@ -6,11 +6,15 @@ namespace FirstBloom.ArcadeFramework.VFX
     {
         [SerializeField] private Transform target;
         [SerializeField] private float parallaxX = 0.35f;
+        [SerializeField] private float parallaxY;
         [SerializeField] private float tileWidth = 16f;
         [SerializeField] private Transform[] tiles;
 
         private float startTargetX;
+        private float startTargetY;
         private float startX;
+        private float startY;
+        private UnityEngine.Camera targetCamera;
 
         private void Start()
         {
@@ -20,7 +24,10 @@ namespace FirstBloom.ArcadeFramework.VFX
             }
 
             startTargetX = target != null ? target.position.x : 0f;
+            startTargetY = target != null ? target.position.y : 0f;
             startX = transform.position.x;
+            startY = transform.position.y;
+            targetCamera = target != null ? target.GetComponent<UnityEngine.Camera>() : null;
 
             if (tiles == null || tiles.Length == 0)
             {
@@ -41,12 +48,19 @@ namespace FirstBloom.ArcadeFramework.VFX
 
             Vector3 position = transform.position;
             position.x = startX + (target.position.x - startTargetX) * parallaxX;
+            position.y = startY + (target.position.y - startTargetY) * parallaxY;
             transform.position = position;
 
             if (tileWidth <= 0f || tiles == null)
             {
                 return;
             }
+
+            float halfViewWidth = targetCamera != null && targetCamera.orthographic
+                ? targetCamera.orthographicSize * targetCamera.aspect
+                : tileWidth * 0.75f;
+            float viewportLeft = target.position.x - halfViewWidth;
+            float cycleWidth = tileWidth * tiles.Length;
 
             for (int i = 0; i < tiles.Length; i++)
             {
@@ -55,10 +69,11 @@ namespace FirstBloom.ArcadeFramework.VFX
                     continue;
                 }
 
-                float delta = target.position.x - tiles[i].position.x;
-                if (delta > tileWidth)
+                int safety = 0;
+                while (tiles[i].position.x + tileWidth * 0.5f < viewportLeft - 0.05f && safety < 2)
                 {
-                    tiles[i].position += Vector3.right * tileWidth * tiles.Length;
+                    tiles[i].position += Vector3.right * cycleWidth;
+                    safety++;
                 }
             }
         }

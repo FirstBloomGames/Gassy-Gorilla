@@ -85,11 +85,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.FartFuelPickup
   pickupType: 1
-  refillAmount: 40
+  refillAmount: 44
   pickupSound: {fileID: 0}
-  bobHeight: 0.12
-  bobSpeed: 4
-  spinDegreesPerSecond: 35
+  bobHeight: 0.08
+  bobSpeed: 2.7
+  spinDegreesPerSecond: 26
   collectDuration: 0.18
   collectArcHeight: 0.45
   attractionRadius: 1.18
@@ -5014,23 +5014,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 716b4f13faf8f5744bf7901aa5420085, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.9294235
+      value: 0.84357864
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 716b4f13faf8f5744bf7901aa5420085, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.9294235
+      value: 0.84357864
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 716b4f13faf8f5744bf7901aa5420085, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.9294235
+      value: 0.84357864
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 716b4f13faf8f5744bf7901aa5420085, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.0006399347
+      value: -0.00058082794
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 716b4f13faf8f5744bf7901aa5420085, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.031110704
+      value: -0.008991867
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 716b4f13faf8f5744bf7901aa5420085, type: 3}
       propertyPath: m_LocalPosition.z

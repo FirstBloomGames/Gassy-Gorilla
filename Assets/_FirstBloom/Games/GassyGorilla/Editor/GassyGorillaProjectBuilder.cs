@@ -191,7 +191,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private static SpriteSet GenerateSprites()
         {
             SpriteSet set = new SpriteSet();
-            set.UiPanel = CreateSoftPanelSprite("ui_panel_soft", 64, 64, new Color32(18, 42, 32, 232), new Color32(71, 126, 78, 230));
+            set.UiPanel = CreateSoftPanelSprite("ui_panel_clean_v1", 64, 64, new Color32(14, 34, 27, 238), new Color32(54, 111, 72, 232));
             AssetDatabase.SaveAssets();
             return set;
         }
@@ -1157,10 +1157,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             PrefabSet prefabs = new PrefabSet();
             prefabs.Player = BuildPlayerPrefab(gorillaModel);
-            prefabs.Bean = BuildPickupPrefab("Pickup_Bean", FoodPickupType.Bean, 20f, meshyAssets.Bean, 0.82f, "Bean");
-            prefabs.Burrito = BuildPickupPrefab("Pickup_Burrito", FoodPickupType.Burrito, 40f, meshyAssets.Burrito, 0.9f, "Burrito");
-            prefabs.Soda = BuildPickupPrefab("Pickup_Soda", FoodPickupType.Soda, 60f, meshyAssets.Soda, 0.82f, "Soda");
-            prefabs.BananaBunch = BuildPickupPrefab("Pickup_BananaBunch", FoodPickupType.BananaBunch, 35f, meshyAssets.BananaBunch, 0.88f, "Banana");
+            prefabs.Bean = BuildPickupPrefab("Pickup_Bean", FoodPickupType.Bean, 24f, meshyAssets.Bean, 0.74f, "Bean");
+            prefabs.Burrito = BuildPickupPrefab("Pickup_Burrito", FoodPickupType.Burrito, 44f, meshyAssets.Burrito, 0.82f, "Burrito");
+            prefabs.Soda = BuildPickupPrefab("Pickup_Soda", FoodPickupType.Soda, 70f, meshyAssets.Soda, 0.76f, "Soda");
+            prefabs.BananaBunch = BuildPickupPrefab("Pickup_BananaBunch", FoodPickupType.BananaBunch, 42f, meshyAssets.BananaBunch, 0.8f, "Banana");
             prefabs.SwingableVine = BuildSwingableVinePrefab(meshyAssets.Vine, meshyAssets.BroadLeafA, meshyAssets.ForegroundFernA);
             prefabs.VineObstacle = BuildHazardPrefab("Vine_Obstacle", new Vector2(0.55f, 2.6f), meshyAssets.StickySapBlob, 2.25f, "SapBlob");
             prefabs.TreeTrunkObstacle = BuildHazardPrefab("Obstacle_TreeTrunk", new Vector2(0.75f, 2.4f), meshyAssets.FirstAvailable(meshyAssets.ThornLog, meshyAssets.SpikyStump), 1.85f, "ThornLog");
@@ -1237,10 +1237,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 3.8f,
                 new[]
                 {
-                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.35f, 0.85f, -10f),
-                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 2.75f, 1.55f, -4f),
-                    ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 4.25f, 2.25f, 5f),
-                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 5.75f, 1.55f, 11f)
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.3f, 0.85f, -8f),
+                    ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 3.75f, 2.2f, 4f),
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 6.2f, 1.2f, 9f)
                 });
 
             RunChunkDefinition boostGap = CreateOrUpdateRunChunk(
@@ -1260,9 +1259,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 4.2f,
                 new[]
                 {
-                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 2.25f, 0.35f, -9f),
-                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 4.65f, 1.4f),
-                    ChunkSpawn(prefabs.Soda, RunChunkSpawnKind.Pickup, 7.1f, 2.45f, 8f)
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 2.4f, 0.45f, -7f),
+                    ChunkSpawn(prefabs.Soda, RunChunkSpawnKind.Pickup, 6.75f, 2.35f, 8f)
                 });
 
             RunChunkDefinition hazardIntroduction = CreateOrUpdateRunChunk(
@@ -1305,8 +1303,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 new[]
                 {
                     ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 1.75f, 1.1f, -6f),
-                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 3.45f, 1.65f),
-                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 5.15f, 1.15f, 7f)
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 4.9f, 1.45f, 6f)
                 });
 
             AssetDatabase.SaveAssets();
@@ -1551,6 +1548,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             FartFuelPickup pickup = root.AddComponent<FartFuelPickup>();
             pickup.Configure(type, refill);
+            SetFloat(pickup, "bobHeight", 0.08f);
+            SetFloat(pickup, "bobSpeed", 2.7f);
+            SetFloat(pickup, "spinDegreesPerSecond", 26f);
             SetFloat(pickup, "attractionRadius", type == FoodPickupType.BananaBunch ? 1.38f : 1.18f);
             SetFloat(pickup, "attractionSpeed", 6.1f);
             SetFloat(pickup, "attractionRampSpeed", 8.2f);
@@ -1599,36 +1599,35 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             visualRoot.transform.localPosition = new Vector3(0f, -canopyPivotHeight, 0f);
 
             bool useModel = HasModel(vineModel);
-            Renderer[] glowRenderers;
             if (useModel)
             {
-                CreateModelVisualInstance(vineModel, "VineBody_3D", visualRoot.transform, Vector3.zero, 3.5f, -2.96f, 2, Quaternion.Euler(0f, 26f, 0f), true);
-                glowRenderers = visualRoot.GetComponentsInChildren<Renderer>(true);
+                CreateModelVisualInstance(vineModel, "VineBody_3D", visualRoot.transform, Vector3.zero, 3.72f, -3.08f, 2, Quaternion.Euler(0f, 26f, 0f), true);
             }
             else
             {
-                glowRenderers = CreatePrimitiveVineVisual(visualRoot.transform);
+                CreatePrimitiveVineVisual(visualRoot.transform);
             }
 
             GameObject grab = new GameObject("GrabPoint");
             grab.transform.SetParent(swingRoot.transform, false);
             grab.transform.localPosition = new Vector3(0f, -(canopyPivotHeight + 1.42f), 0f);
 
-            Material catchGlow = CreateColorMaterial("GG_VineCatchGlow_3D", new Color(0.54f, 1f, 0.32f, 0.28f), true);
-            GameObject assistGlow = CreatePrimitiveVisual("MagneticCatchGlow_3D", PrimitiveType.Sphere, swingRoot.transform, grab.transform.localPosition + new Vector3(0f, 0f, 0.08f), new Vector3(0.62f, 0.34f, 0.08f), catchGlow, 6);
+            Material catchGlow = CreateColorMaterial("GG_VineCatchGlow_3D", new Color(0.54f, 1f, 0.32f, 0.34f), true);
+            GameObject assistGlow = CreatePrimitiveVisual("MagneticCatchGlow_3D", PrimitiveType.Sphere, swingRoot.transform, grab.transform.localPosition + new Vector3(0f, 0f, 0.08f), new Vector3(0.78f, 0.42f, 0.08f), catchGlow, 6);
             assistGlow.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
+            Renderer[] catchCueRenderers = { assistGlow.GetComponent<Renderer>() };
 
             VineSwingTrigger swingTrigger = root.AddComponent<VineSwingTrigger>();
             SetObject(swingTrigger, "grabPoint", grab.transform);
             SetObject(swingTrigger, "pivotPoint", pivot.transform);
             SetObject(swingTrigger, "visualRoot", visualRoot.transform);
-            SetObjectArray(swingTrigger, "glowRenderers", glowRenderers);
+            SetObjectArray(swingTrigger, "glowRenderers", catchCueRenderers);
             SetFloat(swingTrigger, "catchRadius", 1.72f);
             SetFloat(swingTrigger, "grabPunchScale", 1.08f);
 
             VineSwingAnimator animator = root.AddComponent<VineSwingAnimator>();
             SetObject(animator, "vineVisual", swingRoot.transform);
-            SetObjectArray(animator, "glowRenderers", glowRenderers);
+            SetObjectArray(animator, "glowRenderers", catchCueRenderers);
             SetFloat(animator, "swayDegrees", 5.5f);
             SetFloat(animator, "swaySpeed", 0.78f);
             SetFloat(animator, "occupiedFollowTime", 0.055f);
@@ -1696,18 +1695,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             Canvas canvas = CreateCanvas("MainMenuCanvas");
             MainMenuController menu = new GameObject("Manager_MainMenu").AddComponent<MainMenuController>();
 
-            Text title = CreateText("Title", canvas.transform, "GASSY GORILLA", 58, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.93f, 0.38f, 1f));
-            SetRect(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -94f), new Vector2(760f, 90f));
+            Text title = CreateText("Title", canvas.transform, "GASSY GORILLA", 54, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.93f, 0.38f, 1f));
+            SetRect(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -82f), new Vector2(720f, 76f));
 
-            Text best = CreateText("Best Distance", canvas.transform, "Best Distance: 0 m", 26, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
-            SetRect(best.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -172f), new Vector2(460f, 52f));
+            Text best = CreateText("Best Distance", canvas.transform, "Best Distance: 0 m", 22, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
+            SetRect(best.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -146f), new Vector2(420f, 44f));
 
             Button playButton = CreateButton("PlayButton", canvas.transform, "PLAY", new Color(0.36f, 0.78f, 0.28f, 1f));
-            SetRect(playButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 44f), new Vector2(260f, 72f));
+            SetRect(playButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 34f), new Vector2(244f, 64f));
             UnityEventTools.AddPersistentListener(playButton.onClick, menu.Play);
 
             Button settingsButton = CreateButton("SettingsButton", canvas.transform, "SETTINGS", new Color(0.22f, 0.55f, 0.78f, 1f));
-            SetRect(settingsButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -42f), new Vector2(260f, 64f));
+            SetRect(settingsButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -40f), new Vector2(244f, 54f));
             UnityEventTools.AddPersistentListener(settingsButton.onClick, menu.OpenSettings);
 
             ArcadeSettingsMenu settingsMenu = CreateSettingsPanel(canvas.transform, "SettingsPanel_Menu");
@@ -1739,11 +1738,14 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(follow, "target", player.transform);
             SetObject(follow, "velocitySource", player.GetComponent<Rigidbody2D>());
             SetVector3(follow, "offset", new Vector3(4f, 0.15f, -10f));
+            SetFloat(follow, "smoothTime", 0.2f);
+            SetFloat(follow, "minY", -1.1f);
+            SetFloat(follow, "maxY", 5.2f);
             SetFloat(follow, "baseOrthographicSize", 5.2f);
-            SetFloat(follow, "zoomOutAtSpeed", 0.38f);
+            SetFloat(follow, "zoomOutAtSpeed", 0.28f);
             SetFloat(follow, "speedLookaheadX", 0.18f);
-            SetFloat(follow, "speedLookaheadY", 0.09f);
-            SetFloat(follow, "maxExtraLookahead", 1.08f);
+            SetFloat(follow, "speedLookaheadY", 0.045f);
+            SetFloat(follow, "maxExtraLookahead", 0.96f);
             SetFloat(follow, "actionLookaheadReturnTime", 0.2f);
             SetObject(gorilla, "cameraFollow", follow);
 
@@ -1751,11 +1753,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             CreateFallDeathZone(camera.transform);
 
             Canvas canvas = CreateCanvas("GameCanvas");
-            Text scoreText = CreateText("DistanceText", canvas.transform, "0 m", 30, FontStyle.Bold, TextAnchor.MiddleLeft, Color.white);
-            SetRect(scoreText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(128f, -42f), new Vector2(220f, 54f));
+            CreateHudScrim(canvas.transform);
+            Text scoreText = CreateText("DistanceText", canvas.transform, "0 m", 27, FontStyle.Bold, TextAnchor.MiddleLeft, Color.white);
+            SetRect(scoreText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(104f, -34f), new Vector2(180f, 46f));
 
-            Text bestHudText = CreateText("BestText", canvas.transform, "Best 0 m", 18, FontStyle.Normal, TextAnchor.MiddleRight, new Color(1f, 0.94f, 0.72f, 1f));
-            SetRect(bestHudText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-124f, -42f), new Vector2(220f, 48f));
+            Text bestHudText = CreateText("BestText", canvas.transform, "Best 0 m", 16, FontStyle.Normal, TextAnchor.MiddleRight, new Color(1f, 0.94f, 0.72f, 1f));
+            SetRect(bestHudText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-106f, -32f), new Vector2(188f, 40f));
 
             FartBarUI fartBar = CreateFartBar(canvas.transform, gorilla, sprites);
             TextOverlay milestoneOverlay = CreateMilestoneOverlay(canvas.transform);
@@ -1765,7 +1768,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             UnityEventTools.AddPersistentListener(gameSettingsCloseButton.onClick, settingsMenu.Close);
 
             Button settingsButton = CreateButton("SettingsButton", canvas.transform, "SETTINGS", new Color(0.19f, 0.5f, 0.68f, 1f));
-            SetRect(settingsButton.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-96f, -92f), new Vector2(154f, 46f));
+            SetRect(settingsButton.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-82f, -72f), new Vector2(132f, 38f));
             UnityEventTools.AddPersistentListener(settingsButton.onClick, settingsMenu.Toggle);
 
             GameObject scoreObject = new GameObject("Manager_Score");
@@ -1813,8 +1816,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(gameManager, "runChunkDirector", runDirector);
             SetObject(gameManager, "cameraFollow", follow);
             SetObject(gameManager, "sceneCamera", camera);
-            SetFloat(gameManager, "deathY", -3.45f);
-            SetFloat(gameManager, "gameOverRestY", -2.82f);
+            SetFloat(gameManager, "deathY", -2.2f);
+            SetFloat(gameManager, "gameOverRestY", -1.72f);
             SetFloat(gameManager, "introDuration", 1.15f);
             SetFloat(gameManager, "introStartZoom", 2.85f);
             SetVector3(gameManager, "introStartOffset", new Vector3(-0.4f, -0.28f, -10f));
@@ -1962,6 +1965,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ParallaxBand2D band = root.AddComponent<ParallaxBand2D>();
             SetObject(band, "target", cameraTransform);
             SetFloat(band, "parallaxX", parallax);
+            SetFloat(band, "parallaxY", 1f);
             SetFloat(band, "tileWidth", tileWidth);
 
             Material regular = CreatePaintedBackdropMaterial(name + "_Regular", texture, tint, false);
@@ -1974,7 +1978,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     PrimitiveType.Cube,
                     root.transform,
                     new Vector3(i * tileWidth, 0f, 0f),
-                    new Vector3(tileWidth + 0.035f, 10.82f, 0.09f),
+                    new Vector3(tileWidth + 0.035f, 12.1f, 0.09f),
                     i % 2 == 0 ? regular : mirrored,
                     -10,
                     false);
@@ -2029,9 +2033,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             root.transform.position = new Vector3(0f, 0.15f, 5.65f);
             FollowTargetX follow = root.AddComponent<FollowTargetX>();
             SetObject(follow, "target", cameraTransform);
+            SetBool(follow, "followY", true);
 
             Material material = CreateColorMaterial(name + "_MistedTexture", color, true);
-            GameObject veil = CreatePrimitiveVisual("AnimatedMistSurface_3D", PrimitiveType.Cube, root.transform, Vector3.zero, new Vector3(40f, 11.4f, 0.04f), material, -8);
+            GameObject veil = CreatePrimitiveVisual("AnimatedMistSurface_3D", PrimitiveType.Cube, root.transform, Vector3.zero, new Vector3(40f, 12.8f, 0.04f), material, -8);
             AddAmbientSway(veil, 0.24f, 0.035f, 0f, 0.008f, 0.09f, 0.8f);
         }
 
@@ -2039,13 +2044,29 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             CreatePaintedJungleBackdrop("Menu_PaintedJungleBackdrop_3D", cameraTransform, 0.018f, new Color(0.64f, 0.79f, 0.73f, 1f));
             CreateBackdropDepthVeil("Menu_JungleDepthVeil_3D", cameraTransform, new Color(0.2f, 0.48f, 0.42f, 0.25f));
-            CreateMeshyDecorBand("Menu_3DDecor", cameraTransform, -3.38f, new[] { meshyAssets.ForegroundFernA, meshyAssets.ForegroundFernB, meshyAssets.BroadLeafA }, 0.92f, 0.23f, 1);
         }
 
         private static void CreateGameBackdrop(Transform cameraTransform, MeshyGameAssets meshyAssets)
         {
             CreatePaintedJungleBackdrop("PaintedJungleBackdrop_3D", cameraTransform, 0.032f, new Color(0.54f, 0.7f, 0.67f, 1f));
             CreateBackdropDepthVeil("JungleDepthVeil_3D", cameraTransform, new Color(0.14f, 0.42f, 0.39f, 0.34f));
+            CreateJungleLagoon(cameraTransform);
+        }
+
+        private static void CreateJungleLagoon(Transform cameraTransform)
+        {
+            GameObject root = new GameObject("JungleLagoon_3D");
+            root.transform.position = new Vector3(0f, -2.43f, -0.42f);
+            FollowTargetX follow = root.AddComponent<FollowTargetX>();
+            SetObject(follow, "target", cameraTransform);
+
+            Material deepWater = CreateColorMaterial("GG_LagoonDeepWater_3D", new Color(0.025f, 0.23f, 0.27f, 0.94f), true);
+            Material surfaceWater = CreateColorMaterial("GG_LagoonSurface_3D", new Color(0.18f, 0.68f, 0.58f, 0.52f), true);
+            Material highlight = CreateColorMaterial("GG_LagoonHighlight_3D", new Color(0.54f, 0.96f, 0.72f, 0.22f), true);
+
+            CreatePrimitiveVisual("LagoonBody_3D", PrimitiveType.Cube, root.transform, new Vector3(0f, -3f, 0f), new Vector3(42f, 7.7f, 0.16f), deepWater, 10);
+            CreatePrimitiveVisual("LagoonSurface_3D", PrimitiveType.Cube, root.transform, new Vector3(0f, 0.82f, -0.03f), new Vector3(42f, 0.09f, 0.18f), surfaceWater, 11);
+            CreatePrimitiveVisual("LagoonHighlight_3D", PrimitiveType.Cube, root.transform, new Vector3(-0.32f, 0.885f, -0.05f), new Vector3(42f, 0.02f, 0.19f), highlight, 12);
         }
 
         private static void CreateMenuHeroArt(GorillaModelAssets gorillaModel, MeshyGameAssets meshyAssets)
@@ -2065,7 +2086,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             }
 
             Animator menuAnimator;
-            GameObject menuModel = CreateGorillaModelInstance(gorillaModel, "Menu_GorillaHero", null, new Vector3(-3.32f, -1.24f, -0.12f), 4.72f, -2.14f, 4, out menuAnimator);
+            GameObject menuModel = CreateGorillaModelInstance(gorillaModel, "Menu_GorillaHero", null, new Vector3(-3.32f, -1.2f, -0.12f), 5.05f, -2.14f, 4, out menuAnimator);
             if (menuModel != null)
             {
                 if (menuAnimator != null && menuAnimator.runtimeAnimatorController != null && menuAnimator.HasState(0, Animator.StringToHash("Idle")))
@@ -2295,16 +2316,27 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ConfigureParticleMeshRenderer(renderer, PrimitiveType.Sphere, "GG_AmbientMote_Particle3D", new Color(0.76f, 1f, 0.48f, 0.72f), 6);
         }
 
+        private static void CreateHudScrim(Transform parent)
+        {
+            GameObject root = new GameObject("HUD_TopScrim");
+            root.transform.SetParent(parent, false);
+            Image image = root.AddComponent<Image>();
+            image.color = new Color(0.015f, 0.09f, 0.075f, 0.3f);
+            image.raycastTarget = false;
+            SetRect(image.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -38f), new Vector2(0f, 76f));
+        }
+
         private static FartBarUI CreateFartBar(Transform parent, GorillaController gorilla, SpriteSet sprites)
         {
             GameObject root = new GameObject("HUD_FartBar");
             RectTransform rect = root.AddComponent<RectTransform>();
             root.transform.SetParent(parent, false);
-            SetRect(rect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(430f, 54f));
+            SetRect(rect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(360f, 44f));
 
             Image back = root.AddComponent<Image>();
-            back.sprite = sprites.FuelBar;
-            back.color = sprites.FuelBar != null ? Color.white : new Color(0.08f, 0.12f, 0.1f, 0.88f);
+            back.sprite = UiPanelSprite();
+            back.type = Image.Type.Sliced;
+            back.color = new Color(0.035f, 0.1f, 0.075f, 0.92f);
             Shadow shadow = root.AddComponent<Shadow>();
             shadow.effectColor = new Color(0f, 0f, 0f, 0.34f);
             shadow.effectDistance = new Vector2(0f, -4f);
@@ -2312,17 +2344,17 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GameObject fillObject = new GameObject("Fill");
             fillObject.transform.SetParent(root.transform, false);
             Image fill = fillObject.AddComponent<Image>();
-            fill.color = new Color(0.34f, 0.95f, 0.4f, 1f);
+            fill.color = new Color(0.31f, 0.94f, 0.42f, 1f);
             fill.type = Image.Type.Filled;
             fill.fillMethod = Image.FillMethod.Horizontal;
             fill.fillOrigin = 0;
-            SetRect(fill.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, new Vector2(-14f, -14f));
+            SetRect(fill.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, new Vector2(-10f, -10f));
 
-            Text title = CreateText("Label", root.transform, "FART FUEL", 18, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
+            Text title = CreateText("Label", root.transform, "FART FUEL", 15, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
             SetRect(title.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 2f), Vector2.zero);
 
-            Text value = CreateText("Value", root.transform, "100 / 100", 16, FontStyle.Bold, TextAnchor.MiddleRight, new Color(1f, 1f, 1f, 0.88f));
-            SetRect(value.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(-14f, -2f), new Vector2(-28f, 0f));
+            Text value = CreateText("Value", root.transform, "100 / 100", 13, FontStyle.Bold, TextAnchor.MiddleRight, new Color(1f, 1f, 1f, 0.88f));
+            SetRect(value.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(-11f, -1f), new Vector2(-22f, 0f));
 
             MeterFillUI meter = root.AddComponent<MeterFillUI>();
             SetObject(meter, "fillImage", fill);
@@ -2343,12 +2375,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             CanvasGroup group = root.AddComponent<CanvasGroup>();
             group.alpha = 0f;
             RectTransform rect = root.AddComponent<RectTransform>();
-            SetRect(rect, new Vector2(0.5f, 0.72f), new Vector2(0.5f, 0.72f), Vector2.zero, new Vector2(720f, 84f));
+            SetRect(rect, new Vector2(0.5f, 0.8f), new Vector2(0.5f, 0.8f), Vector2.zero, new Vector2(620f, 62f));
 
-            Text text = CreateText("MilestoneText", root.transform, "", 32, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.96f, 0.48f, 1f));
+            Text text = CreateText("MilestoneText", root.transform, "", 26, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.96f, 0.48f, 1f));
             text.resizeTextForBestFit = true;
-            text.resizeTextMinSize = 18;
-            text.resizeTextMaxSize = 34;
+            text.resizeTextMinSize = 16;
+            text.resizeTextMaxSize = 27;
             SetRect(text.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero);
 
             TextOverlay overlay = root.AddComponent<TextOverlay>();
@@ -2364,14 +2396,15 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             CanvasGroup group = root.AddComponent<CanvasGroup>();
             group.alpha = 0f;
             RectTransform rect = root.AddComponent<RectTransform>();
-            SetRect(rect, new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.28f), Vector2.zero, new Vector2(560f, 62f));
+            SetRect(rect, new Vector2(0.5f, 0.2f), new Vector2(0.5f, 0.2f), Vector2.zero, new Vector2(420f, 50f));
 
             Image backing = root.AddComponent<Image>();
             backing.sprite = UiPanelSprite();
-            backing.color = new Color(0.04f, 0.12f, 0.1f, 0.58f);
+            backing.type = Image.Type.Sliced;
+            backing.color = new Color(0.035f, 0.11f, 0.09f, 0.68f);
 
-            Text text = CreateText("TutorialText", root.transform, "", 24, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.96f, 0.56f, 1f));
-            SetRect(text.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, new Vector2(-28f, -12f));
+            Text text = CreateText("TutorialText", root.transform, "", 20, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.96f, 0.56f, 1f));
+            SetRect(text.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, new Vector2(-22f, -8f));
 
             TextOverlay overlay = root.AddComponent<TextOverlay>();
             SetObject(overlay, "group", group);
@@ -2386,10 +2419,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GameObject panel = new GameObject("UI_GameOverPanel");
             panel.transform.SetParent(parent, false);
             RectTransform rect = panel.AddComponent<RectTransform>();
-            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(520f, 360f));
+            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(460f, 326f));
             Image image = panel.AddComponent<Image>();
             image.sprite = UiPanelSprite();
-            image.color = new Color(0.08f, 0.12f, 0.11f, 0.94f);
+            image.type = Image.Type.Sliced;
+            image.color = new Color(0.045f, 0.1f, 0.08f, 0.95f);
             Shadow shadow = panel.AddComponent<Shadow>();
             shadow.effectColor = new Color(0f, 0f, 0f, 0.42f);
             shadow.effectDistance = new Vector2(0f, -8f);
@@ -2400,23 +2434,23 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             CanvasGroupPanel panelController = panel.AddComponent<CanvasGroupPanel>();
             SetObject(panelController, "canvasGroup", group);
 
-            Text title = CreateText("Title", panel.transform, "RUN OVER", 42, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.86f, 0.35f, 1f));
-            SetRect(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -54f), new Vector2(420f, 58f));
+            Text title = CreateText("Title", panel.transform, "RUN OVER", 38, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.86f, 0.35f, 1f));
+            SetRect(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -46f), new Vector2(380f, 52f));
 
-            Text distanceLabel = CreateText("DistanceLabel", panel.transform, "Distance", 20, FontStyle.Normal, TextAnchor.MiddleCenter, Color.white);
-            SetRect(distanceLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -114f), new Vector2(260f, 32f));
+            Text distanceLabel = CreateText("DistanceLabel", panel.transform, "DISTANCE", 16, FontStyle.Normal, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.76f));
+            SetRect(distanceLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(240f, 28f));
 
-            currentDistanceText = CreateText("CurrentDistance", panel.transform, "0 m", 34, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
-            SetRect(currentDistanceText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -152f), new Vector2(260f, 48f));
+            currentDistanceText = CreateText("CurrentDistance", panel.transform, "0 m", 32, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
+            SetRect(currentDistanceText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -136f), new Vector2(250f, 44f));
 
-            bestDistanceText = CreateText("BestDistance", panel.transform, "0 m", 22, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.75f, 1f, 0.74f, 1f));
-            SetRect(bestDistanceText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -196f), new Vector2(280f, 42f));
+            bestDistanceText = CreateText("BestDistance", panel.transform, "BEST  0 m", 18, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.75f, 1f, 0.74f, 1f));
+            SetRect(bestDistanceText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -178f), new Vector2(280f, 34f));
 
             retryButton = CreateButton("RetryButton", panel.transform, "RETRY", new Color(0.36f, 0.78f, 0.28f, 1f));
-            SetRect(retryButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 92f), new Vector2(230f, 58f));
+            SetRect(retryButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 78f), new Vector2(210f, 52f));
 
             mainMenuButton = CreateButton("MainMenuButton", panel.transform, "MAIN MENU", new Color(0.22f, 0.55f, 0.78f, 1f));
-            SetRect(mainMenuButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 28f), new Vector2(230f, 52f));
+            SetRect(mainMenuButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(210f, 46f));
 
             return panelController;
         }
@@ -2429,6 +2463,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(500f, 430f));
             Image image = panel.AddComponent<Image>();
             image.sprite = UiPanelSprite();
+            image.type = Image.Type.Sliced;
             image.color = new Color(0.07f, 0.12f, 0.11f, 0.96f);
             Shadow shadow = panel.AddComponent<Shadow>();
             shadow.effectColor = new Color(0f, 0f, 0f, 0.42f);
@@ -2529,6 +2564,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             buttonObject.transform.SetParent(parent, false);
             Image image = buttonObject.AddComponent<Image>();
             image.sprite = UiPanelSprite();
+            image.type = Image.Type.Sliced;
             image.color = color;
             Shadow shadow = buttonObject.AddComponent<Shadow>();
             shadow.effectColor = new Color(0f, 0f, 0f, 0.36f);
@@ -3898,9 +3934,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
         private static Sprite CreateSoftPanelSprite(string name, int width, int height, Color32 fill, Color32 edge)
         {
-            return CreateSprite(name, width, height, (x, y, w, h) =>
+            Sprite sprite = CreateSprite(name, width, height, (x, y, w, h) =>
             {
-                float radius = Mathf.Min(w, h) * 0.28f;
+                float radius = Mathf.Min(w, h) * 0.14f;
                 float px = Mathf.Min(x, w - 1 - x);
                 float py = Mathf.Min(y, h - 1 - y);
 
@@ -3921,6 +3957,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 color = Color.Lerp(color, Color.white, topLight * 0.08f);
                 return (Color32)color;
             });
+
+            string assetPath = SpriteRoot + "/" + name + ".png";
+            TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (importer != null)
+            {
+                float border = Mathf.Round(Mathf.Min(width, height) * 0.16f);
+                importer.spriteBorder = new Vector4(border, border, border, border);
+                importer.SaveAndReimport();
+                sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+            }
+
+            return sprite;
         }
 
         private static Sprite CreateSprite(string name, int width, int height, Func<int, int, int, int, Color32> colorFunc)
@@ -3995,7 +4043,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
         private static Sprite UiPanelSprite()
         {
-            return AssetDatabase.LoadAssetAtPath<Sprite>(SpriteRoot + "/ui_panel_soft.png");
+            return AssetDatabase.LoadAssetAtPath<Sprite>(SpriteRoot + "/ui_panel_clean_v1.png");
         }
 
         private static void EnsureAssetFolder(string assetPath)
