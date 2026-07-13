@@ -1553,7 +1553,91 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetFloat(modelVisual, "releaseYawDegrees", -56f);
             SetFloat(modelVisual, "yawBlendSpeed", 9f);
 
+            BuildLagoonFinishPresentation(root, body);
             return SavePrefab(root, PrefabRoot + "/Player_GassyGorilla.prefab");
+        }
+
+        private static void BuildLagoonFinishPresentation(GameObject playerRoot, Rigidbody2D body)
+        {
+            Material reflectionMaterial = CreateColorMaterial(
+                "GG_LagoonReflection_3D",
+                new Color(0.02f, 0.16f, 0.16f, 0.29f),
+                true);
+            Material rippleMaterial = CreateColorMaterial(
+                "GG_LagoonRipple_3D",
+                new Color(0.68f, 1f, 0.9f, 0.42f),
+                true);
+
+            GameObject reflectionRoot = new GameObject("Lagoon Reflection 3D");
+            reflectionRoot.transform.SetParent(playerRoot.transform, false);
+            Renderer[] reflectionRenderers =
+            {
+                CreatePrimitiveVisual("Reflection Body", PrimitiveType.Sphere, reflectionRoot.transform, Vector3.zero, new Vector3(0.68f, 0.18f, 0.18f), reflectionMaterial, 13, false).GetComponent<Renderer>(),
+                CreatePrimitiveVisual("Reflection Head", PrimitiveType.Sphere, reflectionRoot.transform, new Vector3(0.23f, 0.04f, -0.01f), new Vector3(0.42f, 0.13f, 0.16f), reflectionMaterial, 13, false).GetComponent<Renderer>(),
+                CreatePrimitiveVisual("Reflection Muzzle", PrimitiveType.Sphere, reflectionRoot.transform, new Vector3(0.45f, 0.025f, -0.02f), new Vector3(0.24f, 0.075f, 0.12f), reflectionMaterial, 13, false).GetComponent<Renderer>(),
+                CreatePrimitiveVisual("Reflection Forward Arm", PrimitiveType.Sphere, reflectionRoot.transform, new Vector3(0.48f, -0.025f, 0.01f), new Vector3(0.62f, 0.06f, 0.1f), reflectionMaterial, 13, false).GetComponent<Renderer>(),
+                CreatePrimitiveVisual("Reflection Rear Arm", PrimitiveType.Sphere, reflectionRoot.transform, new Vector3(-0.42f, -0.015f, 0.015f), new Vector3(0.56f, 0.055f, 0.1f), reflectionMaterial, 13, false).GetComponent<Renderer>(),
+                CreatePrimitiveVisual("Reflection Legs", PrimitiveType.Sphere, reflectionRoot.transform, new Vector3(-0.12f, -0.07f, 0.02f), new Vector3(0.58f, 0.07f, 0.11f), reflectionMaterial, 13, false).GetComponent<Renderer>()
+            };
+            reflectionRenderers[3].transform.localRotation = Quaternion.Euler(0f, 0f, -10f);
+            reflectionRenderers[4].transform.localRotation = Quaternion.Euler(0f, 0f, 8f);
+            reflectionRenderers[5].transform.localRotation = Quaternion.Euler(0f, 0f, -3f);
+
+            GameObject impactRoot = new GameObject("Lagoon Water Impact FX");
+            impactRoot.transform.SetParent(playerRoot.transform, false);
+
+            GameObject splashCrown = new GameObject("Splash Crown");
+            splashCrown.transform.SetParent(impactRoot.transform, false);
+            ParticleSystem splashParticles = splashCrown.AddComponent<ParticleSystem>();
+            ConfigureLagoonSplashParticles(splashParticles);
+
+            GameObject droplets = new GameObject("Splash Droplets");
+            droplets.transform.SetParent(impactRoot.transform, false);
+            ParticleSystem dropletParticles = droplets.AddComponent<ParticleSystem>();
+            ConfigureLagoonDropletParticles(dropletParticles);
+
+            GameObject bubbles = new GameObject("Foam Bubbles");
+            bubbles.transform.SetParent(impactRoot.transform, false);
+            ParticleSystem bubbleParticles = bubbles.AddComponent<ParticleSystem>();
+            ConfigureLagoonBubbleParticles(bubbleParticles);
+
+            Transform[] rippleTransforms = new Transform[3];
+            Renderer[] rippleRenderers = new Renderer[3];
+            for (int i = 0; i < rippleTransforms.Length; i++)
+            {
+                GameObject ripple = CreatePrimitiveVisual(
+                    "Water Ripple " + (i + 1),
+                    PrimitiveType.Sphere,
+                    impactRoot.transform,
+                    new Vector3(0f, 0.01f - i * 0.012f, -0.015f - i * 0.012f),
+                    new Vector3(0.48f + i * 0.08f, 0.052f, 0.14f),
+                    rippleMaterial,
+                    14 + i,
+                    false);
+                rippleTransforms[i] = ripple.transform;
+                rippleRenderers[i] = ripple.GetComponent<Renderer>();
+                rippleRenderers[i].enabled = false;
+            }
+
+            LagoonFinishPresentation presentation = playerRoot.AddComponent<LagoonFinishPresentation>();
+            SetObject(presentation, "reflectionRoot", reflectionRoot.transform);
+            SetObjectArray(presentation, "reflectionRenderers", reflectionRenderers);
+            SetObject(presentation, "velocitySource", body);
+            SetFloat(presentation, "waterSurfaceY", -1.61f);
+            SetFloat(presentation, "reflectionWorldZ", -0.32f);
+            SetFloat(presentation, "reflectionDepth", 0.09f);
+            SetFloat(presentation, "reflectionVerticalCompression", 0.14f);
+            SetFloat(presentation, "reflectionFullAlphaHeight", 0.75f);
+            SetFloat(presentation, "reflectionFadeHeight", 4.7f);
+            SetFloat(presentation, "reflectionImpactFadeDuration", 0.22f);
+            SetObject(presentation, "impactRoot", impactRoot.transform);
+            SetObjectArray(presentation, "impactParticles", new[] { splashParticles, dropletParticles, bubbleParticles });
+            SetObjectArray(presentation, "rippleTransforms", rippleTransforms);
+            SetObjectArray(presentation, "rippleRenderers", rippleRenderers);
+            SetFloat(presentation, "impactWorldZ", -0.2f);
+            SetFloat(presentation, "rippleDuration", 0.72f);
+            SetFloat(presentation, "rippleStagger", 0.1f);
+            SetFloat(presentation, "rippleExpansion", 4.2f);
         }
 
         private static GameObject BuildPickupPrefab(string name, FoodPickupType type, float refill, ModelVisualAsset modelAsset, float modelHeight, string primitiveKind)
@@ -1844,8 +1928,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(gameManager, "runChunkDirector", runDirector);
             SetObject(gameManager, "cameraFollow", follow);
             SetObject(gameManager, "sceneCamera", camera);
-            SetFloat(gameManager, "deathY", -2.2f);
+            SetObject(gameManager, "lagoonFinishPresentation", gorilla.GetComponent<LagoonFinishPresentation>());
+            SetFloat(gameManager, "deathY", -1.72f);
             SetFloat(gameManager, "gameOverRestY", -1.72f);
+            SetFloat(gameManager, "lagoonResultRevealDelay", 0.42f);
+            SetFloat(gameManager, "hazardResultRevealDelay", 0.08f);
             SetFloat(gameManager, "introDuration", 1.15f);
             SetFloat(gameManager, "introStartZoom", 2.85f);
             SetVector3(gameManager, "introStartOffset", new Vector3(-0.4f, -0.28f, -10f));
@@ -3609,6 +3696,127 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             ParticleSystemRenderer renderer = particles.GetComponent<ParticleSystemRenderer>();
             ConfigureParticleMeshRenderer(renderer, PrimitiveType.Cube, "GG_FartSpark_Particle3D", new Color(1f, 0.94f, 0.26f, 0.86f), 9);
+        }
+
+        private static void ConfigureLagoonSplashParticles(ParticleSystem particles)
+        {
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.useUnscaledTime = true;
+            main.duration = 0.28f;
+            main.maxParticles = 24;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.34f, 0.66f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(2.5f, 4.8f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.07f, 0.18f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(0.76f, 1f, 0.92f, 0.9f),
+                new Color(0.2f, 0.82f, 0.76f, 0.82f));
+            main.gravityModifier = 0.85f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 22) });
+
+            ParticleSystem.ShapeModule shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 31f;
+            shape.radius = 0.32f;
+            shape.rotation = new Vector3(-90f, 0f, 0f);
+
+            ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particles.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[] { new GradientColorKey(new Color(0.82f, 1f, 0.94f), 0f), new GradientColorKey(new Color(0.2f, 0.72f, 0.7f), 1f) },
+                new[] { new GradientAlphaKey(0.92f, 0f), new GradientAlphaKey(0.52f, 0.55f), new GradientAlphaKey(0f, 1f) });
+            colorOverLifetime.color = new ParticleSystem.MinMaxGradient(gradient);
+
+            ParticleSystemRenderer renderer = particles.GetComponent<ParticleSystemRenderer>();
+            ConfigureParticleMeshRenderer(renderer, PrimitiveType.Sphere, "GG_LagoonSplash_Particle3D", new Color(0.55f, 1f, 0.9f, 0.86f), 16);
+        }
+
+        private static void ConfigureLagoonDropletParticles(ParticleSystem particles)
+        {
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.useUnscaledTime = true;
+            main.duration = 0.24f;
+            main.maxParticles = 18;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.42f, 0.82f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(3.4f, 6.2f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.035f, 0.1f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(0.92f, 1f, 0.96f, 0.96f),
+                new Color(0.34f, 0.9f, 0.84f, 0.8f));
+            main.gravityModifier = 1.15f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0.035f, 16) });
+
+            ParticleSystem.ShapeModule shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 46f;
+            shape.radius = 0.2f;
+            shape.rotation = new Vector3(-90f, 0f, 0f);
+
+            ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particles.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(new Color(0.28f, 0.78f, 0.78f), 1f) },
+                new[] { new GradientAlphaKey(0.94f, 0f), new GradientAlphaKey(0.68f, 0.66f), new GradientAlphaKey(0f, 1f) });
+            colorOverLifetime.color = new ParticleSystem.MinMaxGradient(gradient);
+
+            ParticleSystemRenderer renderer = particles.GetComponent<ParticleSystemRenderer>();
+            ConfigureParticleMeshRenderer(renderer, PrimitiveType.Sphere, "GG_LagoonDroplet_Particle3D", new Color(0.8f, 1f, 0.95f, 0.9f), 17);
+        }
+
+        private static void ConfigureLagoonBubbleParticles(ParticleSystem particles)
+        {
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.useUnscaledTime = true;
+            main.duration = 0.32f;
+            main.maxParticles = 14;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.48f, 0.88f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.25f, 0.8f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.065f, 0.17f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(0.86f, 1f, 0.9f, 0.78f),
+                new Color(0.34f, 0.86f, 0.7f, 0.62f));
+            main.gravityModifier = -0.06f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0.08f, 12) });
+
+            ParticleSystem.ShapeModule shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 0.48f;
+
+            ParticleSystem.VelocityOverLifetimeModule velocity = particles.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.x = new ParticleSystem.MinMaxCurve(-0.35f, 0.35f);
+            velocity.y = new ParticleSystem.MinMaxCurve(0.12f, 0.62f);
+            velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
+
+            ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particles.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[] { new GradientColorKey(new Color(0.78f, 1f, 0.88f), 0f), new GradientColorKey(new Color(0.24f, 0.7f, 0.6f), 1f) },
+                new[] { new GradientAlphaKey(0.72f, 0f), new GradientAlphaKey(0.42f, 0.58f), new GradientAlphaKey(0f, 1f) });
+            colorOverLifetime.color = new ParticleSystem.MinMaxGradient(gradient);
+
+            ParticleSystemRenderer renderer = particles.GetComponent<ParticleSystemRenderer>();
+            ConfigureParticleMeshRenderer(renderer, PrimitiveType.Sphere, "GG_LagoonBubble_Particle3D", new Color(0.62f, 1f, 0.82f, 0.72f), 15);
         }
 
         private static void ConfigurePickupSparkleParticles(ParticleSystem particles)

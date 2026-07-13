@@ -27,8 +27,13 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private RunChunkDirector runChunkDirector;
         [SerializeField] private SmoothCameraFollow2D cameraFollow;
         [SerializeField] private UnityEngine.Camera sceneCamera;
-        [SerializeField] private float deathY = -3.45f;
-        [SerializeField] private float gameOverRestY = -2.82f;
+        [SerializeField] private float deathY = -1.72f;
+        [SerializeField] private float gameOverRestY = -1.72f;
+
+        [Header("Lagoon Finish")]
+        [SerializeField] private LagoonFinishPresentation lagoonFinishPresentation;
+        [SerializeField] private float lagoonResultRevealDelay = 0.42f;
+        [SerializeField] private float hazardResultRevealDelay = 0.08f;
 
         [Header("Camera Beats")]
         [SerializeField] private bool playCameraIntro = true;
@@ -83,6 +88,11 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (player != null)
             {
+                if (lagoonFinishPresentation == null)
+                {
+                    lagoonFinishPresentation = player.GetComponent<LagoonFinishPresentation>();
+                }
+
                 player.PrepareForIntro();
             }
 
@@ -123,6 +133,12 @@ namespace FirstBloom.Games.GassyGorilla
             SetState(ArcadeGameState.GameOver);
             SetSpawnersActive(false);
 
+            bool lagoonFall = player != null && player.transform.position.y <= deathY + 0.05f;
+            if (lagoonFall && lagoonFinishPresentation != null)
+            {
+                lagoonFinishPresentation.PlayWaterImpact(player.transform.position);
+            }
+
             if (player != null)
             {
                 player.SetInputEnabled(false);
@@ -144,19 +160,14 @@ namespace FirstBloom.Games.GassyGorilla
 
             UpdateBestDistanceText();
 
-            if (gameOverPanel != null)
-            {
-                gameOverPanel.Show();
-            }
-
             if (ArcadeAudioManager.Instance != null)
             {
-                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.Crash);
+                ArcadeAudioManager.Instance.PlaySfx(lagoonFall ? ArcadeSfxType.Splash : ArcadeSfxType.Crash);
             }
 
             if (cameraFollow != null)
             {
-                cameraFollow.Shake(0.32f, 0.45f);
+                cameraFollow.Shake(lagoonFall ? 0.24f : 0.32f, lagoonFall ? 0.34f : 0.45f);
             }
 
             if (outroRoutine != null)
@@ -164,7 +175,8 @@ namespace FirstBloom.Games.GassyGorilla
                 StopCoroutine(outroRoutine);
             }
 
-            outroRoutine = StartCoroutine(CameraOutroRoutine());
+            float resultRevealDelay = lagoonFall ? lagoonResultRevealDelay : hazardResultRevealDelay;
+            outroRoutine = StartCoroutine(CameraOutroRoutine(resultRevealDelay));
 
             if (ArcadeTimeController.Instance != null)
             {
@@ -230,11 +242,14 @@ namespace FirstBloom.Games.GassyGorilla
             BeginRun();
         }
 
-        private IEnumerator CameraOutroRoutine()
+        private IEnumerator CameraOutroRoutine(float resultRevealDelay)
         {
             UnityEngine.Camera activeCamera = GetSceneCamera();
             if (activeCamera == null || player == null)
             {
+                yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, resultRevealDelay));
+                ShowGameOverPanel();
+                outroRoutine = null;
                 yield break;
             }
 
@@ -249,10 +264,17 @@ namespace FirstBloom.Games.GassyGorilla
             float startZoom = activeCamera.orthographicSize;
             float duration = Mathf.Max(0.1f, outroDuration);
             float elapsed = 0f;
+            bool resultShown = false;
 
             while (elapsed < duration)
             {
                 elapsed += Time.unscaledDeltaTime;
+                if (!resultShown && elapsed >= Mathf.Max(0f, resultRevealDelay))
+                {
+                    ShowGameOverPanel();
+                    resultShown = true;
+                }
+
                 float t = Mathf.Clamp01(elapsed / duration);
                 float eased = 1f - Mathf.Pow(1f - t, 3f);
                 float bonkShake = Mathf.Sin(t * Mathf.PI * 12f) * (1f - t) * 0.09f;
@@ -265,7 +287,20 @@ namespace FirstBloom.Games.GassyGorilla
 
             activeCamera.transform.position = targetPosition;
             activeCamera.orthographicSize = outroZoom;
+            if (!resultShown)
+            {
+                ShowGameOverPanel();
+            }
+
             outroRoutine = null;
+        }
+
+        private void ShowGameOverPanel()
+        {
+            if (gameOverPanel != null)
+            {
+                gameOverPanel.Show();
+            }
         }
 
         private void BeginRun()

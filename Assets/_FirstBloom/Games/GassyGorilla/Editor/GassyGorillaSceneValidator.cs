@@ -188,6 +188,49 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 errors.Add("Player gorilla is missing the 3D model child.");
             }
 
+            LagoonFinishPresentation lagoonFinish = gorilla.GetComponent<LagoonFinishPresentation>();
+            if (lagoonFinish == null)
+            {
+                errors.Add("Player gorilla is missing the lightweight lagoon reflection and impact presentation.");
+            }
+
+            Transform reflection = FindChild(gorilla.transform, "Lagoon Reflection 3D");
+            if (reflection == null || reflection.GetComponentsInChildren<Renderer>(true).Length < 4)
+            {
+                errors.Add("Player gorilla lagoon reflection is missing its textured 3D silhouette pieces.");
+            }
+
+            Transform impact = FindChild(gorilla.transform, "Lagoon Water Impact FX");
+            if (impact == null)
+            {
+                errors.Add("Player gorilla is missing the lagoon water impact FX root.");
+            }
+            else
+            {
+                ParticleSystem[] impactParticles = impact.GetComponentsInChildren<ParticleSystem>(true);
+                int maxParticleBudget = 0;
+                for (int i = 0; i < impactParticles.Length; i++)
+                {
+                    ParticleSystem.MainModule main = impactParticles[i].main;
+                    maxParticleBudget += main.maxParticles;
+                    if (main.loop || !main.useUnscaledTime)
+                    {
+                        errors.Add("Lagoon impact particles must be finite and run on unscaled game-over time.");
+                        break;
+                    }
+                }
+
+                if (impactParticles.Length != 3 || maxParticleBudget > 64)
+                {
+                    errors.Add("Lagoon impact must keep exactly three bounded particle systems within the 64-particle mobile budget.");
+                }
+            }
+
+            if (gorilla.GetComponentsInChildren<UnityEngine.Camera>(true).Length > 0)
+            {
+                errors.Add("Lagoon reflection must not use an additional camera.");
+            }
+
             ValidateRenderableVisual("Visual_Gorilla_3D", errors);
             ValidateAnimatedGorilla("Visual_Gorilla_3D", errors);
             ValidateRenderableVisual("Fart Cloud Burst", errors);

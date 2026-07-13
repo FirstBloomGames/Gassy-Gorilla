@@ -7,6 +7,7 @@ namespace FirstBloom.ArcadeFramework.Audio
         VineGrab,
         VineRelease,
         Crash,
-        UiClick
+        UiClick,
+        Splash
     }
 }
