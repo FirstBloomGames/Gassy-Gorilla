@@ -4,6 +4,12 @@ Gassy Gorilla is a one-touch comedy arcade runner built in Unity. The player use
 
 This repository is the production Unity project and the first implementation of the First Bloom Arcade Framework.
 
+## Play
+
+[Play the current Gassy Gorilla WebGL build](https://firstbloomgames.github.io/Gassy-Gorilla/)
+
+The optimized web release is published from the `gh-pages` branch. Production Unity source remains on `main`.
+
 ## Unity Version
 
 - Unity `6000.5.2f1`
