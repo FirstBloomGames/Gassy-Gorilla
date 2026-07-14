@@ -19,7 +19,7 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float reflectionFullAlphaHeight = 0.75f;
         [SerializeField] private float reflectionFadeHeight = 4.7f;
         [SerializeField] private float reflectionImpactFadeDuration = 0.22f;
-        [SerializeField] private Color reflectionColor = new Color(0.02f, 0.16f, 0.16f, 0.46f);
+        [SerializeField] private Color reflectionColor = new Color(0.32f, 0.62f, 0.52f, 0.58f);
 
         [Header("Water Impact")]
         [SerializeField] private Transform impactRoot;

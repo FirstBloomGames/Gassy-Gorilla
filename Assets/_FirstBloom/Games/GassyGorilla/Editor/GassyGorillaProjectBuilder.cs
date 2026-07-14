@@ -1561,7 +1561,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             Material reflectionMaterial = CreateColorMaterial(
                 "GG_LagoonReflection_3D",
-                new Color(0.02f, 0.16f, 0.16f, 0.78f),
+                new Color(0.48f, 0.72f, 0.64f, 0.84f),
                 true);
             Material rippleMaterial = CreateColorMaterial(
                 "GG_LagoonRipple_3D",
