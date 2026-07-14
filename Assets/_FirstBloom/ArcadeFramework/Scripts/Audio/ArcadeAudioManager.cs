@@ -255,6 +255,13 @@ namespace FirstBloom.ArcadeFramework.Audio
                 endFrequency = 82f;
                 noise = 0.2f;
             }
+            else if (type == ArcadeSfxType.Chomp)
+            {
+                duration = 0.24f;
+                startFrequency = 185f;
+                endFrequency = 58f;
+                noise = 0.11f;
+            }
 
             int samples = Mathf.CeilToInt(sampleRate * duration);
             float[] data = new float[samples];

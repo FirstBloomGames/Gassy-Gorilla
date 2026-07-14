@@ -114,5 +114,15 @@ namespace FirstBloom.Games.GassyGorilla
 
             sawVine = true;
         }
+
+        public void HideForGameOver()
+        {
+            StopAllCoroutines();
+            openingRoutine = null;
+            if (overlay != null)
+            {
+                overlay.HideInstant();
+            }
+        }
     }
 }

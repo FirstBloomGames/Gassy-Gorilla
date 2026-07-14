@@ -40,6 +40,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string MeshyGorillaTexturePath = MeshyGorillaFolder + "/Meshy_AI_GG_HeroGorilla_Rigged_biped_texture_0.png";
         private const string MeshyGorillaMaterialPath = GameRoot + "/Materials/GG_HeroGorilla_Meshy.mat";
         private const string MeshyGorillaAnimatorPath = GameRoot + "/Animations/GG_HeroGorilla.controller";
+        private const string CrocodileFolder = ModelRoot + "/Blender/Crocodile";
+        private const string CrocodileModelPath = CrocodileFolder + "/GG_Crocodile_Rigged.fbx";
+        private const string CrocodileTexturePath = CrocodileFolder + "/GG_Crocodile_Atlas.png";
+        private const string CrocodileMaterialPath = GameRoot + "/Materials/GG_Crocodile_Blender.mat";
+        private const string CrocodileAnimatorPath = GameRoot + "/Animations/GG_Crocodile.controller";
         private const string VoiceRoot = GameRoot + "/Audio/Voice";
         private const string MainMenuScenePath = GameRoot + "/Scenes/MainMenu.unity";
         private const string GameScenePath = GameRoot + "/Scenes/Game.unity";
@@ -58,8 +63,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             SpriteSet sprites = GenerateSprites();
             GorillaModelAssets gorillaModel = PrepareMeshyGorillaAssets();
+            CrocodileModelAssets crocodileModel = PrepareCrocodileAssets();
             MeshyGameAssets meshyAssets = PrepareMeshyGameAssets();
-            PrefabSet prefabs = BuildPrefabs(sprites, gorillaModel, meshyAssets);
+            PrefabSet prefabs = BuildPrefabs(sprites, gorillaModel, crocodileModel, meshyAssets);
             RunChunkSet runChunks = BuildRunChunkDefinitions(prefabs);
 
             BuildMainMenuScene(sprites, gorillaModel, meshyAssets);
@@ -257,6 +263,214 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 Material = material,
                 AnimatorController = controller
             };
+        }
+
+        private static CrocodileModelAssets PrepareCrocodileAssets()
+        {
+            if (!File.Exists(ToFullPath(CrocodileModelPath)) || !File.Exists(ToFullPath(CrocodileTexturePath)))
+            {
+                throw new InvalidOperationException("The Blender crocodile model or texture atlas is missing from " + CrocodileFolder + ".");
+            }
+
+            ConfigureCrocodileTextureImporter();
+            ConfigureCrocodileModelImporter();
+
+            GameObject modelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CrocodileModelPath);
+            Material material = CreateCrocodileMaterial();
+            RuntimeAnimatorController controller = CreateCrocodileAnimatorController();
+            if (modelPrefab == null || material == null || controller == null)
+            {
+                throw new InvalidOperationException("The Blender crocodile did not import as a complete textured, animated Unity asset.");
+            }
+
+            Debug.Log("Blender crocodile ready: one 6.6k-triangle skinned mesh, one atlas material, and three finish clips.");
+            return new CrocodileModelAssets
+            {
+                ModelPrefab = modelPrefab,
+                Material = material,
+                AnimatorController = controller
+            };
+        }
+
+        private static void ConfigureCrocodileTextureImporter()
+        {
+            AssetDatabase.ImportAsset(CrocodileTexturePath, ImportAssetOptions.ForceUpdate);
+            TextureImporter importer = AssetImporter.GetAtPath(CrocodileTexturePath) as TextureImporter;
+            if (importer == null)
+            {
+                return;
+            }
+
+            importer.textureType = TextureImporterType.Default;
+            importer.sRGBTexture = true;
+            importer.alphaIsTransparency = false;
+            importer.mipmapEnabled = true;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.anisoLevel = 2;
+            importer.maxTextureSize = 1024;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            importer.SaveAndReimport();
+        }
+
+        private static void ConfigureCrocodileModelImporter()
+        {
+            AssetDatabase.ImportAsset(CrocodileModelPath, ImportAssetOptions.ForceUpdate);
+            ModelImporter importer = AssetImporter.GetAtPath(CrocodileModelPath) as ModelImporter;
+            if (importer == null)
+            {
+                return;
+            }
+
+            importer.animationType = ModelImporterAnimationType.Generic;
+            importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+            importer.importAnimation = true;
+            importer.animationCompression = ModelImporterAnimationCompression.Optimal;
+            importer.importBlendShapes = false;
+            importer.importCameras = false;
+            importer.importLights = false;
+            importer.importVisibility = false;
+            importer.preserveHierarchy = true;
+            importer.optimizeGameObjects = false;
+            importer.materialImportMode = ModelImporterMaterialImportMode.None;
+            importer.meshCompression = ModelImporterMeshCompression.Off;
+
+            ModelImporterClipAnimation[] clips = importer.defaultClipAnimations;
+            if (clips != null)
+            {
+                for (int i = 0; i < clips.Length; i++)
+                {
+                    clips[i].name = NormalizeCrocodileClipName(clips[i].name);
+                    clips[i].loopTime = clips[i].name == "Idle_Submerged";
+                    clips[i].loopPose = clips[i].loopTime;
+                }
+
+                importer.clipAnimations = clips;
+            }
+
+            importer.SaveAndReimport();
+        }
+
+        private static string NormalizeCrocodileClipName(string clipName)
+        {
+            string[] expected = { "Idle_Submerged", "Lunge_Snap", "Settle_Submerge" };
+            for (int i = 0; i < expected.Length; i++)
+            {
+                if (!string.IsNullOrEmpty(clipName) && clipName.IndexOf(expected[i], StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return expected[i];
+                }
+            }
+
+            return clipName;
+        }
+
+        private static Material CreateCrocodileMaterial()
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(CrocodileTexturePath);
+            Shader shader = Shader.Find("Standard");
+            if (shader == null)
+            {
+                shader = Shader.Find("Unlit/Texture");
+            }
+
+            if (texture == null || shader == null)
+            {
+                return null;
+            }
+
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(CrocodileMaterialPath);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, CrocodileMaterialPath);
+            }
+            else
+            {
+                material.shader = shader;
+            }
+
+            if (material.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", texture);
+            }
+
+            if (material.HasProperty("_MainTex"))
+            {
+                material.SetTexture("_MainTex", texture);
+            }
+
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", Color.white);
+            }
+
+            if (material.HasProperty("_Color"))
+            {
+                material.SetColor("_Color", Color.white);
+            }
+
+            if (material.HasProperty("_Metallic"))
+            {
+                material.SetFloat("_Metallic", 0f);
+            }
+
+            if (material.HasProperty("_Smoothness"))
+            {
+                material.SetFloat("_Smoothness", 0.24f);
+            }
+
+            if (material.HasProperty("_Glossiness"))
+            {
+                material.SetFloat("_Glossiness", 0.24f);
+            }
+
+            material.enableInstancing = true;
+            material.renderQueue = -1;
+            material.SetOverrideTag("RenderType", "Opaque");
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static RuntimeAnimatorController CreateCrocodileAnimatorController()
+        {
+            AnimationClip idle = LoadCrocodileAnimationClip("Idle_Submerged");
+            AnimationClip lunge = LoadCrocodileAnimationClip("Lunge_Snap");
+            AnimationClip settle = LoadCrocodileAnimationClip("Settle_Submerge");
+            if (idle == null || lunge == null || settle == null)
+            {
+                throw new InvalidOperationException("GG_Crocodile_Rigged.fbx must contain Idle_Submerged, Lunge_Snap, and Settle_Submerge clips.");
+            }
+
+            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(CrocodileAnimatorPath);
+            if (controller == null)
+            {
+                controller = AnimatorController.CreateAnimatorControllerAtPath(CrocodileAnimatorPath);
+            }
+
+            AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
+            ClearAnimatorStateMachine(stateMachine);
+            AnimatorState idleState = AddAnimatorState(stateMachine, "Idle_Submerged", idle);
+            AddAnimatorState(stateMachine, "Lunge_Snap", lunge);
+            AddAnimatorState(stateMachine, "Settle_Submerge", settle);
+            stateMachine.defaultState = idleState;
+            AssetDatabase.SaveAssets();
+            return controller;
+        }
+
+        private static AnimationClip LoadCrocodileAnimationClip(string clipName)
+        {
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(CrocodileModelPath);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                AnimationClip clip = assets[i] as AnimationClip;
+                if (clip != null && clip.name.Equals(clipName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return clip;
+                }
+            }
+
+            return null;
         }
 
         private static MeshyGameAssets PrepareMeshyGameAssets()
@@ -986,6 +1200,48 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return model;
         }
 
+        private static GameObject CreateCrocodileModelInstance(CrocodileModelAssets assets, Transform parent, out Animator animator)
+        {
+            animator = null;
+            if (assets == null || assets.ModelPrefab == null)
+            {
+                return null;
+            }
+
+            GameObject finishRoot = new GameObject("Crocodile Finish 3D");
+            finishRoot.transform.SetParent(parent, false);
+
+            GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(assets.ModelPrefab);
+            if (model == null)
+            {
+                model = UnityEngine.Object.Instantiate(assets.ModelPrefab);
+            }
+
+            model.name = "Visual_Crocodile_3D";
+            model.transform.SetParent(finishRoot.transform, false);
+            model.transform.localPosition = Vector3.zero;
+            model.transform.localRotation = Quaternion.identity;
+            model.transform.localScale = Vector3.one;
+            RemoveImportedSceneExtras(model);
+            ConfigureGorillaModelRenderers(model, assets.Material, 9);
+            FitModelToTarget(model, finishRoot.transform, Vector3.zero, 1.24f, -0.92f);
+
+            animator = model.GetComponentInChildren<Animator>(true);
+            if (animator == null)
+            {
+                animator = model.AddComponent<Animator>();
+            }
+
+            animator.runtimeAnimatorController = assets.AnimatorController;
+            animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+
+            finishRoot.transform.localPosition = new Vector3(3.72f, 0f, -0.42f);
+            finishRoot.SetActive(false);
+            return finishRoot;
+        }
+
         private static GameObject CreateModelVisualInstance(ModelVisualAsset asset, string name, Transform parent, Vector3 position, float targetHeight, float targetBottomY, int sortingOrder, Quaternion rotation, bool fitToTarget)
         {
             if (!HasModel(asset))
@@ -1170,10 +1426,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return bounds;
         }
 
-        private static PrefabSet BuildPrefabs(SpriteSet sprites, GorillaModelAssets gorillaModel, MeshyGameAssets meshyAssets)
+        private static PrefabSet BuildPrefabs(SpriteSet sprites, GorillaModelAssets gorillaModel, CrocodileModelAssets crocodileModel, MeshyGameAssets meshyAssets)
         {
             PrefabSet prefabs = new PrefabSet();
-            prefabs.Player = BuildPlayerPrefab(gorillaModel);
+            prefabs.Player = BuildPlayerPrefab(gorillaModel, crocodileModel);
             prefabs.Bean = BuildPickupPrefab("Pickup_Bean", FoodPickupType.Bean, 24f, meshyAssets.Bean, 0.74f, "Bean");
             prefabs.Burrito = BuildPickupPrefab("Pickup_Burrito", FoodPickupType.Burrito, 44f, meshyAssets.Burrito, 0.82f, "Burrito");
             prefabs.Soda = BuildPickupPrefab("Pickup_Soda", FoodPickupType.Soda, 70f, meshyAssets.Soda, 0.76f, "Soda");
@@ -1413,7 +1669,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 Vector3.one * scale);
         }
 
-        private static GameObject BuildPlayerPrefab(GorillaModelAssets gorillaModel)
+        private static GameObject BuildPlayerPrefab(GorillaModelAssets gorillaModel, CrocodileModelAssets crocodileModel)
         {
             bool useMeshyGorilla = gorillaModel != null && gorillaModel.ModelPrefab != null;
             GameObject root = new GameObject("Player_GassyGorilla");
@@ -1553,11 +1809,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetFloat(modelVisual, "releaseYawDegrees", -56f);
             SetFloat(modelVisual, "yawBlendSpeed", 9f);
 
-            BuildLagoonFinishPresentation(root, body);
+            BuildLagoonFinishPresentation(root, body, modelRoot, crocodileModel);
             return SavePrefab(root, PrefabRoot + "/Player_GassyGorilla.prefab");
         }
 
-        private static void BuildLagoonFinishPresentation(GameObject playerRoot, Rigidbody2D body)
+        private static void BuildLagoonFinishPresentation(GameObject playerRoot, Rigidbody2D body, GameObject gorillaModelRoot, CrocodileModelAssets crocodileModel)
         {
             Material reflectionMaterial = CreateColorMaterial(
                 "GG_LagoonReflection_3D",
@@ -1619,6 +1875,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 rippleRenderers[i].enabled = false;
             }
 
+            Animator crocodileAnimator;
+            GameObject crocodileRoot = CreateCrocodileModelInstance(crocodileModel, impactRoot.transform, out crocodileAnimator);
+            Renderer[] gorillaVisualRenderers = gorillaModelRoot != null
+                ? gorillaModelRoot.GetComponentsInChildren<Renderer>(true)
+                : Array.Empty<Renderer>();
+
             LagoonFinishPresentation presentation = playerRoot.AddComponent<LagoonFinishPresentation>();
             SetObject(presentation, "reflectionRoot", reflectionRoot.transform);
             SetObjectArray(presentation, "reflectionRenderers", reflectionRenderers);
@@ -1638,6 +1900,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetFloat(presentation, "rippleDuration", 0.72f);
             SetFloat(presentation, "rippleStagger", 0.1f);
             SetFloat(presentation, "rippleExpansion", 5.2f);
+            SetObject(presentation, "crocodileRoot", crocodileRoot);
+            SetObject(presentation, "crocodileAnimator", crocodileAnimator);
+            SetObjectArray(presentation, "playerVisualRenderers", gorillaVisualRenderers);
+            SetFloat(presentation, "crocodileChompDelay", 0.46f);
+            SetFloat(presentation, "crocodileSettleDelay", 0.72f);
+            SetFloat(presentation, "chompVolume", 0.92f);
         }
 
         private static GameObject BuildPickupPrefab(string name, FoodPickupType type, float refill, ModelVisualAsset modelAsset, float modelHeight, string primitiveKind)
@@ -1929,9 +2197,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(gameManager, "cameraFollow", follow);
             SetObject(gameManager, "sceneCamera", camera);
             SetObject(gameManager, "lagoonFinishPresentation", gorilla.GetComponent<LagoonFinishPresentation>());
+            SetObject(gameManager, "tutorialPrompt", tutorial);
             SetFloat(gameManager, "deathY", -1.72f);
             SetFloat(gameManager, "gameOverRestY", -1.72f);
-            SetFloat(gameManager, "lagoonResultRevealDelay", 0.68f);
+            SetFloat(gameManager, "lagoonResultRevealDelay", 1.02f);
             SetFloat(gameManager, "hazardResultRevealDelay", 0.08f);
             SetFloat(gameManager, "introDuration", 1.15f);
             SetFloat(gameManager, "introStartZoom", 2.85f);
@@ -4479,6 +4748,13 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         }
 
         private sealed class GorillaModelAssets
+        {
+            public GameObject ModelPrefab;
+            public Material Material;
+            public RuntimeAnimatorController AnimatorController;
+        }
+
+        private sealed class CrocodileModelAssets
         {
             public GameObject ModelPrefab;
             public Material Material;

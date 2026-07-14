@@ -32,7 +32,8 @@ namespace FirstBloom.Games.GassyGorilla
 
         [Header("Lagoon Finish")]
         [SerializeField] private LagoonFinishPresentation lagoonFinishPresentation;
-        [SerializeField] private float lagoonResultRevealDelay = 0.68f;
+        [SerializeField] private GassyTutorialPromptController tutorialPrompt;
+        [SerializeField] private float lagoonResultRevealDelay = 1.02f;
         [SerializeField] private float hazardResultRevealDelay = 0.08f;
 
         [Header("Camera Beats")]
@@ -78,6 +79,11 @@ namespace FirstBloom.Games.GassyGorilla
             if (gameOverPanel != null)
             {
                 gameOverPanel.Hide();
+            }
+
+            if (tutorialPrompt == null)
+            {
+                tutorialPrompt = FindFirstObjectByType<GassyTutorialPromptController>();
             }
 
             if (scoreManager != null)
@@ -132,6 +138,11 @@ namespace FirstBloom.Games.GassyGorilla
 
             SetState(ArcadeGameState.GameOver);
             SetSpawnersActive(false);
+
+            if (tutorialPrompt != null)
+            {
+                tutorialPrompt.HideForGameOver();
+            }
 
             bool lagoonFall = player != null && player.transform.position.y <= deathY + 0.05f;
             if (lagoonFall && lagoonFinishPresentation != null)
@@ -266,7 +277,8 @@ namespace FirstBloom.Games.GassyGorilla
             float elapsed = 0f;
             bool resultShown = false;
 
-            while (elapsed < duration)
+            float totalDuration = Mathf.Max(duration, Mathf.Max(0f, resultRevealDelay));
+            while (elapsed < totalDuration)
             {
                 elapsed += Time.unscaledDeltaTime;
                 if (!resultShown && elapsed >= Mathf.Max(0f, resultRevealDelay))

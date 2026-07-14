@@ -23,6 +23,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string MeshyGorillaModelPath = GameRoot + "/Models/Meshy/Meshy_AI_GG_HeroGorilla_Rigged_biped/Meshy_AI_GG_HeroGorilla_Rigged_biped_Character_output.fbx";
         private const string MeshyGorillaAnimatorPath = GameRoot + "/Animations/GG_HeroGorilla.controller";
         private const string PaintedJungleTexturePath = GameRoot + "/Textures/Generated3D/GG_JungleBackdrop_Painted3D_v1.png";
+        private const string CrocodileModelPath = GameRoot + "/Models/Blender/Crocodile/GG_Crocodile_Rigged.fbx";
+        private const string CrocodileTexturePath = GameRoot + "/Models/Blender/Crocodile/GG_Crocodile_Atlas.png";
+        private const string CrocodileMaterialPath = GameRoot + "/Materials/GG_Crocodile_Blender.mat";
+        private const string CrocodileAnimatorPath = GameRoot + "/Animations/GG_Crocodile.controller";
 
         [MenuItem("First Bloom/Gassy Gorilla/Validate Built Scenes")]
         public static void ValidateBuiltScenes()
@@ -47,11 +51,95 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireAsset(MainMenuScenePath, errors);
             RequireAsset(GameScenePath, errors);
             RequireAsset(PaintedJungleTexturePath, errors);
+            ValidateCrocodileAssets(errors);
 
             if (HasMeshyGorilla())
             {
                 RequireAsset(MeshyGorillaAnimatorPath, errors);
                 ValidateVineReleaseAnimation(errors);
+            }
+        }
+
+        private static void ValidateCrocodileAssets(List<string> errors)
+        {
+            RequireAsset(CrocodileModelPath, errors);
+            RequireAsset(CrocodileTexturePath, errors);
+            RequireAsset(CrocodileMaterialPath, errors);
+            RequireAsset(CrocodileAnimatorPath, errors);
+
+            string[] expectedClips = { "Idle_Submerged", "Lunge_Snap", "Settle_Submerge" };
+            HashSet<string> clipNames = new HashSet<string>(StringComparer.Ordinal);
+            UnityEngine.Object[] importedAssets = AssetDatabase.LoadAllAssetsAtPath(CrocodileModelPath);
+            for (int i = 0; i < importedAssets.Length; i++)
+            {
+                AnimationClip clip = importedAssets[i] as AnimationClip;
+                if (clip != null && !clip.name.StartsWith("__preview", StringComparison.OrdinalIgnoreCase))
+                {
+                    clipNames.Add(clip.name);
+                }
+            }
+
+            for (int i = 0; i < expectedClips.Length; i++)
+            {
+                if (!clipNames.Contains(expectedClips[i]))
+                {
+                    errors.Add("Blender crocodile is missing imported clip " + expectedClips[i] + ".");
+                }
+            }
+
+            GameObject sourceModel = AssetDatabase.LoadAssetAtPath<GameObject>(CrocodileModelPath);
+            if (sourceModel != null)
+            {
+                SkinnedMeshRenderer[] renderers = sourceModel.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                if (renderers.Length != 1 || renderers[0].sharedMesh == null)
+                {
+                    errors.Add("Blender crocodile must import as exactly one skinned mesh renderer.");
+                }
+                else
+                {
+                    int triangles = renderers[0].sharedMesh.triangles.Length / 3;
+                    if (triangles > 7000)
+                    {
+                        errors.Add("Blender crocodile exceeds its 7,000-triangle mobile budget: " + triangles + ".");
+                    }
+
+                    if (renderers[0].sharedMesh.subMeshCount != 1)
+                    {
+                        errors.Add("Blender crocodile must keep one atlas-backed submesh for one finish draw call.");
+                    }
+                }
+            }
+
+            ValidateCrocodileAnimatorController(errors);
+        }
+
+        private static void ValidateCrocodileAnimatorController(List<string> errors)
+        {
+            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(CrocodileAnimatorPath);
+            if (controller == null || controller.layers.Length == 0)
+            {
+                return;
+            }
+
+            HashSet<string> expectedStates = new HashSet<string>(StringComparer.Ordinal)
+            {
+                "Idle_Submerged",
+                "Lunge_Snap",
+                "Settle_Submerge"
+            };
+            ChildAnimatorState[] states = controller.layers[0].stateMachine.states;
+            for (int i = 0; i < states.Length; i++)
+            {
+                AnimatorState state = states[i].state;
+                if (state != null && expectedStates.Remove(state.name) && (state.motion == null || state.motion.name != state.name))
+                {
+                    errors.Add("Crocodile animator state " + state.name + " is not wired to its matching imported clip.");
+                }
+            }
+
+            foreach (string missingState in expectedStates)
+            {
+                errors.Add("Crocodile animator is missing state " + missingState + ".");
             }
         }
 
@@ -187,11 +275,23 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             {
                 errors.Add("Player gorilla is missing the 3D model child.");
             }
+            else
+            {
+                Transform gorillaModel = FindChild(gorilla.transform, "Visual_Gorilla_3D");
+                if (Mathf.Abs(Mathf.DeltaAngle(gorillaModel.localEulerAngles.y, 180f)) > 1f)
+                {
+                    errors.Add("Player gorilla imported model must keep its established 180-degree travel-facing correction.");
+                }
+            }
 
             LagoonFinishPresentation lagoonFinish = gorilla.GetComponent<LagoonFinishPresentation>();
             if (lagoonFinish == null)
             {
                 errors.Add("Player gorilla is missing the lightweight lagoon reflection and impact presentation.");
+            }
+            else if (!lagoonFinish.HasCrocodileFinish)
+            {
+                errors.Add("Player gorilla lagoon finish is missing its rigged Blender crocodile.");
             }
 
             Transform reflection = FindChild(gorilla.transform, "Lagoon Reflection 3D");
@@ -223,6 +323,49 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 if (impactParticles.Length != 3 || maxParticleBudget > 64)
                 {
                     errors.Add("Lagoon impact must keep exactly three bounded particle systems within the 64-particle mobile budget.");
+                }
+            }
+
+            Transform crocodile = FindChild(gorilla.transform, "Crocodile Finish 3D");
+            if (crocodile == null)
+            {
+                errors.Add("Player gorilla is missing the inactive crocodile finish object.");
+            }
+            else
+            {
+                if (crocodile.gameObject.activeSelf)
+                {
+                    errors.Add("Crocodile finish must remain inactive until a lagoon fall.");
+                }
+
+                SkinnedMeshRenderer[] crocodileRenderers = crocodile.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                if (crocodileRenderers.Length != 1 || crocodileRenderers[0].sharedMaterials.Length != 1)
+                {
+                    errors.Add("Crocodile finish must use exactly one skinned renderer and one atlas material.");
+                }
+
+                Animator crocodileAnimator = crocodile.GetComponentInChildren<Animator>(true);
+                if (crocodileAnimator == null || crocodileAnimator.runtimeAnimatorController == null)
+                {
+                    errors.Add("Crocodile finish has no generated animator controller.");
+                }
+                else
+                {
+                    if (crocodileAnimator.applyRootMotion)
+                    {
+                        errors.Add("Crocodile finish must not apply root motion.");
+                    }
+
+                    if (crocodileAnimator.updateMode != AnimatorUpdateMode.UnscaledTime)
+                    {
+                        errors.Add("Crocodile finish must animate on unscaled game-over time.");
+                    }
+                }
+
+                Transform crocodileModel = FindChild(crocodile, "Visual_Crocodile_3D");
+                if (crocodileModel == null || Quaternion.Angle(crocodileModel.localRotation, Quaternion.identity) > 1f)
+                {
+                    errors.Add("Crocodile finish must keep the FBX's native Unity-facing axis so its lunge travels toward the gorilla.");
                 }
             }
 

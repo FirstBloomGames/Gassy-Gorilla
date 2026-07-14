@@ -1,4 +1,5 @@
 using System.Collections;
+using FirstBloom.ArcadeFramework.Audio;
 using UnityEngine;
 
 namespace FirstBloom.Games.GassyGorilla
@@ -32,10 +33,19 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float rippleExpansion = 5.2f;
         [SerializeField] private Color rippleColor = new Color(0.68f, 1f, 0.9f, 0.58f);
 
+        [Header("Crocodile Finish")]
+        [SerializeField] private GameObject crocodileRoot;
+        [SerializeField] private Animator crocodileAnimator;
+        [SerializeField] private Renderer[] playerVisualRenderers;
+        [SerializeField] private float crocodileChompDelay = 0.46f;
+        [SerializeField] private float crocodileSettleDelay = 0.72f;
+        [SerializeField] private float chompVolume = 0.92f;
+
         private MaterialPropertyBlock propertyBlock;
         private Vector3 reflectionBaseScale = Vector3.one;
         private Vector3[] rippleBaseScales;
         private Coroutine rippleRoutine;
+        private Coroutine crocodileRoutine;
         private float reflectionImpactAlpha = 1f;
         private bool impactPlayed;
 
@@ -47,6 +57,21 @@ namespace FirstBloom.Games.GassyGorilla
         public float WaterSurfaceY
         {
             get { return waterSurfaceY; }
+        }
+
+        public bool HasCrocodileFinish
+        {
+            get { return crocodileRoot != null && crocodileAnimator != null; }
+        }
+
+        public GameObject CrocodileRoot
+        {
+            get { return crocodileRoot; }
+        }
+
+        public Animator CrocodileAnimator
+        {
+            get { return crocodileAnimator; }
         }
 
         private void Awake()
@@ -79,6 +104,32 @@ namespace FirstBloom.Games.GassyGorilla
         {
             impactPlayed = false;
             reflectionImpactAlpha = 1f;
+            SetPlayerVisualsVisible(true);
+            if (crocodileRoot != null)
+            {
+                crocodileRoot.SetActive(false);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (rippleRoutine != null)
+            {
+                StopCoroutine(rippleRoutine);
+                rippleRoutine = null;
+            }
+
+            if (crocodileRoutine != null)
+            {
+                StopCoroutine(crocodileRoutine);
+                crocodileRoutine = null;
+            }
+
+            SetPlayerVisualsVisible(true);
+            if (crocodileRoot != null)
+            {
+                crocodileRoot.SetActive(false);
+            }
         }
 
         private void LateUpdate()
@@ -154,7 +205,53 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             rippleRoutine = StartCoroutine(AnimateRipples());
+            if (crocodileRoutine != null)
+            {
+                StopCoroutine(crocodileRoutine);
+            }
+
+            if (HasCrocodileFinish)
+            {
+                crocodileRoutine = StartCoroutine(AnimateCrocodileFinish());
+            }
+
             return true;
+        }
+
+        private IEnumerator AnimateCrocodileFinish()
+        {
+            if (crocodileRoot != null)
+            {
+                crocodileRoot.SetActive(true);
+            }
+
+            if (crocodileAnimator != null)
+            {
+                crocodileAnimator.Rebind();
+                crocodileAnimator.updateMode = AnimatorUpdateMode.UnscaledTime;
+                crocodileAnimator.Play("Lunge_Snap", 0, 0f);
+                crocodileAnimator.Update(0f);
+            }
+
+            yield return new WaitForSecondsRealtime(Mathf.Max(0f, crocodileChompDelay));
+            SetPlayerVisualsVisible(false);
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.Chomp, chompVolume);
+            }
+
+            float settleWait = Mathf.Max(0f, crocodileSettleDelay - crocodileChompDelay);
+            if (settleWait > 0f)
+            {
+                yield return new WaitForSecondsRealtime(settleWait);
+            }
+
+            if (crocodileAnimator != null)
+            {
+                crocodileAnimator.Play("Settle_Submerge", 0, 0f);
+            }
+
+            crocodileRoutine = null;
         }
 
         private IEnumerator AnimateRipples()
@@ -216,6 +313,22 @@ namespace FirstBloom.Games.GassyGorilla
                 if (rippleRenderers[i] != null)
                 {
                     rippleRenderers[i].enabled = false;
+                }
+            }
+        }
+
+        private void SetPlayerVisualsVisible(bool visible)
+        {
+            if (playerVisualRenderers == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < playerVisualRenderers.Length; i++)
+            {
+                if (playerVisualRenderers[i] != null)
+                {
+                    playerVisualRenderers[i].enabled = visible;
                 }
             }
         }
