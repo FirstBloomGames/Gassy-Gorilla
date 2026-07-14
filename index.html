@@ -85,12 +85,12 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/95ed13a54ab4a75e93c6587ee51e8a70.loader.js";
+      var loaderUrl = buildUrl + "/bd698c031a4a745c6903467a25b71d82.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/06a3eb7a12755b8beb6a4a6ac5b89ef5.data.unityweb",
+        dataUrl: buildUrl + "/96e3cfe0d8b57ce15286f308703672a4.data.unityweb",
         frameworkUrl: buildUrl + "/6eedcc1a1461b4806d0d5c923c87c352.framework.js.unityweb",
-        codeUrl: buildUrl + "/6fab7b1fa89ab1b723cc03ca769e245d.wasm.unityweb",
+        codeUrl: buildUrl + "/27ca6fcd1403d81040453578cd81de09.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "First Bloom Games",
         productName: "Gassy Gorilla",
@@ -154,12 +154,21 @@
                 window.ggUnityInstance = unityInstance;
                 var ggQaParameters = new URLSearchParams(window.location.search);
                 var ggQaSmokeRun = ggQaParameters.has("qa-smoke");
-                if (ggQaParameters.has("qa-autoplay") || ggQaSmokeRun) {
+                var ggQaCrocHitRun = ggQaParameters.has("qa-croc-hit");
+                var ggQaCrocRun = ggQaParameters.has("qa-croc") || ggQaCrocHitRun;
+                var ggQaAutomatedRun = ggQaSmokeRun || ggQaCrocRun;
+                if (ggQaParameters.has("qa-autoplay") || ggQaAutomatedRun) {
                   window.setTimeout(() => unityInstance.SendMessage("Manager_MainMenu", "Play"), 250);
                 }
-                if (ggQaSmokeRun) {
+                if (ggQaCrocRun) {
                   window.setTimeout(() => {
-                    var ggQaTapsRemaining = 48;
+                    unityInstance.SendMessage("Director_RunChunks", "ConfigureSeedForQa", "6");
+                    unityInstance.SendMessage("Manager_Game", "ConfigureCrocodileQa", ggQaCrocHitRun ? "hit" : "dodge");
+                  }, 3300);
+                }
+                if (ggQaAutomatedRun) {
+                  window.setTimeout(() => {
+                    var ggQaTapsRemaining = ggQaCrocHitRun ? 6 : 24;
                     var ggQaTap = () => {
                       var rect = canvas.getBoundingClientRect();
                       var x = rect.left + rect.width * 0.42;
@@ -169,7 +178,7 @@
                       canvas.dispatchEvent(down);
                       canvas.dispatchEvent(up);
                       ggQaTapsRemaining--;
-                      if (ggQaTapsRemaining > 0) window.setTimeout(ggQaTap, 650);
+                      if (ggQaTapsRemaining > 0) window.setTimeout(ggQaTap, 1000);
                     };
                     ggQaTap();
                   }, 1650);
