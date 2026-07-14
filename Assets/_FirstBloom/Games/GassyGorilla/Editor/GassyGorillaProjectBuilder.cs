@@ -114,7 +114,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 Soda = LoadRequiredPrefab("Pickup_Soda"),
                 BananaBunch = LoadRequiredPrefab("Pickup_BananaBunch"),
                 SwingableVine = LoadRequiredPrefab("Vine_Swingable"),
-                SpikyStumpObstacle = LoadRequiredPrefab("Hazard_SpikyStump")
+                SpikyStumpObstacle = LoadRequiredPrefab("Hazard_SpikyStump"),
+                CrocodileAmbush = LoadRequiredPrefab("Hazard_CrocodileAmbush")
             };
         }
 
@@ -1202,14 +1203,39 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
         private static GameObject CreateCrocodileModelInstance(CrocodileModelAssets assets, Transform parent, out Animator animator)
         {
+            return CreateCrocodileModelInstance(
+                assets,
+                parent,
+                "Crocodile Finish 3D",
+                1.24f,
+                -0.92f,
+                9,
+                AnimatorUpdateMode.UnscaledTime,
+                new Vector3(3.72f, 0f, -0.42f),
+                false,
+                out animator);
+        }
+
+        private static GameObject CreateCrocodileModelInstance(
+            CrocodileModelAssets assets,
+            Transform parent,
+            string rootName,
+            float targetHeight,
+            float targetBottomY,
+            int sortingOrder,
+            AnimatorUpdateMode updateMode,
+            Vector3 localPosition,
+            bool active,
+            out Animator animator)
+        {
             animator = null;
             if (assets == null || assets.ModelPrefab == null)
             {
                 return null;
             }
 
-            GameObject finishRoot = new GameObject("Crocodile Finish 3D");
-            finishRoot.transform.SetParent(parent, false);
+            GameObject crocodileRoot = new GameObject(rootName);
+            crocodileRoot.transform.SetParent(parent, false);
 
             GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(assets.ModelPrefab);
             if (model == null)
@@ -1218,13 +1244,13 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             }
 
             model.name = "Visual_Crocodile_3D";
-            model.transform.SetParent(finishRoot.transform, false);
+            model.transform.SetParent(crocodileRoot.transform, false);
             model.transform.localPosition = Vector3.zero;
             model.transform.localRotation = Quaternion.identity;
             model.transform.localScale = Vector3.one;
             RemoveImportedSceneExtras(model);
-            ConfigureGorillaModelRenderers(model, assets.Material, 9);
-            FitModelToTarget(model, finishRoot.transform, Vector3.zero, 1.24f, -0.92f);
+            ConfigureGorillaModelRenderers(model, assets.Material, sortingOrder);
+            FitModelToTarget(model, crocodileRoot.transform, Vector3.zero, targetHeight, targetBottomY);
 
             animator = model.GetComponentInChildren<Animator>(true);
             if (animator == null)
@@ -1235,11 +1261,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             animator.runtimeAnimatorController = assets.AnimatorController;
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            animator.updateMode = updateMode;
 
-            finishRoot.transform.localPosition = new Vector3(3.72f, 0f, -0.42f);
-            finishRoot.SetActive(false);
-            return finishRoot;
+            crocodileRoot.transform.localPosition = localPosition;
+            crocodileRoot.SetActive(active);
+            return crocodileRoot;
         }
 
         private static GameObject CreateModelVisualInstance(ModelVisualAsset asset, string name, Transform parent, Vector3 position, float targetHeight, float targetBottomY, int sortingOrder, Quaternion rotation, bool fitToTarget)
@@ -1440,6 +1466,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             prefabs.SpikyStumpObstacle = BuildHazardPrefab("Hazard_SpikyStump", new Vector2(0.9f, 1.55f), meshyAssets.SpikyStump, 1.55f, "ThornLog");
             prefabs.MudGeyserObstacle = BuildHazardPrefab("Hazard_MudGeyser", new Vector2(0.9f, 1.8f), meshyAssets.MudGeyser, 1.8f, "SapBlob");
             prefabs.StickySapObstacle = BuildHazardPrefab("Hazard_StickySapBlob", new Vector2(0.85f, 1.6f), meshyAssets.StickySapBlob, 1.6f, "SapBlob");
+            prefabs.CrocodileAmbush = BuildCrocodileAmbushPrefab(crocodileModel);
             prefabs.AudioManager = BuildAudioManagerPrefab();
             prefabs.PickupSpawner = BuildSpawnerPrefab<PickupSpawner>("Spawner_Pickups");
             prefabs.ObstacleSpawner = BuildSpawnerPrefab<ObstacleSpawner>("Spawner_Obstacles");
@@ -1579,6 +1606,28 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 4.9f, 1.45f, 6f)
                 });
 
+            RunChunkDefinition crocodileAmbush = CreateOrUpdateRunChunk(
+                "CrocodileAmbush",
+                RunChunkTag.Hazard | RunChunkTag.NoVine | RunChunkTag.Predator,
+                true,
+                12.5f,
+                0.68f,
+                0,
+                4,
+                RunChunkTag.Hazard | RunChunkTag.Vine | RunChunkTag.Predator,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                new Vector2(-0.2f, 3.3f),
+                new Vector2(0.6f, 3.6f),
+                new Vector2(17.5f, 100f),
+                new Vector2(0f, 100f),
+                5.2f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 0.35f, 1.1f, -5f),
+                    ChunkSpawn(prefabs.CrocodileAmbush, RunChunkSpawnKind.Hazard, 8f, -1.61f),
+                    ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 10.8f, 2.35f, 7f)
+                });
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
@@ -1588,10 +1637,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             boostGap = LoadRunChunk("BoostGap");
             hazardIntroduction = LoadRunChunk("HazardIntroduction");
             recovery = LoadRunChunk("Recovery");
+            crocodileAmbush = LoadRunChunk("CrocodileAmbush");
 
             return new RunChunkSet
             {
-                All = new[] { openingBoost, safeVine, fuelArc, boostGap, hazardIntroduction, recovery },
+                All = new[] { openingBoost, safeVine, fuelArc, boostGap, hazardIntroduction, recovery, crocodileAmbush },
                 Opening = new[] { openingBoost, safeVine, hazardIntroduction, recovery }
             };
         }
@@ -2019,6 +2069,124 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return SavePrefab(root, PrefabRoot + "/Vine_Swingable.prefab");
         }
 
+        private static GameObject BuildCrocodileAmbushPrefab(CrocodileModelAssets crocodileModel)
+        {
+            if (crocodileModel == null || crocodileModel.ModelPrefab == null)
+            {
+                throw new InvalidOperationException("The crocodile ambush requires the production Blender crocodile model.");
+            }
+
+            GameObject root = new GameObject("Hazard_CrocodileAmbush");
+            root.tag = "Obstacle";
+
+            Material warningMaterial = CreateColorMaterial(
+                "GG_CrocodileWarningRipple_3D",
+                new Color(1f, 0.82f, 0.28f, 0.9f),
+                true);
+
+            GameObject warningRoot = new GameObject("Crocodile Warning 3D");
+            warningRoot.transform.SetParent(root.transform, false);
+            warningRoot.transform.localPosition = new Vector3(-1.95f, 0.07f, -0.24f);
+
+            Transform[] warningRipples = new Transform[3];
+            Renderer[] warningRenderers = new Renderer[3];
+            for (int i = 0; i < warningRipples.Length; i++)
+            {
+                GameObject ripple = CreatePrimitiveVisual(
+                    "Predator Ripple " + (i + 1),
+                    PrimitiveType.Sphere,
+                    warningRoot.transform,
+                    new Vector3(0f, -i * 0.012f, -i * 0.015f),
+                    new Vector3(0.48f + i * 0.09f, 0.05f, 0.15f),
+                    warningMaterial,
+                    14 + i,
+                    false);
+                warningRipples[i] = ripple.transform;
+                warningRenderers[i] = ripple.GetComponent<Renderer>();
+                warningRenderers[i].enabled = false;
+            }
+
+            GameObject warningBubbleRoot = new GameObject("Warning Bubbles");
+            warningBubbleRoot.transform.SetParent(warningRoot.transform, false);
+            ParticleSystem warningBubbles = warningBubbleRoot.AddComponent<ParticleSystem>();
+            ConfigureLagoonBubbleParticles(warningBubbles);
+
+            GameObject launchSplashRoot = new GameObject("Ambush Launch Splash");
+            launchSplashRoot.transform.SetParent(root.transform, false);
+            launchSplashRoot.transform.localPosition = new Vector3(-1.95f, 0.04f, -0.26f);
+            ParticleSystem launchSplash = launchSplashRoot.AddComponent<ParticleSystem>();
+            ConfigureLagoonSplashParticles(launchSplash);
+
+            GameObject motionRoot = new GameObject("Crocodile Motion Root");
+            motionRoot.transform.SetParent(root.transform, false);
+            motionRoot.transform.localPosition = new Vector3(0f, -0.18f, 0f);
+
+            Animator crocodileAnimator;
+            GameObject visualRoot = CreateCrocodileModelInstance(
+                crocodileModel,
+                motionRoot.transform,
+                "Crocodile Ambush 3D",
+                1.05f,
+                -0.74f,
+                12,
+                AnimatorUpdateMode.Normal,
+                new Vector3(0f, 0f, -0.38f),
+                false,
+                out crocodileAnimator);
+
+            GameObject bitePoint = new GameObject("Bite Point");
+            bitePoint.transform.SetParent(motionRoot.transform, false);
+            bitePoint.transform.localPosition = new Vector3(-2.02f, 0.14f, -0.1f);
+
+            GameObject biteTrigger = new GameObject("Bite Trigger");
+            biteTrigger.transform.SetParent(motionRoot.transform, false);
+            biteTrigger.transform.localPosition = new Vector3(-2.02f, 0.14f, 0f);
+            BoxCollider2D biteCollider = biteTrigger.AddComponent<BoxCollider2D>();
+            biteCollider.isTrigger = true;
+            biteCollider.size = new Vector2(1.65f, 1.36f);
+            biteCollider.enabled = false;
+
+            CrocodileAmbushController controller = root.AddComponent<CrocodileAmbushController>();
+            CrocodileAmbushHitbox hitbox = biteTrigger.AddComponent<CrocodileAmbushHitbox>();
+            SetObject(hitbox, "controller", controller);
+            SetObject(controller, "motionRoot", motionRoot.transform);
+            SetObject(controller, "visualRoot", visualRoot);
+            SetObject(controller, "animator", crocodileAnimator);
+            SetObject(controller, "biteCollider", biteCollider);
+            SetObject(controller, "bitePoint", bitePoint.transform);
+            SetObject(controller, "warningRoot", warningRoot);
+            SetObjectArray(controller, "warningRipples", warningRipples);
+            SetObjectArray(controller, "warningRenderers", warningRenderers);
+            SetObject(controller, "warningBubbles", warningBubbles);
+            SetObject(controller, "launchSplash", launchSplash);
+            SetFloat(controller, "activationDistance", 7.35f);
+            SetFloat(controller, "minimumLeadDistance", 1.6f);
+            SetFloat(controller, "minimumFuel", 17.5f);
+            SetFloat(controller, "skipBehindDistance", -0.8f);
+            SetFloat(controller, "warningDuration", 0.8f);
+            SetFloat(controller, "lungeDuration", 0.84f);
+            SetFloat(controller, "biteWindowStart", 0.2f);
+            SetFloat(controller, "biteWindowEnd", 0.58f);
+            SetFloat(controller, "missSnapNormalizedTime", 0.48f);
+            SetFloat(controller, "settleDuration", 0.42f);
+            SetFloat(controller, "playerSnapDuration", 0.13f);
+            SetVector3(controller, "submergedLocalPosition", new Vector3(0f, -0.18f, 0f));
+            SetFloat(controller, "lungeHeight", 2.55f);
+            SetFloat(controller, "lungeHorizontalTravel", -0.48f);
+            SetFloat(controller, "warningBobHeight", 0.045f);
+            SetFloat(controller, "settleDepth", 0.46f);
+            SetVector3(controller, "playerBiteOffset", new Vector3(0.08f, 0.08f, 0f));
+            SetFloat(controller, "warningSplashVolume", 0.28f);
+            SetFloat(controller, "launchSplashVolume", 0.72f);
+            SetFloat(controller, "missChompVolume", 0.42f);
+            SetFloat(controller, "launchShakeIntensity", 0.14f);
+            SetFloat(controller, "launchShakeDuration", 0.24f);
+
+            warningRoot.SetActive(false);
+            visualRoot.SetActive(false);
+            return SavePrefab(root, PrefabRoot + "/Hazard_CrocodileAmbush.prefab");
+        }
+
         private static GameObject BuildHazardPrefab(string name, Vector2 colliderSize, ModelVisualAsset modelAsset, float modelHeight, string primitiveKind)
         {
             GameObject root = new GameObject(name);
@@ -2201,6 +2369,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetFloat(gameManager, "deathY", -1.72f);
             SetFloat(gameManager, "gameOverRestY", -1.72f);
             SetFloat(gameManager, "lagoonResultRevealDelay", 1.02f);
+            SetFloat(gameManager, "crocodileAmbushResultRevealDelay", 0.9f);
             SetFloat(gameManager, "hazardResultRevealDelay", 0.08f);
             SetFloat(gameManager, "introDuration", 1.15f);
             SetFloat(gameManager, "introStartZoom", 2.85f);
@@ -4865,6 +5034,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             public GameObject SpikyStumpObstacle;
             public GameObject MudGeyserObstacle;
             public GameObject StickySapObstacle;
+            public GameObject CrocodileAmbush;
             public GameObject AudioManager;
             public GameObject PickupSpawner;
             public GameObject ObstacleSpawner;

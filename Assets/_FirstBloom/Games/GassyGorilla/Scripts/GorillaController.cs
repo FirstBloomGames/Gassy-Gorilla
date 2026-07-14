@@ -84,6 +84,9 @@ namespace FirstBloom.Games.GassyGorilla
         private float currentSwingAngleDegrees;
         private float currentReleasePower;
         private Vector2 currentSwingVelocity;
+        private bool crocodileQaMode;
+        private bool crocodileQaAutoDodge;
+        private bool crocodileQaAutoHit;
 
         public event Action<float, float> FuelChanged;
         public event Action Boosted;
@@ -97,6 +100,8 @@ namespace FirstBloom.Games.GassyGorilla
         public float CurrentSwingAngleDegrees { get { return currentSwingAngleDegrees; } }
         public float CurrentReleasePower { get { return currentReleasePower; } }
         public Vector2 CurrentSwingVelocity { get { return currentSwingVelocity; } }
+        public bool ShouldAutoDodgeCrocodileForQa { get { return crocodileQaMode && crocodileQaAutoDodge; } }
+        public bool ShouldAutoHitCrocodileForQa { get { return crocodileQaMode && crocodileQaAutoHit; } }
         public Vector3 CurrentVineGripPosition
         {
             get
@@ -226,7 +231,9 @@ namespace FirstBloom.Games.GassyGorilla
             nextBoostTime = Time.time + boostCooldown;
             forwardKickTimer = boostForwardKickDuration;
             bufferedBoostUntil = 0f;
-            CurrentFuel = Mathf.Max(0f, CurrentFuel - fuelDrainPerBoost);
+            CurrentFuel = crocodileQaMode
+                ? maxFuel
+                : Mathf.Max(0f, CurrentFuel - fuelDrainPerBoost);
             NotifyFuelChanged();
 
             Vector2 velocity = GetVelocity();
@@ -464,6 +471,49 @@ namespace FirstBloom.Games.GassyGorilla
             body.bodyType = RigidbodyType2D.Dynamic;
             body.gravityScale = originalGravityScale;
             SetVelocity(Vector2.zero);
+        }
+
+        public void ConfigureCrocodileQa(string mode)
+        {
+            crocodileQaMode = true;
+            crocodileQaAutoDodge = string.Equals(mode, "dodge", StringComparison.OrdinalIgnoreCase);
+            crocodileQaAutoHit = string.Equals(mode, "hit", StringComparison.OrdinalIgnoreCase);
+            CurrentFuel = maxFuel;
+            NotifyFuelChanged();
+        }
+
+        public void PrepareForCrocodileQaHit(float targetY)
+        {
+            if (!ShouldAutoHitCrocodileForQa || body == null)
+            {
+                return;
+            }
+
+            ResetSwingState();
+            IsSwinging = false;
+            inputEnabled = false;
+            body.bodyType = RigidbodyType2D.Dynamic;
+            body.gravityScale = originalGravityScale;
+            transform.position = new Vector3(transform.position.x, targetY, transform.position.z);
+            SetVelocity(new Vector2(Mathf.Max(GetVelocity().x, forwardSpeed), 0f));
+        }
+
+        public void RecoverForCrocodileQa(float recoveryY)
+        {
+            if (!crocodileQaMode || body == null)
+            {
+                return;
+            }
+
+            ResetSwingState();
+            IsSwinging = false;
+            inputEnabled = true;
+            body.bodyType = RigidbodyType2D.Dynamic;
+            body.gravityScale = originalGravityScale;
+            transform.position = new Vector3(transform.position.x, recoveryY, transform.position.z);
+            SetVelocity(new Vector2(forwardSpeed, fartBoostVelocity * 0.72f));
+            CurrentFuel = maxFuel;
+            NotifyFuelChanged();
         }
 
         public void StopForGameOver()

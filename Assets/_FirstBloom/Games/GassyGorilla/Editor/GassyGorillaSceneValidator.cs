@@ -27,6 +27,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string CrocodileTexturePath = GameRoot + "/Models/Blender/Crocodile/GG_Crocodile_Atlas.png";
         private const string CrocodileMaterialPath = GameRoot + "/Materials/GG_Crocodile_Blender.mat";
         private const string CrocodileAnimatorPath = GameRoot + "/Animations/GG_Crocodile.controller";
+        private const string CrocodileAmbushPrefabPath = GameRoot + "/Prefabs/Hazard_CrocodileAmbush.prefab";
+        private const string CrocodileAmbushChunkPath = GameRoot + "/ScriptableObjects/RunChunks/GG_RunChunk_CrocodileAmbush.asset";
 
         [MenuItem("First Bloom/Gassy Gorilla/Validate Built Scenes")]
         public static void ValidateBuiltScenes()
@@ -43,7 +45,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 throw new InvalidOperationException("Gassy Gorilla scene validation failed:\n - " + string.Join("\n - ", errors));
             }
 
-            Debug.Log("Gassy Gorilla scene validation passed. Menu, authored run chunks, textured 3D world art, HUD, camera, tutorial, and game loop are wired.");
+            Debug.Log("Gassy Gorilla scene validation passed. Menu, authored predator chunks, textured 3D world art, HUD, camera, tutorial, and game loop are wired.");
         }
 
         private static void ValidateRequiredAssets(List<string> errors)
@@ -51,6 +53,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireAsset(MainMenuScenePath, errors);
             RequireAsset(GameScenePath, errors);
             RequireAsset(PaintedJungleTexturePath, errors);
+            RequireAsset(CrocodileAmbushPrefabPath, errors);
+            RequireAsset(CrocodileAmbushChunkPath, errors);
             ValidateCrocodileAssets(errors);
 
             if (HasMeshyGorilla())
@@ -218,6 +222,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             if (runDirector != null)
             {
                 runDirector.AppendValidationErrors(errors, 100);
+                ValidateCrocodileAmbushChunk(runDirector, errors);
             }
 
             RequireNoLegacyGameplaySpawners(errors);
@@ -432,7 +437,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 GameRoot + "/Prefabs/Obstacle_TreeTrunk.prefab",
                 GameRoot + "/Prefabs/Hazard_SpikyStump.prefab",
                 GameRoot + "/Prefabs/Hazard_MudGeyser.prefab",
-                GameRoot + "/Prefabs/Hazard_StickySapBlob.prefab"
+                GameRoot + "/Prefabs/Hazard_StickySapBlob.prefab",
+                CrocodileAmbushPrefabPath
             };
 
             for (int i = 0; i < prefabPaths.Length; i++)
@@ -460,6 +466,145 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             }
 
             ValidateTopAnchoredVinePrefab(errors);
+            ValidateCrocodileAmbushPrefab(errors);
+        }
+
+        private static void ValidateCrocodileAmbushChunk(RunChunkDirector runDirector, List<string> errors)
+        {
+            RunChunkDefinition definition = AssetDatabase.LoadAssetAtPath<RunChunkDefinition>(CrocodileAmbushChunkPath);
+            if (definition == null)
+            {
+                return;
+            }
+
+            RunChunkTag requiredTags = RunChunkTag.Hazard | RunChunkTag.NoVine | RunChunkTag.Predator;
+            if ((definition.Tags & requiredTags) != requiredTags || !definition.AllowInMainPool)
+            {
+                errors.Add("Crocodile ambush chunk must be a main-pool hazard, predator, and vine-free beat.");
+            }
+
+            if (definition.MinimumReactionDistance < 5f || definition.EntryFuelRange.x < 17f)
+            {
+                errors.Add("Crocodile ambush chunk must guarantee readable lead distance and at least one boost of entry fuel.");
+            }
+
+            int pickupCount = 0;
+            int predatorCount = 0;
+            RunChunkSpawn[] spawns = definition.Spawns;
+            for (int i = 0; i < spawns.Length; i++)
+            {
+                RunChunkSpawn spawn = spawns[i];
+                if (spawn == null || spawn.Prefab == null)
+                {
+                    continue;
+                }
+
+                if (spawn.Kind == RunChunkSpawnKind.Pickup)
+                {
+                    pickupCount++;
+                }
+
+                if (spawn.Prefab.name == "Hazard_CrocodileAmbush")
+                {
+                    predatorCount++;
+                }
+            }
+
+            if (predatorCount != 1 || pickupCount < 2)
+            {
+                errors.Add("Crocodile ambush chunk must contain one crocodile plus approach and recovery food.");
+            }
+
+            RunChunkDefinition[] opening = runDirector.OpeningSequence;
+            for (int i = 0; i < opening.Length; i++)
+            {
+                if (opening[i] != null && (opening[i].Tags & RunChunkTag.Predator) != 0)
+                {
+                    errors.Add("The controlled opening sequence must not contain a crocodile predator beat.");
+                    break;
+                }
+            }
+        }
+
+        private static void ValidateCrocodileAmbushPrefab(List<string> errors)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CrocodileAmbushPrefabPath);
+            if (prefab == null)
+            {
+                return;
+            }
+
+            CrocodileAmbushController controller = prefab.GetComponent<CrocodileAmbushController>();
+            if (controller == null || !controller.IsConfigured)
+            {
+                errors.Add("Crocodile ambush prefab is missing its complete warning, motion, bite, or animation wiring.");
+                return;
+            }
+
+            Animator animator = controller.Animator;
+            if (animator.runtimeAnimatorController == null || animator.applyRootMotion || animator.updateMode != AnimatorUpdateMode.Normal)
+            {
+                errors.Add("Crocodile ambush animator must use the generated controller, normal gameplay time, and no root motion.");
+            }
+
+            SkinnedMeshRenderer[] skinnedRenderers = prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            if (skinnedRenderers.Length != 1 || skinnedRenderers[0].sharedMaterials.Length != 1)
+            {
+                errors.Add("Crocodile ambush must use one atlas-backed skinned renderer.");
+            }
+
+            Transform crocodileModel = FindChild(prefab.transform, "Visual_Crocodile_3D");
+            if (crocodileModel == null || Quaternion.Angle(crocodileModel.localRotation, Quaternion.identity) > 1f)
+            {
+                errors.Add("Crocodile ambush must keep the FBX native facing axis so the head attacks the incoming gorilla.");
+            }
+
+            Collider2D biteCollider = controller.BiteCollider;
+            if (biteCollider == null || !biteCollider.isTrigger || biteCollider.enabled)
+            {
+                errors.Add("Crocodile bite collider must be a disabled trigger outside its authored bite window.");
+            }
+
+            if (controller.WarningRippleCount != 3 || controller.WarningDuration < 0.65f || controller.WarningDuration > 1.05f)
+            {
+                errors.Add("Crocodile warning must keep three readable ripples and a 0.65 to 1.05 second telegraph.");
+            }
+
+            if (controller.BiteWindowStart < 0.12f || controller.BiteWindowEnd <= controller.BiteWindowStart || controller.BiteWindowEnd > 0.7f)
+            {
+                errors.Add("Crocodile bite window must stay narrow, ordered, and inside the readable middle of the lunge.");
+            }
+
+            const float expectedForwardSpeed = 4.85f;
+            float remainingLeadAtBite = controller.ActivationDistance -
+                expectedForwardSpeed * (controller.WarningDuration + controller.LungeDuration * controller.BiteWindowStart);
+            if (remainingLeadAtBite < controller.MinimumLeadDistance)
+            {
+                errors.Add("Crocodile telegraph timing no longer leaves the promised minimum lead distance at bite-window start.");
+            }
+
+            if (controller.MinimumFuel < 17f)
+            {
+                errors.Add("Crocodile ambush must require at least one production boost of fuel.");
+            }
+
+            ParticleSystem[] particles = prefab.GetComponentsInChildren<ParticleSystem>(true);
+            int particleBudget = 0;
+            for (int i = 0; i < particles.Length; i++)
+            {
+                ParticleSystem.MainModule main = particles[i].main;
+                particleBudget += main.maxParticles;
+                if (main.loop)
+                {
+                    errors.Add("Crocodile warning and launch particles must be finite.");
+                    break;
+                }
+            }
+
+            if (particles.Length != 2 || particleBudget > 48)
+            {
+                errors.Add("Crocodile ambush must keep two finite particle systems within its 48-particle mobile budget.");
+            }
         }
 
         private static void ValidateTopAnchoredVinePrefab(List<string> errors)

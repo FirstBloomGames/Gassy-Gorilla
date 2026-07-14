@@ -317,7 +317,7 @@ namespace FirstBloom.Games.GassyGorilla
             }
         }
 
-        private void SetPlayerVisualsVisible(bool visible)
+        public void SetPlayerVisualsVisible(bool visible)
         {
             if (playerVisualRenderers == null)
             {

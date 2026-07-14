@@ -16,12 +16,21 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string BrowserQaBridge = @"                window.ggUnityInstance = unityInstance;
                 var ggQaParameters = new URLSearchParams(window.location.search);
                 var ggQaSmokeRun = ggQaParameters.has(""qa-smoke"");
-                if (ggQaParameters.has(""qa-autoplay"") || ggQaSmokeRun) {
+                var ggQaCrocHitRun = ggQaParameters.has(""qa-croc-hit"");
+                var ggQaCrocRun = ggQaParameters.has(""qa-croc"") || ggQaCrocHitRun;
+                var ggQaAutomatedRun = ggQaSmokeRun || ggQaCrocRun;
+                if (ggQaParameters.has(""qa-autoplay"") || ggQaAutomatedRun) {
                   window.setTimeout(() => unityInstance.SendMessage(""Manager_MainMenu"", ""Play""), 250);
                 }
-                if (ggQaSmokeRun) {
+                if (ggQaCrocRun) {
                   window.setTimeout(() => {
-                    var ggQaTapsRemaining = 48;
+                    unityInstance.SendMessage(""Director_RunChunks"", ""ConfigureSeedForQa"", ""6"");
+                    unityInstance.SendMessage(""Manager_Game"", ""ConfigureCrocodileQa"", ggQaCrocHitRun ? ""hit"" : ""dodge"");
+                  }, 3300);
+                }
+                if (ggQaAutomatedRun) {
+                  window.setTimeout(() => {
+                    var ggQaTapsRemaining = ggQaCrocHitRun ? 6 : 24;
                     var ggQaTap = () => {
                       var rect = canvas.getBoundingClientRect();
                       var x = rect.left + rect.width * 0.42;
@@ -31,7 +40,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                       canvas.dispatchEvent(down);
                       canvas.dispatchEvent(up);
                       ggQaTapsRemaining--;
-                      if (ggQaTapsRemaining > 0) window.setTimeout(ggQaTap, 650);
+                      if (ggQaTapsRemaining > 0) window.setTimeout(ggQaTap, 1000);
                     };
                     ggQaTap();
                   }, 1650);
@@ -172,6 +181,25 @@ body.gg-portrait-active #unity-container {
   .gg-phone-rotation {
     animation: none;
     transform: rotate(90deg);
+  }
+}
+
+@media (max-width: 959px), (max-height: 641px) {
+  #unity-container.unity-desktop {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: none;
+  }
+
+  #unity-container.unity-desktop #unity-canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  #unity-container.unity-desktop #unity-footer {
+    display: none;
   }
 }
 ";

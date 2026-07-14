@@ -3336,6 +3336,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 9fc5d8a0b2c777c42808d78f121d9039, type: 2}
   - {fileID: 11400000, guid: 399abd8c39e65824580166e1dbeb375f, type: 2}
   - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: 407911be56f755b449bfc07f5cb4a1a9, type: 2}
   openingSequence:
   - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
   - {fileID: 11400000, guid: e1769fe815c237648a5f242a652287ba, type: 2}
@@ -5437,6 +5438,11 @@ MonoBehaviour:
   sceneCamera: {fileID: 1028539286}
   deathY: -1.72
   gameOverRestY: -1.72
+  lagoonFinishPresentation: {fileID: 0}
+  tutorialPrompt: {fileID: 0}
+  lagoonResultRevealDelay: 1.02
+  crocodileAmbushResultRevealDelay: 0.9
+  hazardResultRevealDelay: 0.08
   playCameraIntro: 1
   introDuration: 1.15
   introStartZoom: 2.85

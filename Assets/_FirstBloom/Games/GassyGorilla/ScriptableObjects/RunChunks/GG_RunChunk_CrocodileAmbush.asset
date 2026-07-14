@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f915c77b168390345ac76493f6849360, type: 3}
+  m_Name: GG_RunChunk_CrocodileAmbush
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.RunChunkDefinition
+  chunkId: CrocodileAmbush
+  tags: 208
+  allowInMainPool: 1
+  length: 12.5
+  selectionWeight: 0.68
+  minimumDifficulty: 0
+  maximumDifficulty: 4
+  blockedPreviousTags: 152
+  blockedNextTags: 144
+  entryHeightRange: {x: -0.2, y: 3.3}
+  exitHeightRange: {x: 0.6, y: 3.6}
+  entryFuelRange: {x: 17.5, y: 100}
+  exitFuelRange: {x: 0, y: 100}
+  minimumReactionDistance: 5.2
+  spawns:
+  - prefab: {fileID: 2487999869850025639, guid: 17c15824d3657f045af979c96fc73a22, type: 3}
+    kind: 0
+    localPosition: {x: 0.35, y: 1.1, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: -5}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 3969544253556559219, guid: 2a72ec264682bfd46ad971f8e656086d, type: 3}
+    kind: 1
+    localPosition: {x: 8, y: -1.61, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 2559269168645090756, guid: 6776722b02806be47a2f4d7b68377ad7, type: 3}
+    kind: 0
+    localPosition: {x: 10.8, y: 2.35, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 7}
+    localScale: {x: 1, y: 1, z: 1}

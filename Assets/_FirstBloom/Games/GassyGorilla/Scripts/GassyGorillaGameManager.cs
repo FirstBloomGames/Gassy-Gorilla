@@ -34,6 +34,7 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private LagoonFinishPresentation lagoonFinishPresentation;
         [SerializeField] private GassyTutorialPromptController tutorialPrompt;
         [SerializeField] private float lagoonResultRevealDelay = 1.02f;
+        [SerializeField] private float crocodileAmbushResultRevealDelay = 0.9f;
         [SerializeField] private float hazardResultRevealDelay = 0.08f;
 
         [Header("Camera Beats")]
@@ -58,6 +59,7 @@ namespace FirstBloom.Games.GassyGorilla
 
         private Coroutine introRoutine;
         private Coroutine outroRoutine;
+        private bool crocodileQaMode;
 
         protected override void Awake()
         {
@@ -125,15 +127,63 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (player.transform.position.y <= deathY)
             {
-                GameOver("Fell into the jungle.");
+                if (crocodileQaMode)
+                {
+                    player.RecoverForCrocodileQa(deathY + 2.1f);
+                }
+                else
+                {
+                    GameOver("Fell into the jungle.");
+                }
             }
         }
 
         public void GameOver(string reason)
         {
-            if (CurrentState == ArcadeGameState.GameOver)
+            if (crocodileQaMode)
             {
                 return;
+            }
+
+            GameOverInternal(reason, null);
+        }
+
+        public void ConfigureCrocodileQa(string mode)
+        {
+            crocodileQaMode = true;
+            ArcadeHazard[] standardHazards = FindObjectsByType<ArcadeHazard>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < standardHazards.Length; i++)
+            {
+                Collider2D[] colliders = standardHazards[i].GetComponentsInChildren<Collider2D>(true);
+                for (int colliderIndex = 0; colliderIndex < colliders.Length; colliderIndex++)
+                {
+                    colliders[colliderIndex].enabled = false;
+                }
+            }
+
+            if (player != null)
+            {
+                player.ConfigureCrocodileQa(mode);
+            }
+        }
+
+        public bool GameOverFromCrocodileAmbush(CrocodileAmbushController ambush)
+        {
+            if (ambush == null)
+            {
+                return false;
+            }
+
+            return GameOverInternal("Caught by a lagoon crocodile.", ambush);
+        }
+
+        private bool GameOverInternal(string reason, CrocodileAmbushController crocodileAmbush)
+        {
+            if (CurrentState == ArcadeGameState.GameOver)
+            {
+                return false;
             }
 
             SetState(ArcadeGameState.GameOver);
@@ -144,7 +194,8 @@ namespace FirstBloom.Games.GassyGorilla
                 tutorialPrompt.HideForGameOver();
             }
 
-            bool lagoonFall = player != null && player.transform.position.y <= deathY + 0.05f;
+            bool isCrocodileAmbush = crocodileAmbush != null;
+            bool lagoonFall = !isCrocodileAmbush && player != null && player.transform.position.y <= deathY + 0.05f;
             if (lagoonFall && lagoonFinishPresentation != null)
             {
                 lagoonFinishPresentation.PlayWaterImpact(player.transform.position);
@@ -154,6 +205,11 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 player.SetInputEnabled(false);
                 player.StopForGameOver(gameOverRestY);
+            }
+
+            if (isCrocodileAmbush && player != null)
+            {
+                crocodileAmbush.ConfirmSuccessfulBite(player);
             }
 
             if (scoreManager != null)
@@ -173,12 +229,17 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (ArcadeAudioManager.Instance != null)
             {
-                ArcadeAudioManager.Instance.PlaySfx(lagoonFall ? ArcadeSfxType.Splash : ArcadeSfxType.Crash);
+                ArcadeSfxType sfx = isCrocodileAmbush
+                    ? ArcadeSfxType.Chomp
+                    : (lagoonFall ? ArcadeSfxType.Splash : ArcadeSfxType.Crash);
+                ArcadeAudioManager.Instance.PlaySfx(sfx, isCrocodileAmbush ? 0.96f : 1f);
             }
 
             if (cameraFollow != null)
             {
-                cameraFollow.Shake(lagoonFall ? 0.24f : 0.32f, lagoonFall ? 0.34f : 0.45f);
+                float shakeIntensity = isCrocodileAmbush ? 0.42f : (lagoonFall ? 0.24f : 0.32f);
+                float shakeDuration = isCrocodileAmbush ? 0.5f : (lagoonFall ? 0.34f : 0.45f);
+                cameraFollow.Shake(shakeIntensity, shakeDuration);
             }
 
             if (outroRoutine != null)
@@ -186,8 +247,14 @@ namespace FirstBloom.Games.GassyGorilla
                 StopCoroutine(outroRoutine);
             }
 
-            float resultRevealDelay = lagoonFall ? lagoonResultRevealDelay : hazardResultRevealDelay;
-            outroRoutine = StartCoroutine(CameraOutroRoutine(resultRevealDelay));
+            float resultRevealDelay = isCrocodileAmbush
+                ? crocodileAmbushResultRevealDelay
+                : (lagoonFall ? lagoonResultRevealDelay : hazardResultRevealDelay);
+            Transform outroFocus = isCrocodileAmbush && crocodileAmbush.BitePoint != null
+                ? crocodileAmbush.BitePoint
+                : (player != null ? player.transform : null);
+            float outroShake = isCrocodileAmbush ? 0.15f : (lagoonFall ? 0.07f : 0.09f);
+            outroRoutine = StartCoroutine(CameraOutroRoutine(resultRevealDelay, outroFocus, outroShake));
 
             if (ArcadeTimeController.Instance != null)
             {
@@ -197,6 +264,8 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 Time.timeScale = 0f;
             }
+
+            return true;
         }
 
         private IEnumerator CameraIntroRoutine()
@@ -253,7 +322,7 @@ namespace FirstBloom.Games.GassyGorilla
             BeginRun();
         }
 
-        private IEnumerator CameraOutroRoutine(float resultRevealDelay)
+        private IEnumerator CameraOutroRoutine(float resultRevealDelay, Transform focusTarget, float impactShakeAmplitude)
         {
             UnityEngine.Camera activeCamera = GetSceneCamera();
             if (activeCamera == null || player == null)
@@ -270,7 +339,8 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             Vector3 startPosition = activeCamera.transform.position;
-            Vector3 targetPosition = player.transform.position + outroOffset;
+            Transform activeFocus = focusTarget != null ? focusTarget : player.transform;
+            Vector3 targetPosition = activeFocus.position + outroOffset;
             targetPosition.z = startPosition.z;
             float startZoom = activeCamera.orthographicSize;
             float duration = Mathf.Max(0.1f, outroDuration);
@@ -289,12 +359,24 @@ namespace FirstBloom.Games.GassyGorilla
 
                 float t = Mathf.Clamp01(elapsed / duration);
                 float eased = 1f - Mathf.Pow(1f - t, 3f);
-                float bonkShake = Mathf.Sin(t * Mathf.PI * 12f) * (1f - t) * 0.09f;
+                if (activeFocus != null)
+                {
+                    targetPosition = activeFocus.position + outroOffset;
+                    targetPosition.z = startPosition.z;
+                }
+
+                float bonkShake = Mathf.Sin(t * Mathf.PI * 12f) * (1f - t) * impactShakeAmplitude;
                 Vector3 shake = new Vector3(bonkShake, -Mathf.Abs(bonkShake) * 0.65f, 0f);
 
                 activeCamera.transform.position = Vector3.Lerp(startPosition, targetPosition, eased) + shake;
                 activeCamera.orthographicSize = Mathf.Lerp(startZoom, outroZoom, Mathf.SmoothStep(0f, 1f, t));
                 yield return null;
+            }
+
+            if (activeFocus != null)
+            {
+                targetPosition = activeFocus.position + outroOffset;
+                targetPosition.z = startPosition.z;
             }
 
             activeCamera.transform.position = targetPosition;

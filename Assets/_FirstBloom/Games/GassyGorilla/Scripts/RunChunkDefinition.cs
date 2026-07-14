@@ -14,7 +14,8 @@ namespace FirstBloom.Games.GassyGorilla
         Vine = 1 << 3,
         Hazard = 1 << 4,
         Recovery = 1 << 5,
-        NoVine = 1 << 6
+        NoVine = 1 << 6,
+        Predator = 1 << 7
     }
 
     public enum RunChunkSpawnKind

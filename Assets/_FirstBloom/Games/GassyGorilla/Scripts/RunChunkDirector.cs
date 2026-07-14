@@ -103,6 +103,18 @@ namespace FirstBloom.Games.GassyGorilla
             ResetDirector();
         }
 
+        public void ConfigureSeedForQa(string seedValue)
+        {
+            int seed;
+            if (!int.TryParse(seedValue, out seed))
+            {
+                Debug.LogWarning("Ignoring invalid Gassy Gorilla QA seed: " + seedValue, this);
+                return;
+            }
+
+            ConfigureSeed(seed, false);
+        }
+
         public void ConfigureContent(
             Transform source,
             RunChunkDefinition[] definitions,
@@ -120,9 +132,9 @@ namespace FirstBloom.Games.GassyGorilla
                 errors.Add("Run chunk director has no distance source.");
             }
 
-            if (chunkDefinitions == null || chunkDefinitions.Length < 6)
+            if (chunkDefinitions == null || chunkDefinitions.Length < 7)
             {
-                errors.Add("Run chunk director needs at least six authored chunk definitions.");
+                errors.Add("Run chunk director needs at least seven authored chunk definitions.");
                 return;
             }
 
@@ -132,6 +144,7 @@ namespace FirstBloom.Games.GassyGorilla
             bool hasNoVine = false;
             bool hasRecovery = false;
             bool hasHazard = false;
+            bool hasPredator = false;
 
             for (int i = 0; i < chunkDefinitions.Length; i++)
             {
@@ -157,6 +170,7 @@ namespace FirstBloom.Games.GassyGorilla
                 hasNoVine |= (definition.Tags & RunChunkTag.NoVine) != 0;
                 hasRecovery |= (definition.Tags & RunChunkTag.Recovery) != 0;
                 hasHazard |= (definition.Tags & RunChunkTag.Hazard) != 0;
+                hasPredator |= (definition.Tags & RunChunkTag.Predator) != 0;
             }
 
             if (mainPoolCount < 4)
@@ -167,6 +181,11 @@ namespace FirstBloom.Games.GassyGorilla
             if (!hasVine || !hasNoVine || !hasRecovery || !hasHazard)
             {
                 errors.Add("Run chunk library must include vine, vine-free, recovery, and hazard beats.");
+            }
+
+            if (!hasPredator)
+            {
+                errors.Add("Run chunk library must include a spaced predator beat.");
             }
 
             ValidateOpeningSequence(errors);
