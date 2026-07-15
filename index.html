@@ -85,12 +85,12 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/bd698c031a4a745c6903467a25b71d82.loader.js";
+      var loaderUrl = buildUrl + "/b7fe51e21d2e6cd28b0e36a80c41d2e4.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/96e3cfe0d8b57ce15286f308703672a4.data.unityweb",
-        frameworkUrl: buildUrl + "/6eedcc1a1461b4806d0d5c923c87c352.framework.js.unityweb",
-        codeUrl: buildUrl + "/27ca6fcd1403d81040453578cd81de09.wasm.unityweb",
+        dataUrl: buildUrl + "/e08072151ceb9b2ad00a165100006dad.data.unityweb",
+        frameworkUrl: buildUrl + "/6eae3768fbfeae925e53d37eb734cdd5.framework.js.unityweb",
+        codeUrl: buildUrl + "/969694648cd9fe3d1339c6ae42fd7d89.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "First Bloom Games",
         productName: "Gassy Gorilla",
@@ -115,6 +115,7 @@
       // directory to automatically persist so that the contents are remembered when
       // the user revisits the site the next time, uncomment the following line:
       config.autoSyncPersistentDataPath = true;
+      config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
       // This autosyncing is currently not the default behavior to avoid regressing
       // existing user projects that might rely on the earlier manual
       // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
