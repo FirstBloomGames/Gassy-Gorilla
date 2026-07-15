@@ -118,6 +118,16 @@ namespace FirstBloom.Games.GassyGorilla
             releasePower = Mathf.Clamp01(power);
         }
 
+        public void ResetForSpawn()
+        {
+            occupied = false;
+            releasePower = 0f;
+            angularVelocity = 0f;
+            currentDegrees = vineVisual != null
+                ? NormalizeAngle(vineVisual.localEulerAngles.z)
+                : 0f;
+        }
+
         private Color ReadRendererColor(Renderer renderer)
         {
             if (renderer == null || renderer.sharedMaterial == null)

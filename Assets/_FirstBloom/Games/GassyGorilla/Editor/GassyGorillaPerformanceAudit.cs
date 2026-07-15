@@ -48,10 +48,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         [MenuItem("First Bloom/Gassy Gorilla/Validate Runtime Geometry Budgets")]
         public static void ValidateRuntimeGeometryBudgets()
         {
-            const long pickupBudget = 50000;
-            const long vineBudget = 75000;
-            const long prefabBudget = 100000;
-            const long chunkBudget = 150000;
+            const long pickupBudget = 20000;
+            const long vineBudget = 10000;
+            const long prefabBudget = 80000;
+            const long chunkBudget = 75000;
 
             List<string> violations = new List<string>();
             List<GeometryEntry> prefabs = AuditPrefabs();

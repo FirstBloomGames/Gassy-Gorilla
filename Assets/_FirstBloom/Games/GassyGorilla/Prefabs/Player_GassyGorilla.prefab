@@ -20197,7 +20197,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 080f5994e28d9ed499d77e370ad3d89e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GorillaModelVisualController
   gorilla: {fileID: 7349208428275973075}
   modelRoot: {fileID: 672422670256193715}
@@ -30845,7 +30845,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0b94846cc6dd53b498f67235558d8608, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GorillaController
   forwardSpeed: 4.85
   fartBoostVelocity: 6.05
@@ -30903,7 +30903,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3d15240b17c0f734382afb3cd903e424, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.LagoonFinishPresentation
   reflectionRoot: {fileID: 1782573028690760622}
   reflectionRenderers:
@@ -36072,23 +36072,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.1706381
+      value: 1.3199542
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.1706381
+      value: 1.3199542
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.1706381
+      value: 1.3199542
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.032674726
+      value: 0.03684243
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.1561606
+      value: 0.2406708
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: m_LocalPosition.z
@@ -36128,7 +36128,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: m_Controller
-      value:
+      value: 
       objectReference: {fileID: 9100000, guid: 727527168bc77964ba9604bb1c43f80a, type: 2}
     - target: {fileID: 5866666021909216657, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: m_CullingMode
@@ -36156,7 +36156,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8111781155169087978, guid: 2c8398d166a7fba4b854f3a2c6cff6ec, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: 0d5f09d32667971428a28fb5da0ac850, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -36269,11 +36269,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2557264375413880391, guid: 2ec4beecaac9cbf49ab7f52c65c61969, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: 9c3620120236da34aacd7945f18732ab, type: 2}
     - target: {fileID: 5866666021909216657, guid: 2ec4beecaac9cbf49ab7f52c65c61969, type: 3}
       propertyPath: m_Controller
-      value:
+      value: 
       objectReference: {fileID: 9100000, guid: addc5978ef9b9684592329d4730fd323, type: 2}
     - target: {fileID: 5866666021909216657, guid: 2ec4beecaac9cbf49ab7f52c65c61969, type: 3}
       propertyPath: m_UpdateMode

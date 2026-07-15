@@ -58,6 +58,7 @@ MonoBehaviour:
   lagoonFinishPresentation: {fileID: 0}
   tutorialPrompt: {fileID: 0}
   lagoonResultRevealDelay: 1.02
+  crocodileAmbushResultRevealDelay: 0.9
   hazardResultRevealDelay: 0.08
   playCameraIntro: 1
   introDuration: 1.15

@@ -230,6 +230,7 @@ body.gg-portrait-active #unity-container {
 
             GassyGorillaSceneSimplifier.ApplySceneCleanup();
             GassyGorillaWebAssetOptimizer.ApplyWebGlImportSettings();
+            GassyGorillaWebAssetOptimizer.ValidateBuildDependencies();
             GassyGorillaParticleRepair.RepairProjectAssets();
             GassyGorillaPerformanceAudit.ValidateRuntimeGeometryBudgets();
 
@@ -245,9 +246,9 @@ body.gg-portrait-active #unity-container {
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
             PlayerSettings.WebGL.decompressionFallback = true;
             PlayerSettings.WebGL.dataCaching = true;
-            PlayerSettings.WebGL.memorySize = 512;
-            PlayerSettings.WebGL.initialMemorySize = 512;
-            PlayerSettings.WebGL.maximumMemorySize = 2048;
+            PlayerSettings.WebGL.memorySize = 256;
+            PlayerSettings.WebGL.initialMemorySize = 256;
+            PlayerSettings.WebGL.maximumMemorySize = 1024;
             PlayerSettings.WebGL.memoryGrowthMode = WebGLMemoryGrowthMode.Geometric;
             PlayerSettings.WebGL.nameFilesAsHashes = true;
 
@@ -335,7 +336,8 @@ body.gg-portrait-active #unity-container {
             html = ReplaceRequired(
                 html,
                 "      // config.autoSyncPersistentDataPath = true;",
-                "      config.autoSyncPersistentDataPath = true;",
+                "      config.autoSyncPersistentDataPath = true;" + Environment.NewLine
+                + "      config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);",
                 "persistent data autosync"
             );
             html = ReplaceRequired(

@@ -220,11 +220,13 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             importer.textureType = TextureImporterType.Default;
             importer.sRGBTexture = true;
+            importer.alphaSource = TextureImporterAlphaSource.None;
             importer.alphaIsTransparency = false;
             importer.mipmapEnabled = true;
+            importer.npotScale = TextureImporterNPOTScale.ToNearest;
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.filterMode = FilterMode.Trilinear;
-            importer.anisoLevel = 4;
+            importer.anisoLevel = 1;
             importer.maxTextureSize = 2048;
             importer.textureCompression = TextureImporterCompression.CompressedHQ;
             importer.SaveAndReimport();
@@ -934,7 +936,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 return null;
             }
 
-            Shader shader = Shader.Find("Standard");
+            Shader shader = Shader.Find("FirstBloom/GassyGorilla/HeroStylized");
+            if (shader == null)
+            {
+                shader = Shader.Find("Standard");
+            }
+
             if (shader == null)
             {
                 shader = Shader.Find("Unlit/Texture");
@@ -989,6 +996,23 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             if (material.HasProperty("_Glossiness"))
             {
                 material.SetFloat("_Glossiness", 0.26f);
+            }
+
+            if (material.HasProperty("_ShadowTint"))
+            {
+                material.SetColor("_ShadowTint", new Color(0.62f, 0.5f, 0.4f, 1f));
+            }
+
+            if (material.HasProperty("_KeyTint"))
+            {
+                material.SetColor("_KeyTint", new Color(1.08f, 1f, 0.88f, 1f));
+            }
+
+            if (material.HasProperty("_RimColor"))
+            {
+                material.SetColor("_RimColor", new Color(0.62f, 0.96f, 0.74f, 1f));
+                material.SetFloat("_RimStrength", 0.28f);
+                material.SetFloat("_RimPower", 2.35f);
             }
 
             material.enableInstancing = true;
@@ -1460,7 +1484,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             prefabs.Burrito = BuildPickupPrefab("Pickup_Burrito", FoodPickupType.Burrito, 44f, meshyAssets.Burrito, 0.82f, "Burrito");
             prefabs.Soda = BuildPickupPrefab("Pickup_Soda", FoodPickupType.Soda, 70f, meshyAssets.Soda, 0.76f, "Soda");
             prefabs.BananaBunch = BuildPickupPrefab("Pickup_BananaBunch", FoodPickupType.BananaBunch, 42f, meshyAssets.BananaBunch, 0.8f, "Banana");
-            prefabs.SwingableVine = BuildSwingableVinePrefab(meshyAssets.Vine, meshyAssets.BroadLeafA, meshyAssets.ForegroundFernA);
+            prefabs.SwingableVine = BuildSwingableVinePrefab(meshyAssets.Vine);
             prefabs.VineObstacle = BuildHazardPrefab("Vine_Obstacle", new Vector2(0.55f, 2.6f), meshyAssets.StickySapBlob, 2.25f, "SapBlob");
             prefabs.TreeTrunkObstacle = BuildHazardPrefab("Obstacle_TreeTrunk", new Vector2(0.75f, 2.4f), meshyAssets.FirstAvailable(meshyAssets.ThornLog, meshyAssets.SpikyStump), 1.85f, "ThornLog");
             prefabs.SpikyStumpObstacle = BuildHazardPrefab("Hazard_SpikyStump", new Vector2(0.9f, 1.55f), meshyAssets.SpikyStump, 1.55f, "ThornLog");
@@ -1791,7 +1815,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             Animator modelAnimator = null;
             GameObject modelRoot = useMeshyGorilla
-                ? CreateGorillaModelInstance(gorillaModel, "Visual_Gorilla_3D", visual.transform, new Vector3(0f, 0f, -0.15f), 3.92f, -0.82f, 4, out modelAnimator)
+                ? CreateGorillaModelInstance(gorillaModel, "Visual_Gorilla_3D", visual.transform, new Vector3(0f, 0f, -0.15f), 4.42f, -0.86f, 4, out modelAnimator)
                 : CreatePrimitiveGorillaVisual("Visual_Gorilla_3D", visual.transform);
 
             GorillaController controller = root.AddComponent<GorillaController>();
@@ -1993,7 +2017,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return SavePrefab(root, PrefabRoot + "/" + name + ".prefab");
         }
 
-        private static GameObject BuildSwingableVinePrefab(ModelVisualAsset vineModel, ModelVisualAsset canopyLeafModel, ModelVisualAsset branchLeafModel)
+        private static GameObject BuildSwingableVinePrefab(ModelVisualAsset vineModel)
         {
             GameObject root = new GameObject("Vine_Swingable");
             root.tag = "Vine";
@@ -2004,7 +2028,6 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             trigger.offset = new Vector2(0f, -1.25f);
 
             Material branchMaterial = CreateColorMaterial("GG_VineAnchor_Branch_3D", new Color(0.25f, 0.15f, 0.08f, 1f), false);
-            Material leafMaterial = CreateColorMaterial("GG_VineAnchor_Leaves_3D", new Color(0.1f, 0.36f, 0.15f, 1f), false);
             Material upperVineMaterial = CreateColorMaterial("GG_VineHighConnector_3D", new Color(0.13f, 0.4f, 0.13f, 1f), false);
 
             const float canopyPivotHeight = 6.1f;
@@ -2019,9 +2042,6 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             GameObject branch = CreatePrimitiveVisual("HighTreeBranch_3D", PrimitiveType.Cylinder, pivot.transform, new Vector3(0.08f, 0.62f, 0.16f), new Vector3(0.13f, 1.42f, 0.13f), branchMaterial, 1);
             branch.transform.localRotation = Quaternion.Euler(0f, 0f, 86f);
-            CreateCanopyAttachmentVisual("HighCanopyLeaves_A", pivot.transform, canopyLeafModel, new Vector3(-0.84f, 0.78f, 0.1f), 1.48f, 1, leafMaterial, 0);
-            CreateCanopyAttachmentVisual("HighCanopyLeaves_B", pivot.transform, canopyLeafModel, new Vector3(0.52f, 0.92f, 0.05f), 1.28f, 1, leafMaterial, 1);
-            CreateCanopyAttachmentVisual("HighCanopyLeaves_C", pivot.transform, branchLeafModel, new Vector3(-1.58f, 0.48f, 0.14f), 1.08f, 1, leafMaterial, 2);
 
             GameObject visualRoot = new GameObject("VineVisualRoot");
             visualRoot.transform.SetParent(swingRoot.transform, false);
@@ -2429,6 +2449,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             camera.orthographic = true;
             camera.orthographicSize = orthographicSize;
             camera.backgroundColor = background;
+            camera.allowHDR = false;
+            camera.allowMSAA = false;
+            camera.useOcclusionCulling = false;
+            camera.depthTextureMode = DepthTextureMode.None;
             return camera;
         }
 
@@ -2492,6 +2516,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             key.color = new Color(1f, 0.91f, 0.68f, 1f);
             key.intensity = 1.08f;
             key.shadows = LightShadows.None;
+            key.renderMode = LightRenderMode.ForcePixel;
             keyObject.transform.rotation = Quaternion.Euler(38f, -32f, -18f);
 
             GameObject fillObject = new GameObject("World_FillLight_" + sceneKey);
@@ -2500,6 +2525,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             fill.color = new Color(0.38f, 0.72f, 0.74f, 1f);
             fill.intensity = 0.32f;
             fill.shadows = LightShadows.None;
+            fill.renderMode = LightRenderMode.ForceVertex;
             fillObject.transform.rotation = Quaternion.Euler(-24f, 145f, 12f);
         }
 
@@ -2523,7 +2549,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             Material regular = CreatePaintedBackdropMaterial(name + "_Regular", texture, tint, false);
             Material mirrored = CreatePaintedBackdropMaterial(name + "_Mirrored", texture, tint, true);
-            Transform[] tiles = new Transform[5];
+            Transform[] tiles = new Transform[3];
             for (int i = 0; i < tiles.Length; i++)
             {
                 GameObject tile = CreatePrimitiveVisual(
@@ -3392,41 +3418,29 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GameObject root = new GameObject(name);
             root.transform.SetParent(parent, false);
 
-            const int segmentCount = 8;
-            Vector3 previous = new Vector3(0f, startY, 0.05f);
-            for (int i = 0; i < segmentCount; i++)
+            const int pointCount = 10;
+            Vector3[] points = new Vector3[pointCount];
+            for (int i = 0; i < pointCount; i++)
             {
-                float t = (i + 1f) / segmentCount;
+                float t = i / (pointCount - 1f);
                 float y = Mathf.Lerp(startY, endY, t);
-                float x = Mathf.Sin(t * Mathf.PI * 2.1f + 0.35f) * (0.09f + t * 0.08f) + Mathf.Sin(t * Mathf.PI * 0.82f) * 0.07f;
-                Vector3 next = new Vector3(x, y, 0.05f + Mathf.Sin(t * Mathf.PI * 1.6f) * 0.025f);
-                Vector3 delta = next - previous;
-                float length = delta.magnitude;
-                Vector3 midpoint = (previous + next) * 0.5f;
-                GameObject segment = CreatePrimitiveVisual(
-                    "OrganicVineSegment_" + (i + 1),
-                    PrimitiveType.Cylinder,
-                    root.transform,
-                    midpoint,
-                    new Vector3(0.048f, length * 0.5f + 0.025f, 0.048f),
-                    material,
-                    sortingOrder);
-                segment.transform.localRotation = Quaternion.Euler(0f, 0f, -Mathf.Atan2(delta.x, delta.y) * Mathf.Rad2Deg);
-
-                if (i < segmentCount - 1)
-                {
-                    CreatePrimitiveVisual(
-                        "VineJoint_" + (i + 1),
-                        PrimitiveType.Sphere,
-                        root.transform,
-                        next,
-                        new Vector3(0.105f, 0.105f, 0.105f),
-                        material,
-                        sortingOrder);
-                }
-
-                previous = next;
+                float x = Mathf.Sin(t * Mathf.PI * 2.1f + 0.35f) * (0.08f + t * 0.07f)
+                    + Mathf.Sin(t * Mathf.PI * 0.82f) * 0.06f;
+                points[i] = new Vector3(x, y, 0.05f);
             }
+
+            LineRenderer line = root.AddComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            line.positionCount = pointCount;
+            line.SetPositions(points);
+            line.startWidth = 0.1f;
+            line.endWidth = 0.082f;
+            line.numCornerVertices = 2;
+            line.numCapVertices = 2;
+            line.alignment = LineAlignment.TransformZ;
+            line.textureMode = LineTextureMode.Stretch;
+            line.sharedMaterial = material;
+            line.sortingOrder = sortingOrder;
 
             return root;
         }

@@ -1,11 +1,12 @@
 using FirstBloom.ArcadeFramework.Audio;
+using FirstBloom.ArcadeFramework.Spawning;
 using System.Collections;
 using UnityEngine;
 
 namespace FirstBloom.Games.GassyGorilla
 {
     [RequireComponent(typeof(Collider2D))]
-    public class FartFuelPickup : MonoBehaviour
+    public class FartFuelPickup : MonoBehaviour, IArcadePoolable
     {
         [SerializeField] private FoodPickupType pickupType = FoodPickupType.Bean;
         [SerializeField] private float refillAmount = 20f;
@@ -29,6 +30,10 @@ namespace FirstBloom.Games.GassyGorilla
         private Renderer[] renderers;
         private Color[] baseRendererColors;
         private MaterialPropertyBlock[] rendererBlocks;
+        private Vector3 initialLocalPosition;
+        private Quaternion initialLocalRotation;
+        private Vector3 initialLocalScale;
+        private bool hasSpawnPose;
 
         private void Awake()
         {
@@ -46,13 +51,8 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void Start()
         {
-            startPosition = transform.position;
-            startScale = transform.localScale;
-            GorillaController gorilla = FindAnyObjectByType<GorillaController>();
-            if (gorilla != null)
-            {
-                attractionTarget = gorilla.transform;
-            }
+            CaptureSpawnPose();
+            ResetForSpawn();
         }
 
         private void Update()
@@ -107,10 +107,8 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (collectSparkle != null)
             {
-                collectSparkle.transform.SetParent(null, true);
+                collectSparkle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 collectSparkle.Play();
-                Destroy(collectSparkle.gameObject, 1f);
-                collectSparkle = null;
             }
 
             gorilla.RefillFuel(refillAmount, true);
@@ -156,7 +154,67 @@ namespace FirstBloom.Games.GassyGorilla
                 yield return null;
             }
 
-            Destroy(gameObject);
+            gameObject.SetActive(false);
+        }
+
+        public void OnSpawnedFromPool()
+        {
+            CaptureSpawnPose();
+            ResetForSpawn();
+        }
+
+        public void OnDespawnedToPool()
+        {
+            StopAllCoroutines();
+            if (collectSparkle != null)
+            {
+                collectSparkle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+        }
+
+        private void CaptureSpawnPose()
+        {
+            if (hasSpawnPose)
+            {
+                return;
+            }
+
+            initialLocalPosition = transform.localPosition;
+            initialLocalRotation = transform.localRotation;
+            initialLocalScale = transform.localScale;
+            hasSpawnPose = true;
+        }
+
+        private void ResetForSpawn()
+        {
+            StopAllCoroutines();
+            collected = false;
+            attractionWeight = 0f;
+            transform.localPosition = initialLocalPosition;
+            transform.localRotation = initialLocalRotation;
+            transform.localScale = initialLocalScale;
+            startPosition = transform.position;
+            startScale = initialLocalScale;
+
+            if (pickupCollider != null)
+            {
+                pickupCollider.enabled = true;
+            }
+
+            if (collectSparkle != null)
+            {
+                collectSparkle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+
+            SetRendererAlpha(1f);
+            if (attractionTarget == null)
+            {
+                GorillaController gorilla = FindAnyObjectByType<GorillaController>();
+                if (gorilla != null)
+                {
+                    attractionTarget = gorilla.transform;
+                }
+            }
         }
 
         private void SetRendererAlpha(float alpha)

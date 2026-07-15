@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using FirstBloom.ArcadeFramework.Spawning;
 using UnityEngine;
 
 namespace FirstBloom.Games.GassyGorilla
@@ -30,19 +31,29 @@ namespace FirstBloom.Games.GassyGorilla
 
         private readonly List<ActiveChunk> activeChunks = new List<ActiveChunk>();
         private readonly List<RunChunkDefinition> recentDefinitions = new List<RunChunkDefinition>();
+        private readonly Dictionary<RunChunkDefinition, Stack<GameObject>> chunkPool = new Dictionary<RunChunkDefinition, Stack<GameObject>>();
+        private readonly Dictionary<GameObject, IArcadePoolable[]> chunkPoolables = new Dictionary<GameObject, IArcadePoolable[]>();
         private System.Random random;
         private RunChunkDefinition previousDefinition;
         private int openingIndex;
         private int chunkIndex;
         private float nextChunkStartX;
+        private bool poolPrewarmed;
+        private int createdChunkCount;
 
         public int CurrentSeed { get; private set; }
         public bool IsSpawning { get { return spawning; } }
         public float FirstChunkStartX { get { return firstChunkStartX; } }
         public RunChunkDefinition[] OpeningSequence { get { return openingSequence; } }
+        public int CreatedChunkCount { get { return createdChunkCount; } }
 
         private void Start()
         {
+            if (prewarmOnStart)
+            {
+                PrewarmPool();
+            }
+
             ResetDirector();
             if (prewarmOnStart && distanceSource != null)
             {
@@ -77,7 +88,7 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 if (activeChunks[i].Root != null)
                 {
-                    Destroy(activeChunks[i].Root);
+                    RecycleChunk(activeChunks[i]);
                 }
             }
 
@@ -253,9 +264,91 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void SpawnChunk(RunChunkDefinition definition)
         {
-            GameObject root = new GameObject("RunChunk_" + chunkIndex.ToString("D3") + "_" + definition.ChunkId);
-            root.transform.SetParent(transform, false);
+            GameObject root = AcquireChunk(definition);
+            root.name = "RunChunk_" + chunkIndex.ToString("D3") + "_" + definition.ChunkId;
             root.transform.position = new Vector3(nextChunkStartX, 0f, 0f);
+            ActivatePoolables(root);
+            root.SetActive(true);
+            NotifyPoolables(root, true);
+
+            float endX = nextChunkStartX + definition.Length;
+            activeChunks.Add(new ActiveChunk(root, definition, endX));
+            nextChunkStartX = endX;
+            chunkIndex++;
+        }
+
+        private void CleanupBehind()
+        {
+            float cleanupX = distanceSource.position.x - cleanupBehindDistance;
+            while (activeChunks.Count > 0 && activeChunks[0].EndX < cleanupX)
+            {
+                ActiveChunk oldest = activeChunks[0];
+                activeChunks.RemoveAt(0);
+                if (oldest.Root != null)
+                {
+                    RecycleChunk(oldest);
+                }
+            }
+        }
+
+        private void PrewarmPool()
+        {
+            if (poolPrewarmed)
+            {
+                return;
+            }
+
+            poolPrewarmed = true;
+            HashSet<RunChunkDefinition> definitions = new HashSet<RunChunkDefinition>();
+            AddDefinitions(definitions, openingSequence);
+            AddDefinitions(definitions, chunkDefinitions);
+            foreach (RunChunkDefinition definition in definitions)
+            {
+                GameObject root = CreateChunkInstance(definition);
+                StoreChunk(definition, root);
+            }
+
+            Debug.Log("[GG_PERF] Prewarmed " + definitions.Count + " authored run chunks for hitch-free reuse.", this);
+        }
+
+        private static void AddDefinitions(HashSet<RunChunkDefinition> target, RunChunkDefinition[] source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < source.Length; i++)
+            {
+                if (source[i] != null)
+                {
+                    target.Add(source[i]);
+                }
+            }
+        }
+
+        private GameObject AcquireChunk(RunChunkDefinition definition)
+        {
+            if (chunkPool.TryGetValue(definition, out Stack<GameObject> available))
+            {
+                while (available.Count > 0)
+                {
+                    GameObject pooled = available.Pop();
+                    if (pooled != null)
+                    {
+                        return pooled;
+                    }
+                }
+            }
+
+            return CreateChunkInstance(definition);
+        }
+
+        private GameObject CreateChunkInstance(RunChunkDefinition definition)
+        {
+            GameObject root = new GameObject("PooledRunChunk_" + definition.ChunkId);
+            root.transform.SetParent(transform, false);
+            root.SetActive(false);
 
             RunChunkSpawn[] spawns = definition.Spawns;
             for (int i = 0; i < spawns.Length; i++)
@@ -273,24 +366,100 @@ namespace FirstBloom.Games.GassyGorilla
                 instance.transform.localScale = Vector3.Scale(instance.transform.localScale, spawn.LocalScale);
             }
 
-            float endX = nextChunkStartX + definition.Length;
-            activeChunks.Add(new ActiveChunk(root, endX));
-            nextChunkStartX = endX;
-            chunkIndex++;
+            DestroyBehindTarget[] standaloneCleanup = root.GetComponentsInChildren<DestroyBehindTarget>(true);
+            for (int i = 0; i < standaloneCleanup.Length; i++)
+            {
+                standaloneCleanup[i].enabled = false;
+            }
+
+            CachePoolables(root);
+
+            createdChunkCount++;
+            return root;
         }
 
-        private void CleanupBehind()
+        private void RecycleChunk(ActiveChunk chunk)
         {
-            float cleanupX = distanceSource.position.x - cleanupBehindDistance;
-            while (activeChunks.Count > 0 && activeChunks[0].EndX < cleanupX)
+            if (chunk.Root == null || chunk.Definition == null)
             {
-                ActiveChunk oldest = activeChunks[0];
-                activeChunks.RemoveAt(0);
-                if (oldest.Root != null)
+                return;
+            }
+
+            NotifyPoolables(chunk.Root, false);
+            chunk.Root.SetActive(false);
+            StoreChunk(chunk.Definition, chunk.Root);
+        }
+
+        private void StoreChunk(RunChunkDefinition definition, GameObject root)
+        {
+            if (!chunkPool.TryGetValue(definition, out Stack<GameObject> available))
+            {
+                available = new Stack<GameObject>();
+                chunkPool.Add(definition, available);
+            }
+
+            available.Push(root);
+        }
+
+        private void ActivatePoolables(GameObject root)
+        {
+            IArcadePoolable[] poolables = GetPoolables(root);
+            for (int i = 0; i < poolables.Length; i++)
+            {
+                if (poolables[i] is MonoBehaviour behaviour && behaviour != null)
                 {
-                    Destroy(oldest.Root);
+                    behaviour.gameObject.SetActive(true);
                 }
             }
+        }
+
+        private void NotifyPoolables(GameObject root, bool spawned)
+        {
+            IArcadePoolable[] poolables = GetPoolables(root);
+            for (int i = 0; i < poolables.Length; i++)
+            {
+                IArcadePoolable poolable = poolables[i];
+                if (poolable == null)
+                {
+                    continue;
+                }
+
+                if (spawned)
+                {
+                    poolable.OnSpawnedFromPool();
+                }
+                else
+                {
+                    poolable.OnDespawnedToPool();
+                }
+            }
+        }
+
+        private IArcadePoolable[] GetPoolables(GameObject root)
+        {
+            if (!chunkPoolables.TryGetValue(root, out IArcadePoolable[] poolables))
+            {
+                poolables = CachePoolables(root);
+            }
+
+            return poolables;
+        }
+
+        private IArcadePoolable[] CachePoolables(GameObject root)
+        {
+            MonoBehaviour[] behaviours = root.GetComponentsInChildren<MonoBehaviour>(true);
+            List<IArcadePoolable> poolables = new List<IArcadePoolable>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is IArcadePoolable poolable)
+                {
+                    poolables.Add(poolable);
+                }
+            }
+
+            IArcadePoolable[] cached = poolables.ToArray();
+            chunkPoolables[root] = cached;
+            return cached;
         }
 
         private void Remember(RunChunkDefinition definition)
@@ -488,11 +657,13 @@ namespace FirstBloom.Games.GassyGorilla
         private readonly struct ActiveChunk
         {
             public readonly GameObject Root;
+            public readonly RunChunkDefinition Definition;
             public readonly float EndX;
 
-            public ActiveChunk(GameObject root, float endX)
+            public ActiveChunk(GameObject root, RunChunkDefinition definition, float endX)
             {
                 Root = root;
+                Definition = definition;
                 EndX = endX;
             }
         }

@@ -9,7 +9,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 {
     public static class GassyGorillaWebAssetOptimizer
     {
+        private const string GameRoot = "Assets/_FirstBloom/Games/GassyGorilla/";
         private const string MeshyRoot = "Assets/_FirstBloom/Games/GassyGorilla/Models/Meshy/";
+        private const string ModelRoot = GameRoot + "Models/";
+        private const string PaintedJungleTexturePath = GameRoot + "Textures/Generated3D/GG_JungleBackdrop_Painted3D_v1.png";
         private const string WebGlPlatform = "WebGL";
 
         [MenuItem("First Bloom/Gassy Gorilla/Optimize WebGL Asset Imports")]
@@ -34,7 +37,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             foreach (string path in dependencies.OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
             {
-                if (!path.StartsWith(MeshyRoot, StringComparison.OrdinalIgnoreCase))
+                bool isMeshyAsset = path.StartsWith(MeshyRoot, StringComparison.OrdinalIgnoreCase);
+                bool isPaintedBackdrop = path.Equals(PaintedJungleTexturePath, StringComparison.OrdinalIgnoreCase);
+                if (!isMeshyAsset && !isPaintedBackdrop)
                 {
                     continue;
                 }
@@ -56,19 +61,96 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 + " textures and " + optimizedMeshes + " dense static meshes.");
         }
 
+        public static void ValidateBuildDependencies()
+        {
+            string[] scenePaths = EditorBuildSettings.scenes
+                .Where(scene => scene.enabled)
+                .Select(scene => scene.path)
+                .ToArray();
+            HashSet<string> dependencies = new HashSet<string>(
+                AssetDatabase.GetDependencies(scenePaths, true),
+                StringComparer.OrdinalIgnoreCase);
+            List<string> violations = new List<string>();
+
+            foreach (string path in dependencies.OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+            {
+                if (!path.StartsWith(ModelRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                ModelImporter importer = AssetImporter.GetAtPath(path) as ModelImporter;
+                if (importer == null || importer.importAnimation)
+                {
+                    continue;
+                }
+
+                long triangles = AssetDatabase.LoadAllAssetsAtPath(path)
+                    .OfType<Mesh>()
+                    .Sum(mesh => Enumerable.Range(0, mesh.subMeshCount)
+                        .Sum(index => (long)mesh.GetIndexCount(index) / 3L));
+                if (triangles > 100000)
+                {
+                    violations.Add(Path.GetFileName(path) + " has " + triangles.ToString("N0")
+                        + " triangles and is referenced by a shipping scene.");
+                }
+            }
+
+            if (violations.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Gassy Gorilla contains accidental heavyweight build dependencies:\n- "
+                    + string.Join("\n- ", violations));
+            }
+
+            Debug.Log("[GG_PERF] Shipping scenes contain no accidental static model over 100,000 triangles.");
+        }
+
         private static bool OptimizeTexture(string path, TextureImporter importer)
         {
             int targetSize = GetTargetTextureSize(path);
+            bool isHero = path.IndexOf("HeroGorilla", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool isPaintedBackdrop = path.Equals(PaintedJungleTexturePath, StringComparison.OrdinalIgnoreCase);
+            int compressionQuality = isHero ? 92 : isPaintedBackdrop ? 78 : 70;
+            bool importerChanged = false;
+
+            if (isPaintedBackdrop)
+            {
+                if (importer.npotScale != TextureImporterNPOTScale.ToNearest)
+                {
+                    importer.npotScale = TextureImporterNPOTScale.ToNearest;
+                    importerChanged = true;
+                }
+
+                if (importer.alphaSource != TextureImporterAlphaSource.None)
+                {
+                    importer.alphaSource = TextureImporterAlphaSource.None;
+                    importerChanged = true;
+                }
+
+                if (!importer.mipmapEnabled)
+                {
+                    importer.mipmapEnabled = true;
+                    importerChanged = true;
+                }
+
+                if (importer.anisoLevel != 1)
+                {
+                    importer.anisoLevel = 1;
+                    importerChanged = true;
+                }
+            }
+
             TextureImporterPlatformSettings settings = importer.GetPlatformTextureSettings(WebGlPlatform);
 
             bool alreadyOptimized = settings.overridden
                 && settings.maxTextureSize == targetSize
                 && settings.format == TextureImporterFormat.Automatic
                 && settings.textureCompression == TextureImporterCompression.Compressed
-                && settings.compressionQuality == 70
+                && settings.compressionQuality == compressionQuality
                 && settings.crunchedCompression;
 
-            if (alreadyOptimized)
+            if (alreadyOptimized && !importerChanged)
             {
                 return false;
             }
@@ -78,7 +160,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             settings.maxTextureSize = targetSize;
             settings.format = TextureImporterFormat.Automatic;
             settings.textureCompression = TextureImporterCompression.Compressed;
-            settings.compressionQuality = 70;
+            settings.compressionQuality = compressionQuality;
             settings.crunchedCompression = true;
             importer.SetPlatformTextureSettings(settings);
             importer.SaveAndReimport();

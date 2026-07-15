@@ -1,10 +1,11 @@
 using UnityEngine;
 using System.Collections;
+using FirstBloom.ArcadeFramework.Spawning;
 
 namespace FirstBloom.Games.GassyGorilla
 {
     [RequireComponent(typeof(Collider2D))]
-    public class VineSwingTrigger : MonoBehaviour
+    public class VineSwingTrigger : MonoBehaviour, IArcadePoolable
     {
         [SerializeField] private Transform grabPoint;
         [SerializeField] private Transform pivotPoint;
@@ -139,6 +140,47 @@ namespace FirstBloom.Games.GassyGorilla
             if (swingAnimator != null)
             {
                 swingAnimator.SetReleasePower(easedPower);
+            }
+        }
+
+        public void OnSpawnedFromPool()
+        {
+            nextAvailableTime = 0f;
+            if (punchRoutine != null)
+            {
+                StopCoroutine(punchRoutine);
+                punchRoutine = null;
+            }
+
+            if (visualRoot != null)
+            {
+                visualRoot.localScale = baseVisualScale;
+            }
+
+            if (releasePowerCue != null)
+            {
+                releasePowerCue.localScale = releasePowerCueBaseScale;
+            }
+
+            if (swingAnimator != null)
+            {
+                swingAnimator.ResetForSpawn();
+            }
+
+            SetGlowColor(readyColor);
+        }
+
+        public void OnDespawnedToPool()
+        {
+            if (punchRoutine != null)
+            {
+                StopCoroutine(punchRoutine);
+                punchRoutine = null;
+            }
+
+            if (swingAnimator != null)
+            {
+                swingAnimator.ResetForSpawn();
             }
         }
 
