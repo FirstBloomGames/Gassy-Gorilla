@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f915c77b168390345ac76493f6849360, type: 3}
+  m_Name: GG_RunChunk_LongBoostGap
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.RunChunkDefinition
+  chunkId: LongBoostGap
+  tags: 66
+  allowInMainPool: 1
+  length: 11.5
+  selectionWeight: 0.72
+  minimumDifficulty: 2
+  maximumDifficulty: 4
+  blockedPreviousTags: 18
+  blockedNextTags: 18
+  entryHeightRange: {x: 0, y: 3.5}
+  exitHeightRange: {x: 0.5, y: 3.8}
+  entryFuelRange: {x: 36, y: 100}
+  exitFuelRange: {x: 0, y: 100}
+  minimumReactionDistance: 4.8
+  spawns:
+  - prefab: {fileID: 6224503674251131827, guid: 9e1b26558741d87469832ed2d4038da5, type: 3}
+    kind: 0
+    localPosition: {x: 1.85, y: 0.65, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: -6}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 3572392762854811394, guid: 6f76bde1e13d56f46b9b3bea294f1c7b, type: 3}
+    kind: 0
+    localPosition: {x: 9.85, y: 3.15, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 8}
+    localScale: {x: 1, y: 1, z: 1}

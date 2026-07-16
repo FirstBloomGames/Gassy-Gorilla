@@ -25,6 +25,7 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float boostFallRecovery = 0.34f;
         [SerializeField] private float boostUpwardCarry = 0.16f;
         [SerializeField] private float maxBoostVerticalBonus = 1.1f;
+        [Min(0.01f)] [SerializeField] private float difficultySpeedResponse = 0.35f;
 
         [Header("Fuel")]
         [SerializeField] private float maxFuel = 100f;
@@ -87,6 +88,8 @@ namespace FirstBloom.Games.GassyGorilla
         private bool crocodileQaMode;
         private bool crocodileQaAutoDodge;
         private bool crocodileQaAutoHit;
+        private float targetDifficultySpeedMultiplier = 1f;
+        private float currentDifficultySpeedMultiplier = 1f;
 
         public event Action<float, float> FuelChanged;
         public event Action Boosted;
@@ -96,6 +99,8 @@ namespace FirstBloom.Games.GassyGorilla
 
         public float CurrentFuel { get; private set; }
         public float MaxFuel { get { return maxFuel; } }
+        public float EffectiveForwardSpeed { get { return forwardSpeed * currentDifficultySpeedMultiplier; } }
+        public float DifficultySpeedMultiplier { get { return currentDifficultySpeedMultiplier; } }
         public bool IsSwinging { get; private set; }
         public float CurrentSwingAngleDegrees { get { return currentSwingAngleDegrees; } }
         public float CurrentReleasePower { get { return currentReleasePower; } }
@@ -127,11 +132,11 @@ namespace FirstBloom.Games.GassyGorilla
 
             originalGravityScale = gravityScale;
             body.gravityScale = gravityScale;
+            CurrentFuel = maxFuel;
         }
 
         private void Start()
         {
-            CurrentFuel = maxFuel;
             NotifyFuelChanged();
             HideFartCloud();
         }
@@ -159,6 +164,11 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (OneTouchInput.WasPressedThisFrame(true, true))
             {
+                if (ArcadeAudioManager.Instance != null)
+                {
+                    ArcadeAudioManager.Instance.NotifyUserGesture();
+                }
+
                 if (IsSwinging)
                 {
                     bufferedBoostUntil = 0f;
@@ -195,8 +205,13 @@ namespace FirstBloom.Games.GassyGorilla
                 return;
             }
 
+            currentDifficultySpeedMultiplier = Mathf.MoveTowards(
+                currentDifficultySpeedMultiplier,
+                targetDifficultySpeedMultiplier,
+                difficultySpeedResponse * Time.fixedDeltaTime);
+
             Vector2 velocity = GetVelocity();
-            float targetForwardSpeed = forwardSpeed;
+            float targetForwardSpeed = EffectiveForwardSpeed;
             if (forwardKickTimer > 0f)
             {
                 forwardKickTimer -= Time.fixedDeltaTime;
@@ -213,6 +228,11 @@ namespace FirstBloom.Games.GassyGorilla
         public void SetInputEnabled(bool enabled)
         {
             inputEnabled = enabled;
+        }
+
+        public void SetDifficultySpeedMultiplier(float multiplier)
+        {
+            targetDifficultySpeedMultiplier = Mathf.Clamp(multiplier, 0.8f, 1.2f);
         }
 
         public bool TryFartBoost()
@@ -237,7 +257,7 @@ namespace FirstBloom.Games.GassyGorilla
             NotifyFuelChanged();
 
             Vector2 velocity = GetVelocity();
-            velocity.x = Mathf.Max(velocity.x, forwardSpeed + boostForwardKick);
+            velocity.x = Mathf.Max(velocity.x, EffectiveForwardSpeed + boostForwardKick);
             float verticalBonus = velocity.y < 0f
                 ? Mathf.Min(maxBoostVerticalBonus, -velocity.y * boostFallRecovery)
                 : Mathf.Min(maxBoostVerticalBonus * 0.55f, velocity.y * boostUpwardCarry);
@@ -293,7 +313,7 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (ArcadeAudioManager.Instance != null)
             {
-                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.UiClick);
+                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.BoostFailed);
             }
 
             if (cameraFollow != null)
@@ -495,7 +515,7 @@ namespace FirstBloom.Games.GassyGorilla
             body.bodyType = RigidbodyType2D.Dynamic;
             body.gravityScale = originalGravityScale;
             transform.position = new Vector3(transform.position.x, targetY, transform.position.z);
-            SetVelocity(new Vector2(Mathf.Max(GetVelocity().x, forwardSpeed), 0f));
+            SetVelocity(new Vector2(Mathf.Max(GetVelocity().x, EffectiveForwardSpeed), 0f));
         }
 
         public void RecoverForCrocodileQa(float recoveryY)
@@ -511,7 +531,7 @@ namespace FirstBloom.Games.GassyGorilla
             body.bodyType = RigidbodyType2D.Dynamic;
             body.gravityScale = originalGravityScale;
             transform.position = new Vector3(transform.position.x, recoveryY, transform.position.z);
-            SetVelocity(new Vector2(forwardSpeed, fartBoostVelocity * 0.72f));
+            SetVelocity(new Vector2(EffectiveForwardSpeed, fartBoostVelocity * 0.72f));
             CurrentFuel = maxFuel;
             NotifyFuelChanged();
         }
@@ -603,7 +623,7 @@ namespace FirstBloom.Games.GassyGorilla
             Vector2 releaseVelocity = vineReleaseVelocity;
             releaseVelocity.x += inheritedForward + releasePower * releaseReachForwardBonus * reachScale;
             releaseVelocity.y += inheritedLift + releasePower * releaseReachLiftBonus * reachScale;
-            releaseVelocity.x = Mathf.Clamp(releaseVelocity.x, forwardSpeed + 0.35f, maxReleaseForwardSpeed);
+            releaseVelocity.x = Mathf.Clamp(releaseVelocity.x, EffectiveForwardSpeed + 0.35f, maxReleaseForwardSpeed);
             releaseVelocity.y = Mathf.Clamp(releaseVelocity.y, 1.4f, maxVerticalSpeed);
             return releaseVelocity;
         }

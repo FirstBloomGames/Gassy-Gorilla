@@ -18,7 +18,7 @@ MonoBehaviour:
   length: 8.5
   selectionWeight: 0.85
   minimumDifficulty: 0
-  maximumDifficulty: 4
+  maximumDifficulty: 2
   blockedPreviousTags: 80
   blockedNextTags: 16
   entryHeightRange: {x: 0.6, y: 3.2}

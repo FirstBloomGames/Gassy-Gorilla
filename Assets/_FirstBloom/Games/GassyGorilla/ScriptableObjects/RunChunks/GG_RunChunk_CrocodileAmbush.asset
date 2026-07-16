@@ -17,7 +17,7 @@ MonoBehaviour:
   allowInMainPool: 1
   length: 12.5
   selectionWeight: 0.68
-  minimumDifficulty: 0
+  minimumDifficulty: 1
   maximumDifficulty: 4
   blockedPreviousTags: 152
   blockedNextTags: 144

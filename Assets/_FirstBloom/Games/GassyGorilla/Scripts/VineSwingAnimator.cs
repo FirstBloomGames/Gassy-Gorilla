@@ -9,7 +9,6 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float swayDegrees = 5.5f;
         [SerializeField] private float swaySpeed = 0.78f;
         [SerializeField] private float glowPulseSpeed = 5f;
-        [SerializeField] private float occupiedFollowTime = 0.055f;
         [SerializeField] private float releaseReturnTime = 0.32f;
         [SerializeField] private float maxOccupiedDegrees = 35f;
         [SerializeField] private Color launchReadyColor = new Color(1f, 0.88f, 0.25f, 0.82f);

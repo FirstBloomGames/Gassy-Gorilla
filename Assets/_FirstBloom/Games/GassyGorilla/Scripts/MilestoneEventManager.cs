@@ -59,6 +59,7 @@ namespace FirstBloom.Games.GassyGorilla
 
                 if (ArcadeAudioManager.Instance != null)
                 {
+                    ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.Milestone, 0.66f);
                     ArcadeAudioManager.Instance.PlayVoice(milestone.voiceClip);
                 }
             }

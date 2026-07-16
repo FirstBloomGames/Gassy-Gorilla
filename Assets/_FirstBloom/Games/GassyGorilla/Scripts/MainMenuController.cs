@@ -32,7 +32,7 @@ namespace FirstBloom.Games.GassyGorilla
         {
             if (ArcadeAudioManager.Instance != null)
             {
-                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.UiClick);
+                ArcadeAudioManager.Instance.NotifyUserGesture();
             }
 
             SceneManager.LoadScene(gameSceneName);
@@ -42,7 +42,7 @@ namespace FirstBloom.Games.GassyGorilla
         {
             if (ArcadeAudioManager.Instance != null)
             {
-                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.UiClick);
+                ArcadeAudioManager.Instance.NotifyUserGesture();
             }
 
             if (settingsMenu != null)
@@ -55,7 +55,7 @@ namespace FirstBloom.Games.GassyGorilla
         {
             if (ArcadeAudioManager.Instance != null)
             {
-                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.UiClick);
+                ArcadeAudioManager.Instance.NotifyUserGesture();
             }
 
             if (settingsMenu != null)

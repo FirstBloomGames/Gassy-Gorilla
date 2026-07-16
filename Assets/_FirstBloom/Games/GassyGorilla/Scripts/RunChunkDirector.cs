@@ -9,6 +9,7 @@ namespace FirstBloom.Games.GassyGorilla
     {
         [Header("References")]
         [SerializeField] private Transform distanceSource;
+        [SerializeField] private GorillaController fuelSource;
         [SerializeField] private RunChunkDefinition[] chunkDefinitions = Array.Empty<RunChunkDefinition>();
         [SerializeField] private RunChunkDefinition[] openingSequence = Array.Empty<RunChunkDefinition>();
 
@@ -21,6 +22,7 @@ namespace FirstBloom.Games.GassyGorilla
         [Min(0)] [SerializeField] private int recentHistoryLength = 2;
 
         [Header("Difficulty")]
+        [SerializeField] private RunDifficultyProfile difficultyProfile;
         [Min(1f)] [SerializeField] private float distancePerDifficultyStep = 75f;
         [Min(0)] [SerializeField] private int maximumDifficulty = 4;
 
@@ -40,12 +42,23 @@ namespace FirstBloom.Games.GassyGorilla
         private float nextChunkStartX;
         private bool poolPrewarmed;
         private int createdChunkCount;
+        private readonly FairnessState fairnessState = new FairnessState();
+        private float lastReportedIntensity = -1f;
+        private int lastReportedStage = -1;
+
+        public event Action<float, int> DifficultyChanged;
 
         public int CurrentSeed { get; private set; }
         public bool IsSpawning { get { return spawning; } }
         public float FirstChunkStartX { get { return firstChunkStartX; } }
         public RunChunkDefinition[] OpeningSequence { get { return openingSequence; } }
         public int CreatedChunkCount { get { return createdChunkCount; } }
+        public RunDifficultyProfile DifficultyProfile { get { return difficultyProfile; } }
+        public float CurrentRunDistance { get; private set; }
+        public float CurrentIntensity { get; private set; }
+        public int CurrentDifficultyStage { get; private set; }
+        public int CurrentPressure { get { return fairnessState.Pressure; } }
+        public int PredatorCooldownRemaining { get { return fairnessState.PredatorCooldownRemaining; } }
 
         private void Start()
         {
@@ -55,6 +68,7 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             ResetDirector();
+            UpdateDifficulty(true);
             if (prewarmOnStart && distanceSource != null)
             {
                 FillAhead();
@@ -63,6 +77,8 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void Update()
         {
+            UpdateDifficulty(false);
+
             if (!spawning || distanceSource == null)
             {
                 return;
@@ -95,11 +111,15 @@ namespace FirstBloom.Games.GassyGorilla
             activeChunks.Clear();
             recentDefinitions.Clear();
             previousDefinition = null;
+            fairnessState.Reset();
             openingIndex = 0;
             chunkIndex = 0;
             nextChunkStartX = firstChunkStartX;
+            lastReportedIntensity = -1f;
+            lastReportedStage = -1;
             random = null;
             InitializeRandom();
+            UpdateDifficulty(true);
 
             if (spawning)
             {
@@ -136,6 +156,14 @@ namespace FirstBloom.Games.GassyGorilla
             openingSequence = authoredOpening ?? Array.Empty<RunChunkDefinition>();
         }
 
+        public void ConfigureDifficulty(GorillaController controller, RunDifficultyProfile profile)
+        {
+            fuelSource = controller;
+            difficultyProfile = profile;
+            fairnessState.Reset();
+            UpdateDifficulty(true);
+        }
+
         public void AppendValidationErrors(List<string> errors, int simulatedTransitions)
         {
             if (distanceSource == null)
@@ -143,10 +171,19 @@ namespace FirstBloom.Games.GassyGorilla
                 errors.Add("Run chunk director has no distance source.");
             }
 
-            if (chunkDefinitions == null || chunkDefinitions.Length < 7)
+            if (chunkDefinitions == null || chunkDefinitions.Length < 13)
             {
-                errors.Add("Run chunk director needs at least seven authored chunk definitions.");
+                errors.Add("Run chunk director needs at least thirteen authored definitions including its opening beat.");
                 return;
+            }
+
+            if (difficultyProfile == null)
+            {
+                errors.Add("Run chunk director has no difficulty profile.");
+            }
+            else
+            {
+                difficultyProfile.AppendValidationErrors(errors);
             }
 
             HashSet<string> ids = new HashSet<string>(StringComparer.Ordinal);
@@ -184,9 +221,9 @@ namespace FirstBloom.Games.GassyGorilla
                 hasPredator |= (definition.Tags & RunChunkTag.Predator) != 0;
             }
 
-            if (mainPoolCount < 4)
+            if (mainPoolCount < 12)
             {
-                errors.Add("Run chunk director needs at least four main-pool chunks.");
+                errors.Add("Run chunk director needs at least twelve main-pool chunks for premium run variety.");
             }
 
             if (!hasVine || !hasNoVine || !hasRecovery || !hasHazard)
@@ -229,19 +266,27 @@ namespace FirstBloom.Games.GassyGorilla
                 RunChunkDefinition openingDefinition = openingSequence[openingIndex++];
                 if (openingDefinition != null)
                 {
-                    Remember(openingDefinition);
+                    Remember(openingDefinition, fairnessState, GetFuelNormalized());
                     return openingDefinition;
                 }
             }
 
-            int difficulty = GetDifficulty();
+            float runDistance = GetRunDistance();
+            int difficulty = GetDifficulty(runDistance);
+            float fuelNormalized = GetFuelNormalized();
+            UpdateFuelRescueState(difficultyProfile, fairnessState, fuelNormalized);
             RunChunkDefinition selected = SelectWeightedDefinition(
                 chunkDefinitions,
                 previousDefinition,
                 recentDefinitions,
                 difficulty,
+                runDistance,
+                fuelNormalized,
+                difficultyProfile,
+                fairnessState,
                 random,
-                true);
+                true,
+                false);
 
             if (selected == null)
             {
@@ -250,13 +295,41 @@ namespace FirstBloom.Games.GassyGorilla
                     previousDefinition,
                     recentDefinitions,
                     difficulty,
+                    runDistance,
+                    fuelNormalized,
+                    difficultyProfile,
+                    fairnessState,
                     random,
+                    false,
                     false);
+            }
+
+            if (selected == null)
+            {
+                selected = SelectWeightedDefinition(
+                    chunkDefinitions,
+                    previousDefinition,
+                    recentDefinitions,
+                    difficulty,
+                    runDistance,
+                    fuelNormalized,
+                    difficultyProfile,
+                    fairnessState,
+                    random,
+                    false,
+                    true);
+
+                if (selected != null)
+                {
+                    Debug.LogWarning(
+                        "Run chunk selection used its recovery fallback at " + runDistance.ToString("F1") + " m.",
+                        this);
+                }
             }
 
             if (selected != null)
             {
-                Remember(selected);
+                Remember(selected, fairnessState, fuelNormalized);
             }
 
             return selected;
@@ -462,7 +535,7 @@ namespace FirstBloom.Games.GassyGorilla
             return cached;
         }
 
-        private void Remember(RunChunkDefinition definition)
+        private void Remember(RunChunkDefinition definition, FairnessState state, float fuelNormalized)
         {
             previousDefinition = definition;
             recentDefinitions.Add(definition);
@@ -471,17 +544,78 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 recentDefinitions.RemoveAt(0);
             }
+
+            AdvanceFairnessState(difficultyProfile, state, definition, fuelNormalized);
         }
 
-        private int GetDifficulty()
+        private float GetRunDistance()
         {
-            if (distanceSource == null || distancePerDifficultyStep <= 0f)
+            if (distanceSource == null)
+            {
+                return 0f;
+            }
+
+            return Mathf.Max(0f, distanceSource.position.x - firstChunkStartX);
+        }
+
+        private int GetDifficulty(float runDistance)
+        {
+            if (difficultyProfile != null)
+            {
+                return difficultyProfile.GetStageIndex(runDistance);
+            }
+
+            if (distancePerDifficultyStep <= 0f)
             {
                 return 0;
             }
 
-            float runDistance = Mathf.Max(0f, distanceSource.position.x - firstChunkStartX);
             return Mathf.Clamp(Mathf.FloorToInt(runDistance / distancePerDifficultyStep), 0, maximumDifficulty);
+        }
+
+        private float GetFuelNormalized()
+        {
+            if (fuelSource == null || fuelSource.MaxFuel <= 0.01f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp01(fuelSource.CurrentFuel / fuelSource.MaxFuel);
+        }
+
+        private void UpdateDifficulty(bool forceNotification)
+        {
+            CurrentRunDistance = GetRunDistance();
+            CurrentDifficultyStage = GetDifficulty(CurrentRunDistance);
+            CurrentIntensity = difficultyProfile != null
+                ? difficultyProfile.EvaluateIntensity(CurrentRunDistance)
+                : Mathf.Clamp01(CurrentDifficultyStage / (float)Mathf.Max(1, maximumDifficulty));
+
+            float speedMultiplier = difficultyProfile != null
+                ? difficultyProfile.EvaluateSpeedMultiplier(CurrentRunDistance)
+                : 1f;
+            if (fuelSource != null)
+            {
+                fuelSource.SetDifficultySpeedMultiplier(speedMultiplier);
+            }
+
+            bool stageChanged = CurrentDifficultyStage != lastReportedStage;
+            bool intensityChanged = Mathf.Abs(CurrentIntensity - lastReportedIntensity) >= 0.01f;
+            if (forceNotification || stageChanged || intensityChanged)
+            {
+                if (stageChanged && difficultyProfile != null)
+                {
+                    Debug.Log(
+                        "[GG_DIFFICULTY] Entered " + difficultyProfile.GetStageName(CurrentDifficultyStage) +
+                        " at " + CurrentRunDistance.ToString("F0") + "m, intensity=" + CurrentIntensity.ToString("F2") +
+                        ", speed=" + speedMultiplier.ToString("F2") + "x.",
+                        this);
+                }
+
+                lastReportedStage = CurrentDifficultyStage;
+                lastReportedIntensity = CurrentIntensity;
+                DifficultyChanged?.Invoke(CurrentIntensity, CurrentDifficultyStage);
+            }
         }
 
         private void EnsureRandom()
@@ -535,22 +669,91 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void SimulateTransitions(List<string> errors, int count)
         {
-            System.Random simulationRandom = new System.Random(8675309);
+            if (difficultyProfile == null)
+            {
+                return;
+            }
+
+            int transitionsPerStage = Mathf.Max(100, count);
+            RunSimulationMetrics firstMetrics = default;
+            RunSimulationMetrics finalMetrics = default;
+
+            for (int stage = 0; stage < difficultyProfile.StageCount; stage++)
+            {
+                RunSimulationMetrics metrics = SimulateStage(errors, stage, transitionsPerStage);
+                if (stage == 0)
+                {
+                    firstMetrics = metrics;
+                }
+
+                if (stage == difficultyProfile.StageCount - 1)
+                {
+                    finalMetrics = metrics;
+                }
+
+                if (metrics.RecoveryRate < 0.1f)
+                {
+                    errors.Add("Difficulty stage " + difficultyProfile.GetStageName(stage) +
+                        " produces too little recovery space: " + metrics.RecoveryRate.ToString("P1") + ".");
+                }
+
+                if (stage == 0 && metrics.PredatorCount > 0)
+                {
+                    errors.Add("Welcome-stage simulation selected a predator before its unlock distance.");
+                }
+
+                Debug.Log(
+                    "[GG_DIFFICULTY] " + difficultyProfile.GetStageName(stage) +
+                    " hazard=" + metrics.HazardRate.ToString("P1") +
+                    " predator=" + metrics.PredatorRate.ToString("P1") +
+                    " recovery=" + metrics.RecoveryRate.ToString("P1") +
+                    " maxPressure=" + metrics.MaximumPressure + ".",
+                    this);
+            }
+
+            if (finalMetrics.HazardRate <= firstMetrics.HazardRate + 0.025f)
+            {
+                errors.Add("Final difficulty simulation does not increase hazard pressure enough over the opening stage.");
+            }
+
+            if (finalMetrics.PredatorRate <= firstMetrics.PredatorRate + 0.01f)
+            {
+                errors.Add("Final difficulty simulation does not introduce a measurable predator cadence.");
+            }
+
+            ValidateLowFuelRecovery(errors);
+        }
+
+        private RunSimulationMetrics SimulateStage(List<string> errors, int stage, int count)
+        {
+            System.Random simulationRandom = new System.Random(8675309 + stage * 7919);
             List<RunChunkDefinition> history = new List<RunChunkDefinition>();
+            FairnessState state = new FairnessState();
             RunChunkDefinition previous = openingSequence != null && openingSequence.Length > 0
                 ? openingSequence[openingSequence.Length - 1]
                 : null;
+            float distance = difficultyProfile.GetStageRepresentativeDistance(stage);
+            const float fuelNormalized = 0.72f;
+            int hazards = 0;
+            int predators = 0;
+            int recoveries = 0;
+            int maxPressureSeen = 0;
 
             for (int i = 0; i < count; i++)
             {
-                int difficulty = maximumDifficulty <= 0 ? 0 : i % (maximumDifficulty + 1);
+                UpdateFuelRescueState(difficultyProfile, state, fuelNormalized);
                 RunChunkDefinition selected = SelectWeightedDefinition(
                     chunkDefinitions,
                     previous,
                     history,
-                    difficulty,
+                    stage,
+                    distance,
+                    fuelNormalized,
+                    difficultyProfile,
+                    state,
                     simulationRandom,
-                    true);
+                    true,
+                    false);
 
                 if (selected == null)
                 {
@@ -558,30 +761,162 @@ namespace FirstBloom.Games.GassyGorilla
                         chunkDefinitions,
                         previous,
                         history,
-                        difficulty,
+                        stage,
+                        distance,
+                        fuelNormalized,
+                        difficultyProfile,
+                        state,
                         simulationRandom,
+                        false,
                         false);
                 }
 
                 if (selected == null)
                 {
-                    errors.Add("Run chunk simulation found no compatible selection at transition " + i + ".");
-                    return;
+                    selected = SelectWeightedDefinition(
+                        chunkDefinitions,
+                        previous,
+                        history,
+                        stage,
+                        distance,
+                        fuelNormalized,
+                        difficultyProfile,
+                        state,
+                        simulationRandom,
+                        false,
+                        true);
+                }
+
+                if (selected == null)
+                {
+                    errors.Add("Difficulty simulation found no fair selection in " +
+                        difficultyProfile.GetStageName(stage) + " at transition " + i + ".");
+                    break;
                 }
 
                 if (!selected.CanFollow(previous))
                 {
-                    errors.Add("Run chunk simulation produced an incompatible transition from " +
+                    errors.Add("Difficulty simulation produced an incompatible transition from " +
                         (previous != null ? previous.ChunkId : "Start") + " to " + selected.ChunkId + ".");
-                    return;
+                    break;
                 }
 
-                previous = selected;
-                history.Add(selected);
-                while (history.Count > Mathf.Max(0, recentHistoryLength))
+                bool isHazard = HasTag(selected, RunChunkTag.Hazard);
+                bool isPredator = HasTag(selected, RunChunkTag.Predator);
+                bool isRecovery = HasTag(selected, RunChunkTag.Recovery);
+                if (isHazard && previous != null && HasTag(previous, RunChunkTag.Hazard))
                 {
-                    history.RemoveAt(0);
+                    errors.Add("Difficulty simulation selected consecutive hazards in " +
+                        difficultyProfile.GetStageName(stage) + ".");
+                    break;
                 }
+
+                if (isPredator && state.PredatorCooldownRemaining > 0)
+                {
+                    errors.Add("Difficulty simulation violated the predator cooldown in " +
+                        difficultyProfile.GetStageName(stage) + ".");
+                    break;
+                }
+
+                if ((state.RecoveryRequired || state.Pressure >= difficultyProfile.MaximumPressure) && !isRecovery)
+                {
+                    errors.Add("Difficulty simulation failed to force recovery after pressure in " +
+                        difficultyProfile.GetStageName(stage) + ".");
+                    break;
+                }
+
+                AdvanceFairnessState(difficultyProfile, state, selected, fuelNormalized);
+                maxPressureSeen = Mathf.Max(maxPressureSeen, state.Pressure);
+                if (state.Pressure > difficultyProfile.MaximumPressure)
+                {
+                    errors.Add("Difficulty simulation exceeded its pressure limit in " +
+                        difficultyProfile.GetStageName(stage) + ".");
+                    break;
+                }
+
+                hazards += isHazard ? 1 : 0;
+                predators += isPredator ? 1 : 0;
+                recoveries += isRecovery ? 1 : 0;
+                previous = selected;
+                RememberForSimulation(history, selected);
+            }
+
+            return new RunSimulationMetrics(count, hazards, predators, recoveries, maxPressureSeen);
+        }
+
+        private void ValidateLowFuelRecovery(List<string> errors)
+        {
+            int stage = Mathf.Max(0, difficultyProfile.StageCount - 1);
+            float distance = difficultyProfile.GetStageRepresentativeDistance(stage);
+            float fuelNormalized = Mathf.Max(0.01f, difficultyProfile.LowFuelThreshold * 0.65f);
+            FairnessState state = new FairnessState();
+            List<RunChunkDefinition> history = new List<RunChunkDefinition>();
+            RunChunkDefinition previous = openingSequence != null && openingSequence.Length > 0
+                ? openingSequence[openingSequence.Length - 1]
+                : null;
+            System.Random simulationRandom = new System.Random(424242);
+            bool offeredFuel = false;
+
+            for (int i = 0; i < difficultyProfile.LowFuelRecoveryDeadline; i++)
+            {
+                UpdateFuelRescueState(difficultyProfile, state, fuelNormalized);
+                RunChunkDefinition selected = SelectWeightedDefinition(
+                    chunkDefinitions,
+                    previous,
+                    history,
+                    stage,
+                    distance,
+                    fuelNormalized,
+                    difficultyProfile,
+                    state,
+                    simulationRandom,
+                    false,
+                    false);
+
+                if (selected == null)
+                {
+                    selected = SelectWeightedDefinition(
+                        chunkDefinitions,
+                        previous,
+                        history,
+                        stage,
+                        distance,
+                        fuelNormalized,
+                        difficultyProfile,
+                        state,
+                        simulationRandom,
+                        false,
+                        true);
+                }
+
+                if (selected == null)
+                {
+                    break;
+                }
+
+                offeredFuel = HasTag(selected, RunChunkTag.Fuel) || HasTag(selected, RunChunkTag.Recovery);
+                AdvanceFairnessState(difficultyProfile, state, selected, fuelNormalized);
+                previous = selected;
+                RememberForSimulation(history, selected);
+                if (offeredFuel)
+                {
+                    break;
+                }
+            }
+
+            if (!offeredFuel)
+            {
+                errors.Add("Low-fuel simulation did not offer fuel or recovery within " +
+                    difficultyProfile.LowFuelRecoveryDeadline + " generated chunks.");
+            }
+        }
+
+        private void RememberForSimulation(List<RunChunkDefinition> history, RunChunkDefinition selected)
+        {
+            history.Add(selected);
+            while (history.Count > Mathf.Max(0, recentHistoryLength))
+            {
+                history.RemoveAt(0);
             }
         }
 
@@ -590,8 +925,13 @@ namespace FirstBloom.Games.GassyGorilla
             RunChunkDefinition previous,
             List<RunChunkDefinition> history,
             int difficulty,
+            float distance,
+            float fuelNormalized,
+            RunDifficultyProfile profile,
+            FairnessState state,
             System.Random source,
-            bool respectHistory)
+            bool respectHistory,
+            bool recoveryOnly)
         {
             if (definitions == null || source == null)
             {
@@ -602,12 +942,22 @@ namespace FirstBloom.Games.GassyGorilla
             for (int i = 0; i < definitions.Length; i++)
             {
                 RunChunkDefinition candidate = definitions[i];
-                if (!IsEligible(candidate, previous, history, difficulty, respectHistory))
+                if (!IsEligible(
+                    candidate,
+                    previous,
+                    history,
+                    difficulty,
+                    distance,
+                    fuelNormalized,
+                    profile,
+                    state,
+                    respectHistory,
+                    recoveryOnly))
                 {
                     continue;
                 }
 
-                totalWeight += candidate.SelectionWeight;
+                totalWeight += GetCandidateWeight(candidate, difficulty, profile, state);
             }
 
             if (totalWeight <= 0f)
@@ -619,12 +969,22 @@ namespace FirstBloom.Games.GassyGorilla
             for (int i = 0; i < definitions.Length; i++)
             {
                 RunChunkDefinition candidate = definitions[i];
-                if (!IsEligible(candidate, previous, history, difficulty, respectHistory))
+                if (!IsEligible(
+                    candidate,
+                    previous,
+                    history,
+                    difficulty,
+                    distance,
+                    fuelNormalized,
+                    profile,
+                    state,
+                    respectHistory,
+                    recoveryOnly))
                 {
                     continue;
                 }
 
-                roll -= candidate.SelectionWeight;
+                roll -= GetCandidateWeight(candidate, difficulty, profile, state);
                 if (roll <= 0d)
                 {
                     return candidate;
@@ -639,7 +999,12 @@ namespace FirstBloom.Games.GassyGorilla
             RunChunkDefinition previous,
             List<RunChunkDefinition> history,
             int difficulty,
-            bool respectHistory)
+            float distance,
+            float fuelNormalized,
+            RunDifficultyProfile profile,
+            FairnessState state,
+            bool respectHistory,
+            bool recoveryOnly)
         {
             if (candidate == null || !candidate.AllowInMainPool || candidate.SelectionWeight <= 0f)
             {
@@ -651,7 +1016,231 @@ namespace FirstBloom.Games.GassyGorilla
                 return false;
             }
 
-            return !respectHistory || history == null || !history.Contains(candidate);
+            if (respectHistory && history != null && history.Contains(candidate))
+            {
+                return false;
+            }
+
+            bool isRecovery = HasTag(candidate, RunChunkTag.Recovery);
+            bool isFuel = HasTag(candidate, RunChunkTag.Fuel);
+            bool isHazard = HasTag(candidate, RunChunkTag.Hazard);
+            bool isPredator = HasTag(candidate, RunChunkTag.Predator);
+            if (recoveryOnly && !isRecovery)
+            {
+                return false;
+            }
+
+            if (profile == null || state == null)
+            {
+                return true;
+            }
+
+            if ((state.RecoveryRequired || state.Pressure >= profile.MaximumPressure) && !isRecovery)
+            {
+                return false;
+            }
+
+            if (state.LowFuelRescueActive && state.FuelOpportunityDeadline <= 1 && !isFuel && !isRecovery)
+            {
+                return false;
+            }
+
+            if (isHazard && previous != null && HasTag(previous, RunChunkTag.Hazard))
+            {
+                return false;
+            }
+
+            if (GetPressureCost(candidate) + state.Pressure > profile.MaximumPressure && !isRecovery)
+            {
+                return false;
+            }
+
+            if (isPredator)
+            {
+                if (distance < profile.PredatorUnlockDistance || state.PredatorCooldownRemaining > 0)
+                {
+                    return false;
+                }
+
+                if (state.LowFuelRescueActive || fuelNormalized < profile.FuelRecoveryThreshold)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static float GetCandidateWeight(
+            RunChunkDefinition candidate,
+            int difficulty,
+            RunDifficultyProfile profile,
+            FairnessState state)
+        {
+            float weight = candidate.SelectionWeight;
+            if (profile == null)
+            {
+                return weight;
+            }
+
+            weight *= profile.EvaluateTagWeight(difficulty, candidate.Tags);
+            if (state != null && state.LowFuelRescueActive)
+            {
+                if (HasTag(candidate, RunChunkTag.Fuel))
+                {
+                    weight *= profile.LowFuelFuelMultiplier;
+                }
+
+                if (HasTag(candidate, RunChunkTag.Recovery))
+                {
+                    weight *= profile.LowFuelRecoveryMultiplier;
+                }
+
+                if (GetPressureCost(candidate) > 0)
+                {
+                    weight *= profile.LowFuelPressureMultiplier;
+                }
+            }
+
+            return Mathf.Max(0f, weight);
+        }
+
+        private static void UpdateFuelRescueState(
+            RunDifficultyProfile profile,
+            FairnessState state,
+            float fuelNormalized)
+        {
+            if (profile == null || state == null)
+            {
+                return;
+            }
+
+            if (!state.LowFuelRescueActive && fuelNormalized <= profile.LowFuelThreshold)
+            {
+                state.LowFuelRescueActive = true;
+                state.FuelOpportunityDeadline = profile.LowFuelRecoveryDeadline;
+            }
+            else if (state.LowFuelRescueActive && fuelNormalized >= profile.FuelRecoveryThreshold)
+            {
+                state.LowFuelRescueActive = false;
+                state.FuelOpportunityDeadline = profile.LowFuelRecoveryDeadline;
+            }
+        }
+
+        private static void AdvanceFairnessState(
+            RunDifficultyProfile profile,
+            FairnessState state,
+            RunChunkDefinition selected,
+            float fuelNormalized)
+        {
+            if (profile == null || state == null || selected == null)
+            {
+                return;
+            }
+
+            bool isPredator = HasTag(selected, RunChunkTag.Predator);
+            bool isRecovery = HasTag(selected, RunChunkTag.Recovery);
+            bool isFuel = HasTag(selected, RunChunkTag.Fuel);
+
+            if (isPredator)
+            {
+                state.PredatorCooldownRemaining = profile.PredatorCooldownChunks;
+                state.RecoveryRequired = true;
+            }
+            else if (state.PredatorCooldownRemaining > 0)
+            {
+                state.PredatorCooldownRemaining--;
+            }
+
+            if (isRecovery)
+            {
+                state.Pressure = 0;
+                state.RecoveryRequired = false;
+            }
+            else
+            {
+                if (HasTag(selected, RunChunkTag.Beginner))
+                {
+                    state.Pressure = Mathf.Max(0, state.Pressure - 1);
+                }
+
+                state.Pressure += GetPressureCost(selected);
+            }
+
+            UpdateFuelRescueState(profile, state, fuelNormalized);
+            if (state.LowFuelRescueActive)
+            {
+                if (isFuel || isRecovery)
+                {
+                    state.FuelOpportunityDeadline = profile.LowFuelRecoveryDeadline;
+                }
+                else
+                {
+                    state.FuelOpportunityDeadline = Mathf.Max(0, state.FuelOpportunityDeadline - 1);
+                }
+            }
+        }
+
+        private static int GetPressureCost(RunChunkDefinition definition)
+        {
+            if (definition == null || HasTag(definition, RunChunkTag.Recovery))
+            {
+                return 0;
+            }
+
+            if (HasTag(definition, RunChunkTag.Predator))
+            {
+                return 2;
+            }
+
+            return HasTag(definition, RunChunkTag.Hazard) || HasTag(definition, RunChunkTag.Boost) ? 1 : 0;
+        }
+
+        private static bool HasTag(RunChunkDefinition definition, RunChunkTag tag)
+        {
+            return definition != null && (definition.Tags & tag) != 0;
+        }
+
+        private sealed class FairnessState
+        {
+            public int Pressure;
+            public int PredatorCooldownRemaining;
+            public bool RecoveryRequired;
+            public bool LowFuelRescueActive;
+            public int FuelOpportunityDeadline;
+
+            public void Reset()
+            {
+                Pressure = 0;
+                PredatorCooldownRemaining = 0;
+                RecoveryRequired = false;
+                LowFuelRescueActive = false;
+                FuelOpportunityDeadline = int.MaxValue;
+            }
+        }
+
+        private readonly struct RunSimulationMetrics
+        {
+            public readonly int PredatorCount;
+            public readonly int MaximumPressure;
+            public readonly float HazardRate;
+            public readonly float PredatorRate;
+            public readonly float RecoveryRate;
+
+            public RunSimulationMetrics(
+                int count,
+                int hazards,
+                int predators,
+                int recoveries,
+                int maximumPressure)
+            {
+                int safeCount = Mathf.Max(1, count);
+                PredatorCount = predators;
+                MaximumPressure = maximumPressure;
+                HazardRate = hazards / (float)safeCount;
+                PredatorRate = predators / (float)safeCount;
+                RecoveryRate = recoveries / (float)safeCount;
+            }
         }
 
         private readonly struct ActiveChunk

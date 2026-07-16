@@ -472,7 +472,6 @@ MonoBehaviour:
   swayDegrees: 5.5
   swaySpeed: 0.78
   glowPulseSpeed: 5
-  occupiedFollowTime: 0.055
   releaseReturnTime: 0.32
   maxOccupiedDegrees: 28
   launchReadyColor: {r: 1, g: 0.88, b: 0.25, a: 0.82}

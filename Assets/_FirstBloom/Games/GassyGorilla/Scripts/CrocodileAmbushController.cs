@@ -240,7 +240,7 @@ namespace FirstBloom.Games.GassyGorilla
             SetWarningActive(true);
             PlayAnimation("Idle_Submerged", AnimatorUpdateMode.Normal);
             PlayParticles(warningBubbles);
-            PlaySfx(ArcadeSfxType.Splash, warningSplashVolume);
+            PlaySfx(ArcadeSfxType.CrocodileWarning, warningSplashVolume);
 
             float elapsed = 0f;
             float duration = Mathf.Max(0.1f, warningDuration);
@@ -376,13 +376,13 @@ namespace FirstBloom.Games.GassyGorilla
                 gameManager = GassyGorillaGameManager.Instance;
                 if (gameManager == null)
                 {
-                    gameManager = FindFirstObjectByType<GassyGorillaGameManager>();
+                    gameManager = FindAnyObjectByType<GassyGorillaGameManager>();
                 }
             }
 
             if (player == null)
             {
-                player = FindFirstObjectByType<GorillaController>();
+                player = FindAnyObjectByType<GorillaController>();
                 if (player != null)
                 {
                     playerPresentation = player.GetComponent<LagoonFinishPresentation>();
@@ -391,7 +391,7 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (cameraFollow == null)
             {
-                cameraFollow = FindFirstObjectByType<SmoothCameraFollow2D>();
+                cameraFollow = FindAnyObjectByType<SmoothCameraFollow2D>();
             }
         }
 

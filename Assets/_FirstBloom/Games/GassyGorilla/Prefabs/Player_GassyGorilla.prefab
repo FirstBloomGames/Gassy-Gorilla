@@ -30859,6 +30859,7 @@ MonoBehaviour:
   boostFallRecovery: 0.36
   boostUpwardCarry: 0.16
   maxBoostVerticalBonus: 1.15
+  difficultySpeedResponse: 0.35
   maxFuel: 100
   fuelDrainPerBoost: 17.5
   passiveRefillPerSecond: 0

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using FirstBloom.ArcadeFramework.Audio;
 using FirstBloom.ArcadeFramework.Camera;
 using FirstBloom.ArcadeFramework.Scoring;
@@ -29,6 +30,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string CrocodileAnimatorPath = GameRoot + "/Animations/GG_Crocodile.controller";
         private const string CrocodileAmbushPrefabPath = GameRoot + "/Prefabs/Hazard_CrocodileAmbush.prefab";
         private const string CrocodileAmbushChunkPath = GameRoot + "/ScriptableObjects/RunChunks/GG_RunChunk_CrocodileAmbush.asset";
+        private const string DifficultyProfilePath = GameRoot + "/ScriptableObjects/GG_RunDifficulty.asset";
+        private const string AudioLibraryPath = GameRoot + "/ScriptableObjects/GG_AudioLibrary.asset";
 
         [MenuItem("First Bloom/Gassy Gorilla/Validate Built Scenes")]
         public static void ValidateBuiltScenes()
@@ -55,13 +58,169 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireAsset(PaintedJungleTexturePath, errors);
             RequireAsset(CrocodileAmbushPrefabPath, errors);
             RequireAsset(CrocodileAmbushChunkPath, errors);
+            RequireAsset(DifficultyProfilePath, errors);
+            RequireAsset(AudioLibraryPath, errors);
             ValidateCrocodileAssets(errors);
+            ValidateProductionAudio(errors);
 
             if (HasMeshyGorilla())
             {
                 RequireAsset(MeshyGorillaAnimatorPath, errors);
                 ValidateVineReleaseAnimation(errors);
             }
+        }
+
+        private static void ValidateProductionAudio(List<string> errors)
+        {
+            ArcadeAudioLibrary library = AssetDatabase.LoadAssetAtPath<ArcadeAudioLibrary>(AudioLibraryPath);
+            if (library == null)
+            {
+                return;
+            }
+
+            library.AppendValidationErrors(errors, true);
+            AudioClip baseMusic = library.BaseMusic;
+            AudioClip intensityMusic = library.IntensityMusic;
+            AudioClip ambience = library.Ambience;
+            if (baseMusic != null && intensityMusic != null)
+            {
+                if (baseMusic.frequency != intensityMusic.frequency ||
+                    baseMusic.channels != intensityMusic.channels ||
+                    Mathf.Abs(baseMusic.length - intensityMusic.length) > 0.02f)
+                {
+                    errors.Add("Base and intensity music stems must have matching sample rate, channels, and duration.");
+                }
+            }
+
+            if (baseMusic != null && ambience != null && Mathf.Abs(baseMusic.length - ambience.length) > 0.02f)
+            {
+                errors.Add("Jungle ambience must match the synchronized music-loop duration.");
+            }
+
+            ValidateClipPeak(baseMusic, 0.505f, "Base music", errors);
+            ValidateClipPeak(intensityMusic, 0.505f, "Intensity music", errors);
+            ValidateClipPeak(ambience, 0.505f, "Jungle ambience", errors);
+
+            HashSet<AudioClip> checkedClips = new HashSet<AudioClip>();
+            ArcadeSfxEntry[] entries = library.SoundEffects;
+            if (entries == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                ArcadeSfxEntry entry = entries[i];
+                if (entry == null || entry.Clips == null)
+                {
+                    continue;
+                }
+
+                for (int clipIndex = 0; clipIndex < entry.Clips.Length; clipIndex++)
+                {
+                    AudioClip clip = entry.Clips[clipIndex];
+                    if (clip != null && checkedClips.Add(clip))
+                    {
+                        ValidateClipPeak(clip, 0.715f, entry.Type + " SFX", errors);
+                    }
+                }
+            }
+        }
+
+        private static void ValidateAudioManager(
+            ArcadeAudioManager manager,
+            string sceneLabel,
+            List<string> errors)
+        {
+            if (manager == null)
+            {
+                return;
+            }
+
+            if (manager.AudioLibrary == null)
+            {
+                errors.Add(sceneLabel + " audio manager has no production audio library.");
+            }
+
+            if (manager.UsesGeneratedPlaceholderMusic)
+            {
+                errors.Add(sceneLabel + " audio manager still permits generated placeholder music.");
+            }
+        }
+
+        private static void ValidateClipPeak(
+            AudioClip clip,
+            float maximumPeak,
+            string label,
+            List<string> errors)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            string assetPath = AssetDatabase.GetAssetPath(clip);
+            string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+            string fullPath = Path.Combine(projectRoot, assetPath.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(fullPath))
+            {
+                errors.Add(label + " source master is missing: " + clip.name + ".");
+                return;
+            }
+
+            byte[] bytes = File.ReadAllBytes(fullPath);
+            int dataOffset = FindWaveDataOffset(bytes, out int dataLength);
+            if (dataOffset < 0 || dataLength < 2)
+            {
+                errors.Add(label + " is not a readable PCM WAV master: " + clip.name + ".");
+                return;
+            }
+
+            int end = Mathf.Min(bytes.Length, dataOffset + dataLength);
+            int peakSample = 0;
+            for (int offset = dataOffset; offset + 1 < end; offset += 2)
+            {
+                short sample = BitConverter.ToInt16(bytes, offset);
+                peakSample = Mathf.Max(peakSample, Mathf.Abs((int)sample));
+            }
+
+            float peak = peakSample / (float)short.MaxValue;
+            if (peak > maximumPeak)
+            {
+                errors.Add(label + " exceeds its headroom budget at " + peak.ToString("F3") + ": " + clip.name + ".");
+            }
+        }
+
+        private static int FindWaveDataOffset(byte[] bytes, out int dataLength)
+        {
+            dataLength = 0;
+            if (bytes == null || bytes.Length < 44 ||
+                bytes[0] != 'R' || bytes[1] != 'I' || bytes[2] != 'F' || bytes[3] != 'F' ||
+                bytes[8] != 'W' || bytes[9] != 'A' || bytes[10] != 'V' || bytes[11] != 'E')
+            {
+                return -1;
+            }
+
+            int offset = 12;
+            while (offset + 8 <= bytes.Length)
+            {
+                int chunkLength = BitConverter.ToInt32(bytes, offset + 4);
+                if (chunkLength < 0)
+                {
+                    return -1;
+                }
+
+                if (bytes[offset] == 'd' && bytes[offset + 1] == 'a' &&
+                    bytes[offset + 2] == 't' && bytes[offset + 3] == 'a')
+                {
+                    dataLength = Mathf.Min(chunkLength, bytes.Length - offset - 8);
+                    return offset + 8;
+                }
+
+                offset += 8 + chunkLength + (chunkLength & 1);
+            }
+
+            return -1;
         }
 
         private static void ValidateCrocodileAssets(List<string> errors)
@@ -187,7 +346,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             EditorSceneManager.OpenScene(MainMenuScenePath, OpenSceneMode.Single);
 
-            RequireComponent<ArcadeAudioManager>("Main menu audio manager", errors);
+            ArcadeAudioManager audioManager = RequireComponent<ArcadeAudioManager>("Main menu audio manager", errors);
+            ValidateAudioManager(audioManager, "Main menu", errors);
             RequireComponent<ArcadeTimeController>("Main menu time manager", errors);
             RequireComponent<MainMenuController>("Main menu controller", errors);
             RequireComponent<ArcadeSettingsMenu>("Main menu settings menu", errors);
@@ -207,7 +367,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             EditorSceneManager.OpenScene(GameScenePath, OpenSceneMode.Single);
 
-            RequireComponent<ArcadeAudioManager>("Game audio manager", errors);
+            ArcadeAudioManager audioManager = RequireComponent<ArcadeAudioManager>("Game audio manager", errors);
+            ValidateAudioManager(audioManager, "Game", errors);
             RequireComponent<ArcadeTimeController>("Game time manager", errors);
             RequireComponent<GassyGorillaGameManager>("Game manager", errors);
             RequireComponent<GassyScoreManager>("Score manager", errors);
@@ -216,12 +377,13 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireComponent<FartBarUI>("Fart fuel bar", errors);
             RequireComponent<GassyTutorialPromptController>("Tutorial prompt controller", errors);
             RequireComponent<MilestoneEventManager>("Milestone manager", errors);
+            RequireComponent<GassyGorillaAudioDirector>("Gassy Gorilla audio director", errors);
             RequireComponent<TextOverlay>("Tutorial text overlay", errors);
 
             RunChunkDirector runDirector = RequireComponent<RunChunkDirector>("Run chunk director", errors);
             if (runDirector != null)
             {
-                runDirector.AppendValidationErrors(errors, 100);
+                runDirector.AppendValidationErrors(errors, 5000);
                 ValidateCrocodileAmbushChunk(runDirector, errors);
             }
 
@@ -236,6 +398,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireSceneObject("HUD_FartBar", errors);
             RequireSceneObject("TutorialOverlay", errors);
             RequireSceneObject("Director_RunChunks", errors);
+            RequireSceneObject("Director_Audio", errors);
             RequireSceneObject("PaintedJungleBackdrop_3D", errors);
             RequireSceneObject("DeathZone", errors);
             RequireSceneObject("World_KeyLight_Game", errors);

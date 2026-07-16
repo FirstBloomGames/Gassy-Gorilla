@@ -33,6 +33,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string GeneratedTextureRoot = TextureRoot + "/Generated3D";
         private const string ProceduralTextureRoot = GeneratedTextureRoot + "/Procedural";
         private const string RunChunkRoot = GameRoot + "/ScriptableObjects/RunChunks";
+        private const string DifficultyProfilePath = GameRoot + "/ScriptableObjects/GG_RunDifficulty.asset";
+        private const string AudioLibraryPath = GameRoot + "/ScriptableObjects/GG_AudioLibrary.asset";
         private const string PaintedJungleTexturePath = GeneratedTextureRoot + "/GG_JungleBackdrop_Painted3D_v1.png";
         private const string MeshyGorillaFolder = MeshyModelRoot + "/Meshy_AI_GG_HeroGorilla_Rigged_biped";
         private const string MeshyGorillaModelPath = MeshyGorillaFolder + "/Meshy_AI_GG_HeroGorilla_Rigged_biped_Character_output.fbx";
@@ -60,16 +62,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             MoveVoiceClipsIntoGameFolder();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             PreparePaintedJungleTexture();
+            GassyGorillaAudioAssetGenerator.GenerateProductionAudioAssets();
 
             SpriteSet sprites = GenerateSprites();
             GorillaModelAssets gorillaModel = PrepareMeshyGorillaAssets();
             CrocodileModelAssets crocodileModel = PrepareCrocodileAssets();
             MeshyGameAssets meshyAssets = PrepareMeshyGameAssets();
             PrefabSet prefabs = BuildPrefabs(sprites, gorillaModel, crocodileModel, meshyAssets);
+            RunDifficultyProfile difficultyProfile = BuildRunDifficultyProfile();
             RunChunkSet runChunks = BuildRunChunkDefinitions(prefabs);
 
             BuildMainMenuScene(sprites, gorillaModel, meshyAssets);
-            BuildGameScene(sprites, prefabs, meshyAssets, runChunks);
+            BuildGameScene(sprites, prefabs, meshyAssets, runChunks, difficultyProfile);
             ConfigureBuildSettings();
 
             AssetDatabase.SaveAssets();
@@ -82,6 +86,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             EnsureFolders();
             PrefabSet prefabs = LoadRunChunkPrefabs();
+            RunDifficultyProfile difficultyProfile = BuildRunDifficultyProfile();
             RunChunkSet runChunks = BuildRunChunkDefinitions(prefabs);
 
             Scene scene = EditorSceneManager.OpenScene(GameScenePath, OpenSceneMode.Single);
@@ -98,6 +103,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             }
 
             directors[0].ConfigureContent(gorillas[0].transform, runChunks.All, runChunks.Opening);
+            directors[0].ConfigureDifficulty(gorillas[0], difficultyProfile);
             EditorUtility.SetDirty(directors[0]);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, GameScenePath);
@@ -1500,6 +1506,72 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return prefabs;
         }
 
+        private static RunDifficultyProfile BuildRunDifficultyProfile()
+        {
+            RunDifficultyProfile profile = AssetDatabase.LoadAssetAtPath<RunDifficultyProfile>(DifficultyProfilePath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<RunDifficultyProfile>();
+                AssetDatabase.CreateAsset(profile, DifficultyProfilePath);
+            }
+
+            RunDifficultyStage[] stages =
+            {
+                DifficultyStage("Welcome", 0f, 1f, 1.45f, 1.25f, 1.1f, 1.15f, 0.78f, 0.5f, 0.9f, 0f),
+                DifficultyStage("Groove", 70f, 1.02f, 1.2f, 1.15f, 1.05f, 1.1f, 0.95f, 0.75f, 1f, 0.3f),
+                DifficultyStage("Canopy", 150f, 1.05f, 1f, 1.05f, 1f, 1.05f, 1.08f, 1f, 1.08f, 0.55f),
+                DifficultyStage("Wild", 260f, 1.08f, 0.85f, 1f, 0.95f, 1f, 1.18f, 1.2f, 1.15f, 0.75f),
+                DifficultyStage("Legend", 400f, 1.11f, 0.75f, 0.95f, 0.9f, 0.98f, 1.27f, 1.35f, 1.22f, 0.9f)
+            };
+
+            profile.Configure(
+                stages,
+                550f,
+                1.14f,
+                90f,
+                3,
+                4,
+                0.3f,
+                0.45f,
+                2,
+                2.3f,
+                2f,
+                0.35f);
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+            return profile;
+        }
+
+        private static RunDifficultyStage DifficultyStage(
+            string name,
+            float startDistance,
+            float speedMultiplier,
+            float beginner,
+            float recovery,
+            float fuel,
+            float vine,
+            float boost,
+            float hazard,
+            float noVine,
+            float predator)
+        {
+            return new RunDifficultyStage(
+                name,
+                startDistance,
+                speedMultiplier,
+                new[]
+                {
+                    new RunTagWeightMultiplier(RunChunkTag.Beginner, beginner),
+                    new RunTagWeightMultiplier(RunChunkTag.Recovery, recovery),
+                    new RunTagWeightMultiplier(RunChunkTag.Fuel, fuel),
+                    new RunTagWeightMultiplier(RunChunkTag.Vine, vine),
+                    new RunTagWeightMultiplier(RunChunkTag.Boost, boost),
+                    new RunTagWeightMultiplier(RunChunkTag.Hazard, hazard),
+                    new RunTagWeightMultiplier(RunChunkTag.NoVine, noVine),
+                    new RunTagWeightMultiplier(RunChunkTag.Predator, predator)
+                });
+        }
+
         private static RunChunkSet BuildRunChunkDefinitions(PrefabSet prefabs)
         {
             RunChunkDefinition openingBoost = CreateOrUpdateRunChunk(
@@ -1594,7 +1666,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 8.5f,
                 0.85f,
                 0,
-                4,
+                2,
                 RunChunkTag.Hazard | RunChunkTag.NoVine,
                 RunChunkTag.Hazard,
                 new Vector2(0.6f, 3.2f),
@@ -1636,7 +1708,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 true,
                 12.5f,
                 0.68f,
-                0,
+                1,
                 4,
                 RunChunkTag.Hazard | RunChunkTag.Vine | RunChunkTag.Predator,
                 RunChunkTag.Hazard | RunChunkTag.Predator,
@@ -1652,6 +1724,183 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 10.8f, 2.35f, 7f)
                 });
 
+            RunChunkDefinition highVineArc = CreateOrUpdateRunChunk(
+                "HighVineArc",
+                RunChunkTag.Vine | RunChunkTag.Fuel,
+                true,
+                9f,
+                1.02f,
+                0,
+                4,
+                RunChunkTag.None,
+                RunChunkTag.None,
+                new Vector2(-0.2f, 3.6f),
+                new Vector2(0.8f, 4.2f),
+                new Vector2(0f, 100f),
+                new Vector2(25f, 100f),
+                4.2f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.35f, 1.35f, -7f),
+                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 4.1f, 3.35f),
+                    ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 7.45f, 2.85f, 8f)
+                });
+
+            RunChunkDefinition lowVineRescue = CreateOrUpdateRunChunk(
+                "LowVineRescue",
+                RunChunkTag.Beginner | RunChunkTag.Vine | RunChunkTag.Recovery | RunChunkTag.Fuel,
+                true,
+                8f,
+                1.08f,
+                0,
+                3,
+                RunChunkTag.None,
+                RunChunkTag.None,
+                new Vector2(-0.5f, 3.4f),
+                new Vector2(0.1f, 3.4f),
+                new Vector2(0f, 100f),
+                new Vector2(45f, 100f),
+                3.8f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.1f, 0.65f, -6f),
+                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 3.2f, 2.2f),
+                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 6.25f, 1.15f, 7f)
+                });
+
+            RunChunkDefinition vineBoostRelay = CreateOrUpdateRunChunk(
+                "VineBoostRelay",
+                RunChunkTag.Vine | RunChunkTag.Boost,
+                true,
+                10f,
+                0.92f,
+                1,
+                4,
+                RunChunkTag.Hazard,
+                RunChunkTag.Hazard,
+                new Vector2(0.2f, 3.6f),
+                new Vector2(0.7f, 4f),
+                new Vector2(18f, 100f),
+                new Vector2(0f, 100f),
+                4.5f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 2.9f, 3.05f),
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 5.75f, 3.15f, -5f),
+                    ChunkSpawn(prefabs.Soda, RunChunkSpawnKind.Pickup, 8.8f, 1.45f, 8f)
+                });
+
+            RunChunkDefinition fuelChoiceFork = CreateOrUpdateRunChunk(
+                "FuelChoiceFork",
+                RunChunkTag.Fuel | RunChunkTag.Recovery | RunChunkTag.NoVine,
+                true,
+                9f,
+                1.12f,
+                1,
+                4,
+                RunChunkTag.None,
+                RunChunkTag.None,
+                new Vector2(-0.5f, 3.6f),
+                new Vector2(0.2f, 3.6f),
+                new Vector2(0f, 100f),
+                new Vector2(50f, 100f),
+                3.7f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.25f, 0.55f, -7f),
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 2.2f, 2.15f, 6f),
+                    ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 4.65f, 3.05f, -5f),
+                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 7.55f, 1.05f, 7f)
+                });
+
+            RunChunkDefinition longBoostGap = CreateOrUpdateRunChunk(
+                "LongBoostGap",
+                RunChunkTag.Boost | RunChunkTag.NoVine,
+                true,
+                11.5f,
+                0.72f,
+                2,
+                4,
+                RunChunkTag.Hazard | RunChunkTag.Boost,
+                RunChunkTag.Hazard | RunChunkTag.Boost,
+                new Vector2(0f, 3.5f),
+                new Vector2(0.5f, 3.8f),
+                new Vector2(36f, 100f),
+                new Vector2(0f, 100f),
+                4.8f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.85f, 0.65f, -6f),
+                    ChunkSpawn(prefabs.Soda, RunChunkSpawnKind.Pickup, 9.85f, 3.15f, 8f)
+                });
+
+            RunChunkDefinition thornTimingLane = CreateOrUpdateRunChunk(
+                "ThornTimingLane",
+                RunChunkTag.Hazard | RunChunkTag.Boost,
+                true,
+                10f,
+                0.8f,
+                1,
+                4,
+                RunChunkTag.Hazard,
+                RunChunkTag.Hazard,
+                new Vector2(0.2f, 3.6f),
+                new Vector2(0.7f, 3.8f),
+                new Vector2(18f, 100f),
+                new Vector2(0f, 100f),
+                4.6f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.6f, 1.05f, -6f),
+                    ChunkSpawn(prefabs.SpikyStumpObstacle, RunChunkSpawnKind.Hazard, 5.2f, -0.92f),
+                    ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 7.65f, 2.85f, 7f)
+                });
+
+            RunChunkDefinition postPredatorFeast = CreateOrUpdateRunChunk(
+                "PostPredatorFeast",
+                RunChunkTag.Recovery | RunChunkTag.Fuel | RunChunkTag.Vine,
+                true,
+                9f,
+                1.18f,
+                1,
+                4,
+                RunChunkTag.None,
+                RunChunkTag.None,
+                new Vector2(-0.4f, 3.8f),
+                new Vector2(0.5f, 3.8f),
+                new Vector2(0f, 100f),
+                new Vector2(55f, 100f),
+                4f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 2.75f, 2.55f),
+                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 5.55f, 1.65f, -6f),
+                    ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 7.65f, 2.65f, 7f)
+                });
+
+            RunChunkDefinition crocodileBaitLift = CreateOrUpdateRunChunk(
+                "CrocodileBaitLift",
+                RunChunkTag.Hazard | RunChunkTag.NoVine | RunChunkTag.Predator | RunChunkTag.Boost,
+                true,
+                13f,
+                0.52f,
+                3,
+                4,
+                RunChunkTag.Hazard | RunChunkTag.Vine | RunChunkTag.Predator,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                new Vector2(-0.2f, 3.5f),
+                new Vector2(0.8f, 4f),
+                new Vector2(35f, 100f),
+                new Vector2(0f, 100f),
+                5.5f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 0.55f, 1.05f, -5f),
+                    ChunkSpawn(prefabs.Soda, RunChunkSpawnKind.Pickup, 3.35f, 2.75f, 6f),
+                    ChunkSpawn(prefabs.CrocodileAmbush, RunChunkSpawnKind.Hazard, 8.75f, -1.61f),
+                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 11.45f, 3.05f, 7f)
+                });
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
@@ -1662,10 +1911,35 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             hazardIntroduction = LoadRunChunk("HazardIntroduction");
             recovery = LoadRunChunk("Recovery");
             crocodileAmbush = LoadRunChunk("CrocodileAmbush");
+            highVineArc = LoadRunChunk("HighVineArc");
+            lowVineRescue = LoadRunChunk("LowVineRescue");
+            vineBoostRelay = LoadRunChunk("VineBoostRelay");
+            fuelChoiceFork = LoadRunChunk("FuelChoiceFork");
+            longBoostGap = LoadRunChunk("LongBoostGap");
+            thornTimingLane = LoadRunChunk("ThornTimingLane");
+            postPredatorFeast = LoadRunChunk("PostPredatorFeast");
+            crocodileBaitLift = LoadRunChunk("CrocodileBaitLift");
 
             return new RunChunkSet
             {
-                All = new[] { openingBoost, safeVine, fuelArc, boostGap, hazardIntroduction, recovery, crocodileAmbush },
+                All = new[]
+                {
+                    openingBoost,
+                    safeVine,
+                    fuelArc,
+                    boostGap,
+                    hazardIntroduction,
+                    recovery,
+                    crocodileAmbush,
+                    highVineArc,
+                    lowVineRescue,
+                    vineBoostRelay,
+                    fuelChoiceFork,
+                    longBoostGap,
+                    thornTimingLane,
+                    postPredatorFeast,
+                    crocodileBaitLift
+                },
                 Opening = new[] { openingBoost, safeVine, hazardIntroduction, recovery }
             };
         }
@@ -2080,7 +2354,6 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObjectArray(animator, "glowRenderers", catchCueRenderers);
             SetFloat(animator, "swayDegrees", 5.5f);
             SetFloat(animator, "swaySpeed", 0.78f);
-            SetFloat(animator, "occupiedFollowTime", 0.055f);
             SetFloat(animator, "releaseReturnTime", 0.32f);
             SetFloat(animator, "maxOccupiedDegrees", 28f);
             SetObject(swingTrigger, "swingAnimator", animator);
@@ -2282,12 +2555,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(menu, "settingsMenu", settingsMenu);
 
             Button closeButton = settingsMenu.transform.Find("CloseButton").GetComponent<Button>();
+            SetEnum(closeButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
             UnityEventTools.AddPersistentListener(closeButton.onClick, menu.CloseSettings);
 
             EditorSceneManager.SaveScene(scene, MainMenuScenePath);
         }
 
-        private static void BuildGameScene(SpriteSet sprites, PrefabSet prefabs, MeshyGameAssets meshyAssets, RunChunkSet runChunks)
+        private static void BuildGameScene(
+            SpriteSet sprites,
+            PrefabSet prefabs,
+            MeshyGameAssets meshyAssets,
+            RunChunkSet runChunks,
+            RunDifficultyProfile difficultyProfile)
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -2333,6 +2612,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             TextOverlay tutorialOverlay = CreateTutorialOverlay(canvas.transform);
             ArcadeSettingsMenu settingsMenu = CreateSettingsPanel(canvas.transform, "SettingsPanel_Game");
             Button gameSettingsCloseButton = settingsMenu.transform.Find("CloseButton").GetComponent<Button>();
+            SetEnum(gameSettingsCloseButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
             UnityEventTools.AddPersistentListener(gameSettingsCloseButton.onClick, settingsMenu.Close);
 
             Button settingsButton = CreateButton("SettingsButton", canvas.transform, "SETTINGS", new Color(0.19f, 0.5f, 0.68f, 1f));
@@ -2349,6 +2629,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GameObject runDirectorObject = new GameObject("Director_RunChunks");
             RunChunkDirector runDirector = runDirectorObject.AddComponent<RunChunkDirector>();
             runDirector.ConfigureContent(player.transform, runChunks.All, runChunks.Opening);
+            runDirector.ConfigureDifficulty(gorilla, difficultyProfile);
             EditorUtility.SetDirty(runDirector);
             SetBool(runDirector, "spawning", false);
             SetBool(runDirector, "prewarmOnStart", true);
@@ -2403,7 +2684,14 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(gameManager, "bestDistanceText", bestDistanceText);
             SetObject(gameManager, "hudBestDistanceText", bestHudText);
 
+            GameObject audioDirectorObject = new GameObject("Director_Audio");
+            GassyGorillaAudioDirector audioDirector = audioDirectorObject.AddComponent<GassyGorillaAudioDirector>();
+            SetObject(audioDirector, "runDirector", runDirector);
+            SetObject(audioDirector, "gorilla", gorilla);
+            SetObject(audioDirector, "gameManager", gameManager);
+
             UnityEventTools.AddPersistentListener(retryButton.onClick, gameManager.RestartRun);
+            SetEnum(mainMenuButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
             UnityEventTools.AddPersistentListener(mainMenuButton.onClick, gameManager.ReturnToMainMenu);
 
             EditorSceneManager.SaveScene(scene, GameScenePath);
@@ -2462,12 +2750,25 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ArcadeAudioManager manager = root.AddComponent<ArcadeAudioManager>();
 
             AudioSource music = CreateAudioSourceChild(root.transform, "Music Source", true);
+            AudioSource intensityMusic = CreateAudioSourceChild(root.transform, "Intensity Music Source", true);
+            AudioSource ambience = CreateAudioSourceChild(root.transform, "Ambience Source", true);
             AudioSource sfx = CreateAudioSourceChild(root.transform, "SFX Source", false);
             AudioSource voice = CreateAudioSourceChild(root.transform, "Voice Source", false);
+            ArcadeAudioLibrary library = AssetDatabase.LoadAssetAtPath<ArcadeAudioLibrary>(AudioLibraryPath);
+            if (library == null)
+            {
+                throw new InvalidOperationException("Production audio library is missing. Generate production audio before building scenes.");
+            }
+
+            SetObject(manager, "audioLibrary", library);
             SetObject(manager, "musicSource", music);
+            SetObject(manager, "intensityMusicSource", intensityMusic);
+            SetObject(manager, "ambienceSource", ambience);
             SetObject(manager, "sfxSource", sfx);
             SetObject(manager, "voiceSource", voice);
-            SetBool(manager, "generatePlaceholderMusic", true);
+            SetObject(manager, "musicClip", library.BaseMusic);
+            SetBool(manager, "generatePlaceholderMusic", false);
+            SetInt(manager, "sfxVoiceCount", 8);
             return root;
         }
 
@@ -4877,6 +5178,17 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             if (property != null)
             {
                 property.intValue = value;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+        }
+
+        private static void SetEnum(UnityEngine.Object target, string propertyName, int value)
+        {
+            SerializedObject serialized = new SerializedObject(target);
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property != null)
+            {
+                property.enumValueIndex = value;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
             }
         }

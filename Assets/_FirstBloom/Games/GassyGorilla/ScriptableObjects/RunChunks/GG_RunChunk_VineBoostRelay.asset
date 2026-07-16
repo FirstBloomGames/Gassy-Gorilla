@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f915c77b168390345ac76493f6849360, type: 3}
+  m_Name: GG_RunChunk_VineBoostRelay
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.RunChunkDefinition
+  chunkId: VineBoostRelay
+  tags: 10
+  allowInMainPool: 1
+  length: 10
+  selectionWeight: 0.92
+  minimumDifficulty: 1
+  maximumDifficulty: 4
+  blockedPreviousTags: 16
+  blockedNextTags: 16
+  entryHeightRange: {x: 0.2, y: 3.6}
+  exitHeightRange: {x: 0.7, y: 4}
+  entryFuelRange: {x: 18, y: 100}
+  exitFuelRange: {x: 0, y: 100}
+  minimumReactionDistance: 4.5
+  spawns:
+  - prefab: {fileID: 8342533844372145081, guid: 64b26e573cd19fa4fad35e23433aa263, type: 3}
+    kind: 2
+    localPosition: {x: 2.9, y: 3.05, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 6224503674251131827, guid: 9e1b26558741d87469832ed2d4038da5, type: 3}
+    kind: 0
+    localPosition: {x: 5.75, y: 3.15, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: -5}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 3572392762854811394, guid: 6f76bde1e13d56f46b9b3bea294f1c7b, type: 3}
+    kind: 0
+    localPosition: {x: 8.8, y: 1.45, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 8}
+    localScale: {x: 1, y: 1, z: 1}

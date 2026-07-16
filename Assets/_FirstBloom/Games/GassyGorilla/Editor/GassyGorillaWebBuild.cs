@@ -23,12 +23,6 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 if (ggQaParameters.has(""qa-autoplay"") || ggQaAutomatedRun) {
                   window.setTimeout(() => unityInstance.SendMessage(""Manager_MainMenu"", ""Play""), 250);
                 }
-                if (ggQaCrocRun) {
-                  window.setTimeout(() => {
-                    unityInstance.SendMessage(""Director_RunChunks"", ""ConfigureSeedForQa"", ""6"");
-                    unityInstance.SendMessage(""Manager_Game"", ""ConfigureCrocodileQa"", ggQaCrocHitRun ? ""hit"" : ""dodge"");
-                  }, 3300);
-                }
                 if (ggQaAutomatedRun) {
                   window.setTimeout(() => {
                     var ggQaTapsRemaining = ggQaCrocHitRun ? 6 : 24;
@@ -86,6 +80,23 @@ html, body {
   height: 100%;
   overflow: hidden;
   background: #041b14;
+}
+
+#unity-container.unity-desktop {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+}
+
+#unity-container.unity-desktop #unity-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#unity-container.unity-desktop #unity-footer {
+  display: none;
 }
 
 #gg-orientation-gate {
@@ -185,24 +196,6 @@ body.gg-portrait-active #unity-container {
   }
 }
 
-@media (max-width: 959px), (max-height: 641px) {
-  #unity-container.unity-desktop {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    transform: none;
-  }
-
-  #unity-container.unity-desktop #unity-canvas {
-    width: 100% !important;
-    height: 100% !important;
-  }
-
-  #unity-container.unity-desktop #unity-footer {
-    display: none;
-  }
-}
 ";
 
         private const string WebManifest = @"{

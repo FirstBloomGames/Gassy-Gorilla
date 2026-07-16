@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using FirstBloom.ArcadeFramework.Audio;
 using FirstBloom.ArcadeFramework.Camera;
@@ -60,6 +61,7 @@ namespace FirstBloom.Games.GassyGorilla
         private Coroutine introRoutine;
         private Coroutine outroRoutine;
         private bool crocodileQaMode;
+        private float nextCrocodileQaSafetyRefresh;
 
         protected override void Awake()
         {
@@ -85,7 +87,7 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (tutorialPrompt == null)
             {
-                tutorialPrompt = FindFirstObjectByType<GassyTutorialPromptController>();
+                tutorialPrompt = FindAnyObjectByType<GassyTutorialPromptController>();
             }
 
             if (scoreManager != null)
@@ -107,6 +109,7 @@ namespace FirstBloom.Games.GassyGorilla
             SetSpawnersActive(false);
             UpdateBestDistanceText();
             SetState(ArcadeGameState.Ready);
+            ApplyWebQaConfiguration();
 
             if (playCameraIntro && GetSceneCamera() != null && player != null)
             {
@@ -120,6 +123,12 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void Update()
         {
+            if (crocodileQaMode && Time.unscaledTime >= nextCrocodileQaSafetyRefresh)
+            {
+                nextCrocodileQaSafetyRefresh = Time.unscaledTime + 0.75f;
+                DisableStandardHazardsForQa();
+            }
+
             if (!IsRunActive || player == null)
             {
                 return;
@@ -151,9 +160,40 @@ namespace FirstBloom.Games.GassyGorilla
         public void ConfigureCrocodileQa(string mode)
         {
             crocodileQaMode = true;
-            ArcadeHazard[] standardHazards = FindObjectsByType<ArcadeHazard>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+            nextCrocodileQaSafetyRefresh = 0f;
+            DisableStandardHazardsForQa();
+
+            if (player != null)
+            {
+                player.ConfigureCrocodileQa(mode);
+            }
+        }
+
+        private void ApplyWebQaConfiguration()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            string absoluteUrl = Application.absoluteURL;
+            bool crocodileHitQa = absoluteUrl.IndexOf("qa-croc-hit", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool crocodileQa = crocodileHitQa ||
+                absoluteUrl.IndexOf("qa-croc", StringComparison.OrdinalIgnoreCase) >= 0;
+            if (!crocodileQa)
+            {
+                return;
+            }
+
+            RunChunkDirector runDirector = FindAnyObjectByType<RunChunkDirector>();
+            if (runDirector != null)
+            {
+                runDirector.ConfigureSeedForQa("6");
+            }
+
+            ConfigureCrocodileQa(crocodileHitQa ? "hit" : "dodge");
+#endif
+        }
+
+        private static void DisableStandardHazardsForQa()
+        {
+            ArcadeHazard[] standardHazards = FindObjectsByType<ArcadeHazard>(FindObjectsInactive.Include);
             for (int i = 0; i < standardHazards.Length; i++)
             {
                 Collider2D[] colliders = standardHazards[i].GetComponentsInChildren<Collider2D>(true);
@@ -161,11 +201,6 @@ namespace FirstBloom.Games.GassyGorilla
                 {
                     colliders[colliderIndex].enabled = false;
                 }
-            }
-
-            if (player != null)
-            {
-                player.ConfigureCrocodileQa(mode);
             }
         }
 
@@ -428,7 +463,7 @@ namespace FirstBloom.Games.GassyGorilla
         {
             if (ArcadeAudioManager.Instance != null)
             {
-                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.UiClick);
+                ArcadeAudioManager.Instance.NotifyUserGesture();
             }
 
             ResetTimeAndLoad(gameSceneName);
@@ -438,7 +473,7 @@ namespace FirstBloom.Games.GassyGorilla
         {
             if (ArcadeAudioManager.Instance != null)
             {
-                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.UiClick);
+                ArcadeAudioManager.Instance.NotifyUserGesture();
             }
 
             ResetTimeAndLoad(mainMenuSceneName);
