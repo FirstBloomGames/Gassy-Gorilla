@@ -84,13 +84,13 @@
         updateBannerVisibility();
       }
 
-      var buildUrl = "https://cdn.jsdelivr.net/gh/FirstBloomGames/Gassy-Gorilla@e92d328e83f6a4ce691f0eedd7f609116af4a842/Build";
-      var loaderUrl = buildUrl + "/5e77d725f8ff449b9fb51202513bd20f.loader.js";
+      var buildUrl = "https://cdn.jsdelivr.net/gh/FirstBloomGames/Gassy-Gorilla@d9e68895d24c4547a511deaa4c47901f022b9032/Build";
+      var loaderUrl = buildUrl + "/e0b909a58f9d74654a32666702d82c35.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/0f772e1cb6a8e948977fabb578a6ef4f.data.unityweb",
-        frameworkUrl: buildUrl + "/c494be6080935d31202fef3e1f97d51b.framework.js.unityweb",
-        codeUrl: buildUrl + "/876079644e0bd315eb07a031aafe0ed3.wasm.unityweb",
+        dataUrl: buildUrl + "/f3c58359f7d193c5556400af1eff5cf8.data.unityweb",
+        frameworkUrl: buildUrl + "/adc44899308e0619d3d3f6ea9b746b7e.framework.js.unityweb",
+        codeUrl: buildUrl + "/15a5864b9d65e0e4bb5dac4dbe763ea3.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "First Bloom Games",
         productName: "Gassy Gorilla",
@@ -160,12 +160,6 @@
                 var ggQaAutomatedRun = ggQaSmokeRun || ggQaCrocRun;
                 if (ggQaParameters.has("qa-autoplay") || ggQaAutomatedRun) {
                   window.setTimeout(() => unityInstance.SendMessage("Manager_MainMenu", "Play"), 250);
-                }
-                if (ggQaCrocRun) {
-                  window.setTimeout(() => {
-                    unityInstance.SendMessage("Director_RunChunks", "ConfigureSeedForQa", "6");
-                    unityInstance.SendMessage("Manager_Game", "ConfigureCrocodileQa", ggQaCrocHitRun ? "hit" : "dodge");
-                  }, 3300);
                 }
                 if (ggQaAutomatedRun) {
                   window.setTimeout(() => {
