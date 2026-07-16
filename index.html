@@ -84,13 +84,13 @@
         updateBannerVisibility();
       }
 
-      var buildUrl = "https://cdn.jsdelivr.net/gh/FirstBloomGames/Gassy-Gorilla@d9e68895d24c4547a511deaa4c47901f022b9032/Build";
-      var loaderUrl = buildUrl + "/e0b909a58f9d74654a32666702d82c35.loader.js";
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/b76cc945726b742e5029294134264736.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/f3c58359f7d193c5556400af1eff5cf8.data.unityweb",
+        dataUrl: buildUrl + "/ce474d19c43102486cd6b4d09e93e744.data.unityweb",
         frameworkUrl: buildUrl + "/adc44899308e0619d3d3f6ea9b746b7e.framework.js.unityweb",
-        codeUrl: buildUrl + "/15a5864b9d65e0e4bb5dac4dbe763ea3.wasm.unityweb",
+        codeUrl: buildUrl + "/de7192b8738b3dd39a592971cb6f4ce2.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "First Bloom Games",
         productName: "Gassy Gorilla",
@@ -155,10 +155,11 @@
                 window.ggUnityInstance = unityInstance;
                 var ggQaParameters = new URLSearchParams(window.location.search);
                 var ggQaSmokeRun = ggQaParameters.has("qa-smoke");
+                var ggQaVineRun = ggQaParameters.has("qa-vine");
                 var ggQaCrocHitRun = ggQaParameters.has("qa-croc-hit");
                 var ggQaCrocRun = ggQaParameters.has("qa-croc") || ggQaCrocHitRun;
                 var ggQaAutomatedRun = ggQaSmokeRun || ggQaCrocRun;
-                if (ggQaParameters.has("qa-autoplay") || ggQaAutomatedRun) {
+                if (ggQaParameters.has("qa-autoplay") || ggQaAutomatedRun || ggQaVineRun) {
                   window.setTimeout(() => unityInstance.SendMessage("Manager_MainMenu", "Play"), 250);
                 }
                 if (ggQaAutomatedRun) {
