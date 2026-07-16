@@ -173,15 +173,26 @@ namespace FirstBloom.Games.GassyGorilla
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             string absoluteUrl = Application.absoluteURL;
+            bool vineQa = absoluteUrl.IndexOf("qa-vine", StringComparison.OrdinalIgnoreCase) >= 0;
             bool crocodileHitQa = absoluteUrl.IndexOf("qa-croc-hit", StringComparison.OrdinalIgnoreCase) >= 0;
             bool crocodileQa = crocodileHitQa ||
                 absoluteUrl.IndexOf("qa-croc", StringComparison.OrdinalIgnoreCase) >= 0;
-            if (!crocodileQa)
+            if (!vineQa && !crocodileQa)
             {
                 return;
             }
 
             RunChunkDirector runDirector = FindAnyObjectByType<RunChunkDirector>();
+            if (vineQa)
+            {
+                if (runDirector != null)
+                {
+                    runDirector.ConfigureOpeningForQa("LowVineRescue");
+                }
+
+                return;
+            }
+
             if (runDirector != null)
             {
                 runDirector.ConfigureSeedForQa("6");

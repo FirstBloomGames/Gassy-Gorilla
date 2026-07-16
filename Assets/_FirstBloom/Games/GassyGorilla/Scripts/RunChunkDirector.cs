@@ -146,6 +146,42 @@ namespace FirstBloom.Games.GassyGorilla
             ConfigureSeed(seed, false);
         }
 
+        public bool ConfigureOpeningForQa(string primaryChunkId)
+        {
+            RunChunkDefinition primary = null;
+            RunChunkDefinition recovery = null;
+            for (int i = 0; i < chunkDefinitions.Length; i++)
+            {
+                RunChunkDefinition definition = chunkDefinitions[i];
+                if (definition == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(definition.ChunkId, primaryChunkId, StringComparison.OrdinalIgnoreCase))
+                {
+                    primary = definition;
+                }
+                else if (string.Equals(definition.ChunkId, "Recovery", StringComparison.OrdinalIgnoreCase))
+                {
+                    recovery = definition;
+                }
+            }
+
+            if (primary == null)
+            {
+                Debug.LogWarning("Could not configure Gassy Gorilla QA opening for missing chunk " + primaryChunkId + ".", this);
+                return false;
+            }
+
+            openingSequence = recovery != null
+                ? new[] { primary, recovery, primary, recovery }
+                : new[] { primary, primary };
+            ConfigureSeed(71626, false);
+            Debug.Log("[GG_QA] Opening sequence forced to repeated " + primary.ChunkId + " checks.", this);
+            return true;
+        }
+
         public void ConfigureContent(
             Transform source,
             RunChunkDefinition[] definitions,

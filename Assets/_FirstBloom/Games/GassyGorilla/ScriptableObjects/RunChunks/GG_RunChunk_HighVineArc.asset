@@ -20,7 +20,7 @@ MonoBehaviour:
   minimumDifficulty: 0
   maximumDifficulty: 4
   blockedPreviousTags: 0
-  blockedNextTags: 0
+  blockedNextTags: 144
   entryHeightRange: {x: -0.2, y: 3.6}
   exitHeightRange: {x: 0.8, y: 4.2}
   entryFuelRange: {x: 0, y: 100}
@@ -34,7 +34,7 @@ MonoBehaviour:
     localScale: {x: 1, y: 1, z: 1}
   - prefab: {fileID: 8342533844372145081, guid: 64b26e573cd19fa4fad35e23433aa263, type: 3}
     kind: 2
-    localPosition: {x: 4.1, y: 3.35, z: 0}
+    localPosition: {x: 4.1, y: 3.5, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     localScale: {x: 1, y: 1, z: 1}
   - prefab: {fileID: 2559269168645090756, guid: 6776722b02806be47a2f4d7b68377ad7, type: 3}

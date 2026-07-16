@@ -10,9 +10,12 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private GorillaController gorilla;
         [SerializeField] private MeterFillUI meter;
         [SerializeField] private Text titleText;
+        [SerializeField] private Image iconImage;
         [SerializeField] private float lowFuelThreshold = 0.25f;
         [SerializeField] private float warningPulseCooldown = 0.35f;
         [SerializeField] private float warningShakePixels = 7f;
+        [SerializeField] private Color normalIconColor = Color.white;
+        [SerializeField] private Color lowIconColor = new Color(1f, 0.72f, 0.24f, 1f);
 
         private RectTransform rectTransform;
         private Coroutine pulseRoutine;
@@ -77,8 +80,13 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 float normalized = max <= 0f ? 0f : current / max;
                 bool isLowFuel = normalized <= lowFuelThreshold;
-                titleText.text = isLowFuel ? "LOW FART FUEL!" : "FART FUEL";
+                titleText.text = isLowFuel ? "LOW FUEL" : "FART FUEL";
                 titleText.color = isLowFuel ? new Color(1f, 0.72f, 0.24f, 1f) : Color.white;
+                if (iconImage != null)
+                {
+                    iconImage.color = isLowFuel ? lowIconColor : normalIconColor;
+                }
+
                 if (isLowFuel && !wasLowFuel && Time.unscaledTime >= nextWarningPulseTime)
                 {
                     nextWarningPulseTime = Time.unscaledTime + warningPulseCooldown;

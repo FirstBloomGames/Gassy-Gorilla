@@ -17,10 +17,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string BrowserQaBridge = @"                window.ggUnityInstance = unityInstance;
                 var ggQaParameters = new URLSearchParams(window.location.search);
                 var ggQaSmokeRun = ggQaParameters.has(""qa-smoke"");
+                var ggQaVineRun = ggQaParameters.has(""qa-vine"");
                 var ggQaCrocHitRun = ggQaParameters.has(""qa-croc-hit"");
                 var ggQaCrocRun = ggQaParameters.has(""qa-croc"") || ggQaCrocHitRun;
                 var ggQaAutomatedRun = ggQaSmokeRun || ggQaCrocRun;
-                if (ggQaParameters.has(""qa-autoplay"") || ggQaAutomatedRun) {
+                if (ggQaParameters.has(""qa-autoplay"") || ggQaAutomatedRun || ggQaVineRun) {
                   window.setTimeout(() => unityInstance.SendMessage(""Manager_MainMenu"", ""Play""), 250);
                 }
                 if (ggQaAutomatedRun) {

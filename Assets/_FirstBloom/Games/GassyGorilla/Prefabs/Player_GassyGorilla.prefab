@@ -30878,6 +30878,10 @@ MonoBehaviour:
   returningReleasePowerScale: 0.58
   maxInheritedSwingSpeed: 8.5
   maxReleaseForwardSpeed: 11.8
+  minimumVineReleaseLift: 4
+  vineReleaseSafetyDuration: 1
+  vineReleaseDangerY: -1.72
+  vineReleaseSafetyClearance: 0.35
   swingCameraSmoothingMultiplier: 1.85
   vineSlowMoScale: 0.93
   vineSlowMoDuration: 0.06

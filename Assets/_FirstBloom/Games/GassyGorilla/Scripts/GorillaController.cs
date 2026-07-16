@@ -48,6 +48,10 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float returningReleasePowerScale = 0.58f;
         [SerializeField] private float maxInheritedSwingSpeed = 8.5f;
         [SerializeField] private float maxReleaseForwardSpeed = 11.8f;
+        [Min(0f)] [SerializeField] private float minimumVineReleaseLift = 4f;
+        [Min(0.1f)] [SerializeField] private float vineReleaseSafetyDuration = 1f;
+        [SerializeField] private float vineReleaseDangerY = -1.72f;
+        [Min(0f)] [SerializeField] private float vineReleaseSafetyClearance = 0.35f;
         [SerializeField] private float swingCameraSmoothingMultiplier = 1.85f;
         [SerializeField] private float vineSlowMoScale = 0.88f;
         [SerializeField] private float vineSlowMoDuration = 0.07f;
@@ -105,6 +109,12 @@ namespace FirstBloom.Games.GassyGorilla
         public float CurrentSwingAngleDegrees { get { return currentSwingAngleDegrees; } }
         public float CurrentReleasePower { get { return currentReleasePower; } }
         public Vector2 CurrentSwingVelocity { get { return currentSwingVelocity; } }
+        public float MaximumVerticalSpeed { get { return maxVerticalSpeed; } }
+        public float GravityScale { get { return gravityScale; } }
+        public float MinimumVineReleaseLift { get { return minimumVineReleaseLift; } }
+        public float VineReleaseSafetyDuration { get { return vineReleaseSafetyDuration; } }
+        public float VineReleaseDangerY { get { return vineReleaseDangerY; } }
+        public float VineReleaseSafetyClearance { get { return vineReleaseSafetyClearance; } }
         public bool ShouldAutoDodgeCrocodileForQa { get { return crocodileQaMode && crocodileQaAutoDodge; } }
         public bool ShouldAutoHitCrocodileForQa { get { return crocodileQaMode && crocodileQaAutoHit; } }
         public Vector3 CurrentVineGripPosition
@@ -624,8 +634,18 @@ namespace FirstBloom.Games.GassyGorilla
             releaseVelocity.x += inheritedForward + releasePower * releaseReachForwardBonus * reachScale;
             releaseVelocity.y += inheritedLift + releasePower * releaseReachLiftBonus * reachScale;
             releaseVelocity.x = Mathf.Clamp(releaseVelocity.x, EffectiveForwardSpeed + 0.35f, maxReleaseForwardSpeed);
-            releaseVelocity.y = Mathf.Clamp(releaseVelocity.y, 1.4f, maxVerticalSpeed);
+            float safeLift = CalculateMinimumSafeVineReleaseLift(transform.position.y);
+            float minimumLift = Mathf.Min(maxVerticalSpeed, Mathf.Max(minimumVineReleaseLift, safeLift));
+            releaseVelocity.y = Mathf.Clamp(releaseVelocity.y, minimumLift, maxVerticalSpeed);
             return releaseVelocity;
+        }
+
+        public float CalculateMinimumSafeVineReleaseLift(float releaseY)
+        {
+            float duration = Mathf.Max(0.1f, vineReleaseSafetyDuration);
+            float gravityAcceleration = Mathf.Abs(Physics2D.gravity.y * gravityScale);
+            float targetY = vineReleaseDangerY + vineReleaseSafetyClearance;
+            return (targetY - releaseY + 0.5f * gravityAcceleration * duration * duration) / duration;
         }
 
         private float CalculateReleasePower()

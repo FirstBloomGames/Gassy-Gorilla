@@ -94,6 +94,8 @@ namespace FirstBloom.Games.GassyGorilla
         public float SelectionWeight { get { return Mathf.Max(0f, selectionWeight); } }
         public int MinimumDifficulty { get { return minimumDifficulty; } }
         public int MaximumDifficulty { get { return maximumDifficulty; } }
+        public RunChunkTag BlockedPreviousTags { get { return blockedPreviousTags; } }
+        public RunChunkTag BlockedNextTags { get { return blockedNextTags; } }
         public Vector2 EntryHeightRange { get { return Ordered(entryHeightRange); } }
         public Vector2 ExitHeightRange { get { return Ordered(exitHeightRange); } }
         public Vector2 EntryFuelRange { get { return Ordered(entryFuelRange); } }

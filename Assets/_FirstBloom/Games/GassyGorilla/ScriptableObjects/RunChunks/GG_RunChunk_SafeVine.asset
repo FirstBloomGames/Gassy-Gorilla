@@ -19,8 +19,8 @@ MonoBehaviour:
   selectionWeight: 1.05
   minimumDifficulty: 0
   maximumDifficulty: 4
-  blockedPreviousTags: 16
-  blockedNextTags: 0
+  blockedPreviousTags: 144
+  blockedNextTags: 144
   entryHeightRange: {x: 0.6, y: 3.3}
   exitHeightRange: {x: 0.8, y: 3.8}
   entryFuelRange: {x: 0, y: 100}
@@ -29,11 +29,11 @@ MonoBehaviour:
   spawns:
   - prefab: {fileID: 8342533844372145081, guid: 64b26e573cd19fa4fad35e23433aa263, type: 3}
     kind: 2
-    localPosition: {x: 3.2, y: 2.85, z: 0}
+    localPosition: {x: 3.2, y: 3.05, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     localScale: {x: 1, y: 1, z: 1}
   - prefab: {fileID: 6224503674251131827, guid: 9e1b26558741d87469832ed2d4038da5, type: 3}
     kind: 0
-    localPosition: {x: 6.65, y: 1.25, z: 0}
+    localPosition: {x: 6.65, y: 1.45, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 10}
     localScale: {x: 1, y: 1, z: 1}

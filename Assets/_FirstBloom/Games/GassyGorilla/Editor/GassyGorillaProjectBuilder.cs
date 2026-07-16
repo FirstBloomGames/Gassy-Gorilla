@@ -205,6 +205,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             SpriteSet set = new SpriteSet();
             set.UiPanel = CreateSoftPanelSprite("ui_panel_clean_v1", 64, 64, new Color32(14, 34, 27, 238), new Color32(54, 111, 72, 232));
+            set.FuelBar = CreateFartFuelIconSprite();
+            set.FuelSegment = CreateSoftPanelSprite("ui_meter_segment_v1", 32, 16, new Color32(248, 252, 244, 255), new Color32(184, 199, 179, 255));
             AssetDatabase.SaveAssets();
             return set;
         }
@@ -1603,8 +1605,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 1.05f,
                 0,
                 4,
-                RunChunkTag.Hazard,
-                RunChunkTag.None,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
                 new Vector2(0.6f, 3.3f),
                 new Vector2(0.8f, 3.8f),
                 new Vector2(0f, 100f),
@@ -1612,8 +1614,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 4.5f,
                 new[]
                 {
-                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 3.2f, 2.85f),
-                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 6.65f, 1.25f, 10f)
+                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 3.2f, 3.05f),
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 6.65f, 1.45f, 10f)
                 });
 
             RunChunkDefinition fuelArc = CreateOrUpdateRunChunk(
@@ -1667,7 +1669,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 0.85f,
                 0,
                 2,
-                RunChunkTag.Hazard | RunChunkTag.NoVine,
+                RunChunkTag.Hazard,
                 RunChunkTag.Hazard,
                 new Vector2(0.6f, 3.2f),
                 new Vector2(0.9f, 3.5f),
@@ -1733,7 +1735,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 0,
                 4,
                 RunChunkTag.None,
-                RunChunkTag.None,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
                 new Vector2(-0.2f, 3.6f),
                 new Vector2(0.8f, 4.2f),
                 new Vector2(0f, 100f),
@@ -1742,7 +1744,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 new[]
                 {
                     ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.35f, 1.35f, -7f),
-                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 4.1f, 3.35f),
+                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 4.1f, 3.5f),
                     ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 7.45f, 2.85f, 8f)
                 });
 
@@ -1755,17 +1757,17 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 0,
                 3,
                 RunChunkTag.None,
-                RunChunkTag.None,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
                 new Vector2(-0.5f, 3.4f),
-                new Vector2(0.1f, 3.4f),
+                new Vector2(0.8f, 3.6f),
                 new Vector2(0f, 100f),
                 new Vector2(45f, 100f),
                 3.8f,
                 new[]
                 {
-                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.1f, 0.65f, -6f),
-                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 3.2f, 2.2f),
-                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 6.25f, 1.15f, 7f)
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.1f, 1.05f, -6f),
+                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 3.2f, 2.7f),
+                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 6.25f, 1.6f, 7f)
                 });
 
             RunChunkDefinition vineBoostRelay = CreateOrUpdateRunChunk(
@@ -1776,8 +1778,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 0.92f,
                 1,
                 4,
-                RunChunkTag.Hazard,
-                RunChunkTag.Hazard,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
                 new Vector2(0.2f, 3.6f),
                 new Vector2(0.7f, 4f),
                 new Vector2(18f, 100f),
@@ -1785,7 +1787,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 4.5f,
                 new[]
                 {
-                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 2.9f, 3.05f),
+                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 2.9f, 3.15f),
                     ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 5.75f, 3.15f, -5f),
                     ChunkSpawn(prefabs.Soda, RunChunkSpawnKind.Pickup, 8.8f, 1.45f, 8f)
                 });
@@ -1865,7 +1867,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 1,
                 4,
                 RunChunkTag.None,
-                RunChunkTag.None,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
                 new Vector2(-0.4f, 3.8f),
                 new Vector2(0.5f, 3.8f),
                 new Vector2(0f, 100f),
@@ -1873,7 +1875,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 4f,
                 new[]
                 {
-                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 2.75f, 2.55f),
+                    ChunkSpawn(prefabs.SwingableVine, RunChunkSpawnKind.SwingVine, 2.75f, 2.75f),
                     ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 5.55f, 1.65f, -6f),
                     ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 7.65f, 2.65f, 7f)
                 });
@@ -1940,7 +1942,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     postPredatorFeast,
                     crocodileBaitLift
                 },
-                Opening = new[] { openingBoost, safeVine, hazardIntroduction, recovery }
+                Opening = new[] { openingBoost, safeVine, recovery, hazardIntroduction }
             };
         }
 
@@ -2118,6 +2120,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetFloat(controller, "returningReleasePowerScale", 0.58f);
             SetFloat(controller, "maxInheritedSwingSpeed", 8.5f);
             SetFloat(controller, "maxReleaseForwardSpeed", 11.8f);
+            SetFloat(controller, "minimumVineReleaseLift", 4f);
+            SetFloat(controller, "vineReleaseSafetyDuration", 1f);
+            SetFloat(controller, "vineReleaseDangerY", -1.72f);
+            SetFloat(controller, "vineReleaseSafetyClearance", 0.35f);
             SetFloat(controller, "swingCameraSmoothingMultiplier", 1.85f);
             SetFloat(controller, "vineSlowMoScale", 0.93f);
             SetFloat(controller, "vineSlowMoDuration", 0.06f);
@@ -3211,40 +3217,122 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GameObject root = new GameObject("HUD_FartBar");
             RectTransform rect = root.AddComponent<RectTransform>();
             root.transform.SetParent(parent, false);
-            SetRect(rect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(360f, 44f));
+            SetRect(rect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -43f), new Vector2(408f, 62f));
 
             Image back = root.AddComponent<Image>();
             back.sprite = UiPanelSprite();
             back.type = Image.Type.Sliced;
-            back.color = new Color(0.035f, 0.1f, 0.075f, 0.92f);
+            back.color = new Color(0.025f, 0.04f, 0.035f, 0.96f);
+            back.raycastTarget = false;
             Shadow shadow = root.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0f, 0f, 0f, 0.34f);
-            shadow.effectDistance = new Vector2(0f, -4f);
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.48f);
+            shadow.effectDistance = new Vector2(0f, -5f);
+            Outline outline = root.AddComponent<Outline>();
+            outline.effectColor = new Color(0.76f, 0.5f, 0.16f, 0.78f);
+            outline.effectDistance = new Vector2(1.4f, -1.4f);
 
-            GameObject fillObject = new GameObject("Fill");
-            fillObject.transform.SetParent(root.transform, false);
+            GameObject railObject = new GameObject("BrassTopRail");
+            railObject.transform.SetParent(root.transform, false);
+            Image rail = railObject.AddComponent<Image>();
+            rail.sprite = sprites.FuelSegment;
+            rail.type = Image.Type.Sliced;
+            rail.color = new Color(0.86f, 0.62f, 0.2f, 0.92f);
+            rail.raycastTarget = false;
+            SetRect(rail.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -3f), new Vector2(390f, 4f));
+
+            GameObject iconWellObject = new GameObject("FuelIconWell");
+            iconWellObject.transform.SetParent(root.transform, false);
+            Image iconWell = iconWellObject.AddComponent<Image>();
+            iconWell.sprite = UiPanelSprite();
+            iconWell.type = Image.Type.Sliced;
+            iconWell.color = new Color(0.14f, 0.085f, 0.035f, 0.98f);
+            iconWell.raycastTarget = false;
+            SetRect(iconWell.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-171f, -1f), new Vector2(50f, 50f));
+
+            GameObject iconObject = new GameObject("FuelCloudIcon");
+            iconObject.transform.SetParent(iconWellObject.transform, false);
+            Image icon = iconObject.AddComponent<Image>();
+            icon.sprite = sprites.FuelBar;
+            icon.preserveAspect = true;
+            icon.color = Color.white;
+            icon.raycastTarget = false;
+            SetRect(icon.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(42f, 42f));
+
+            Text title = CreateText("Label", root.transform, "FART FUEL", 14, FontStyle.Bold, TextAnchor.MiddleLeft, new Color(0.96f, 0.98f, 0.9f, 1f));
+            title.raycastTarget = false;
+            SetRect(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-72f, 14f), new Vector2(132f, 20f));
+
+            Text value = CreateText("Value", root.transform, "100", 17, FontStyle.Bold, TextAnchor.MiddleRight, new Color(0.78f, 0.98f, 1f, 1f));
+            value.raycastTarget = false;
+            SetRect(value.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(165f, 14f), new Vector2(52f, 20f));
+
+            GameObject trackObject = new GameObject("FuelGlassTrack");
+            trackObject.transform.SetParent(root.transform, false);
+            Image track = trackObject.AddComponent<Image>();
+            track.sprite = UiPanelSprite();
+            track.type = Image.Type.Sliced;
+            track.color = new Color(0.008f, 0.02f, 0.018f, 0.98f);
+            track.raycastTarget = false;
+            SetRect(track.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(29f, -13f), new Vector2(328f, 21f));
+
+            GameObject fillObject = new GameObject("FuelGlowFill");
+            fillObject.transform.SetParent(trackObject.transform, false);
             Image fill = fillObject.AddComponent<Image>();
-            fill.color = new Color(0.31f, 0.94f, 0.42f, 1f);
+            fill.sprite = sprites.FuelSegment;
+            fill.color = new Color(0.48f, 0.92f, 1f, 0.24f);
             fill.type = Image.Type.Filled;
             fill.fillMethod = Image.FillMethod.Horizontal;
             fill.fillOrigin = 0;
-            SetRect(fill.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, new Vector2(-10f, -10f));
+            fill.raycastTarget = false;
+            SetRect(fill.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(-8f, -8f));
 
-            Text title = CreateText("Label", root.transform, "FART FUEL", 15, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
-            SetRect(title.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 2f), Vector2.zero);
+            const int segmentCount = 10;
+            const float innerTrackWidth = 316f;
+            const float segmentGap = 3f;
+            float segmentWidth = (innerTrackWidth - segmentGap * (segmentCount - 1)) / segmentCount;
+            float firstSegmentX = -innerTrackWidth * 0.5f + segmentWidth * 0.5f;
+            Image[] segments = new Image[segmentCount];
+            for (int i = 0; i < segmentCount; i++)
+            {
+                GameObject segmentObject = new GameObject("FuelSegment_" + (i + 1).ToString("00"));
+                segmentObject.transform.SetParent(trackObject.transform, false);
+                Image segment = segmentObject.AddComponent<Image>();
+                segment.sprite = sprites.FuelSegment;
+                segment.type = Image.Type.Sliced;
+                segment.color = new Color(0.48f, 0.92f, 1f, 1f);
+                segment.raycastTarget = false;
+                float x = firstSegmentX + i * (segmentWidth + segmentGap);
+                SetRect(segment.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 0f), new Vector2(segmentWidth, 13f));
+                segments[i] = segment;
+            }
 
-            Text value = CreateText("Value", root.transform, "100 / 100", 13, FontStyle.Bold, TextAnchor.MiddleRight, new Color(1f, 1f, 1f, 0.88f));
-            SetRect(value.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(-11f, -1f), new Vector2(-22f, 0f));
+            GameObject glassHighlightObject = new GameObject("GlassHighlight");
+            glassHighlightObject.transform.SetParent(trackObject.transform, false);
+            Image glassHighlight = glassHighlightObject.AddComponent<Image>();
+            glassHighlight.color = new Color(0.72f, 1f, 0.9f, 0.16f);
+            glassHighlight.raycastTarget = false;
+            SetRect(glassHighlight.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6.5f), new Vector2(312f, 1.5f));
 
             MeterFillUI meter = root.AddComponent<MeterFillUI>();
             SetObject(meter, "fillImage", fill);
+            SetObjectArray(meter, "segmentImages", segments);
             SetObject(meter, "valueLabel", value);
+            SetColor(meter, "normalColor", new Color(0.34f, 0.96f, 0.38f, 1f));
+            SetColor(meter, "lowColor", new Color(1f, 0.3f, 0.12f, 1f));
+            SetColor(meter, "fullColor", new Color(0.48f, 0.92f, 1f, 1f));
+            SetColor(meter, "inactiveSegmentColor", new Color(0.08f, 0.14f, 0.12f, 0.82f));
+            SetFloat(meter, "lowThreshold", 0.26f);
+            SetFloat(meter, "smoothSpeed", 18f);
+            SetBool(meter, "showMaximum", false);
 
             FartBarUI fartBar = root.AddComponent<FartBarUI>();
             SetObject(fartBar, "gorilla", gorilla);
             SetObject(fartBar, "meter", meter);
             SetObject(fartBar, "titleText", title);
+            SetObject(fartBar, "iconImage", icon);
             SetFloat(fartBar, "lowFuelThreshold", 0.26f);
+            SetColor(fartBar, "normalIconColor", Color.white);
+            SetColor(fartBar, "lowIconColor", new Color(1f, 0.72f, 0.24f, 1f));
             return fartBar;
         }
 
@@ -4895,6 +4983,47 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             });
         }
 
+        private static Sprite CreateFartFuelIconSprite()
+        {
+            return CreateSprite("gg_fart_fuel_icon_v1", 96, 96, (x, y, w, h) =>
+            {
+                Vector2 point = new Vector2((x + 0.5f) / w, (y + 0.5f) / h);
+                bool inside =
+                    Vector2.Distance(point, new Vector2(0.48f, 0.48f)) <= 0.235f ||
+                    Vector2.Distance(point, new Vector2(0.29f, 0.46f)) <= 0.17f ||
+                    Vector2.Distance(point, new Vector2(0.67f, 0.47f)) <= 0.18f ||
+                    Vector2.Distance(point, new Vector2(0.5f, 0.66f)) <= 0.18f ||
+                    Vector2.Distance(point, new Vector2(0.25f, 0.29f)) <= 0.085f ||
+                    Vector2.Distance(point, new Vector2(0.14f, 0.2f)) <= 0.045f;
+
+                bool insideOutline =
+                    Vector2.Distance(point, new Vector2(0.48f, 0.48f)) <= 0.275f ||
+                    Vector2.Distance(point, new Vector2(0.29f, 0.46f)) <= 0.21f ||
+                    Vector2.Distance(point, new Vector2(0.67f, 0.47f)) <= 0.22f ||
+                    Vector2.Distance(point, new Vector2(0.5f, 0.66f)) <= 0.22f ||
+                    Vector2.Distance(point, new Vector2(0.25f, 0.29f)) <= 0.125f ||
+                    Vector2.Distance(point, new Vector2(0.14f, 0.2f)) <= 0.085f;
+
+                if (!insideOutline)
+                {
+                    return Transparent();
+                }
+
+                if (!inside)
+                {
+                    return new Color32(20, 46, 28, 255);
+                }
+
+                Color gasColor = Color.Lerp(
+                    new Color(0.32f, 0.9f, 0.32f, 1f),
+                    new Color(0.88f, 1f, 0.36f, 1f),
+                    Mathf.Clamp01(point.y));
+                float highlight = 1f - Mathf.Clamp01(Vector2.Distance(point, new Vector2(0.43f, 0.68f)) / 0.22f);
+                gasColor = Color.Lerp(gasColor, Color.white, highlight * 0.34f);
+                return (Color32)gasColor;
+            });
+        }
+
         private static Sprite CreateRoundedRectSprite(string name, int width, int height, Color32 fill, Color32 accent)
         {
             return CreateSprite(name, width, height, (x, y, w, h) =>
@@ -5160,6 +5289,17 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             }
         }
 
+        private static void SetColor(UnityEngine.Object target, string propertyName, Color value)
+        {
+            SerializedObject serialized = new SerializedObject(target);
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property != null)
+            {
+                property.colorValue = value;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+        }
+
         private static void SetBool(UnityEngine.Object target, string propertyName, bool value)
         {
             SerializedObject serialized = new SerializedObject(target);
@@ -5234,6 +5374,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             public Sprite MistBand;
             public Sprite FartCloud;
             public Sprite FuelBar;
+            public Sprite FuelSegment;
             public Sprite PlantLeft;
             public Sprite PlantMiddle;
             public Sprite PlantRight;

@@ -30,8 +30,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string CrocodileAnimatorPath = GameRoot + "/Animations/GG_Crocodile.controller";
         private const string CrocodileAmbushPrefabPath = GameRoot + "/Prefabs/Hazard_CrocodileAmbush.prefab";
         private const string CrocodileAmbushChunkPath = GameRoot + "/ScriptableObjects/RunChunks/GG_RunChunk_CrocodileAmbush.asset";
+        private const string SwingableVinePrefabPath = GameRoot + "/Prefabs/Vine_Swingable.prefab";
+        private const string RunChunkFolder = GameRoot + "/ScriptableObjects/RunChunks";
         private const string DifficultyProfilePath = GameRoot + "/ScriptableObjects/GG_RunDifficulty.asset";
         private const string AudioLibraryPath = GameRoot + "/ScriptableObjects/GG_AudioLibrary.asset";
+        private const float MinimumAuthoredVineGrabY = 1.25f;
 
         [MenuItem("First Bloom/Gassy Gorilla/Validate Built Scenes")]
         public static void ValidateBuiltScenes()
@@ -393,7 +396,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             if (gorilla != null)
             {
                 ValidatePlayerPolish(gorilla, errors);
+                ValidateVineReleaseContract(gorilla, errors);
             }
+
+            ValidateFuelHud(errors);
 
             RequireSceneObject("HUD_FartBar", errors);
             RequireSceneObject("TutorialOverlay", errors);
@@ -545,6 +551,112 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ValidateRenderableVisual("Visual_Gorilla_3D", errors);
             ValidateAnimatedGorilla("Visual_Gorilla_3D", errors);
             ValidateRenderableVisual("Fart Cloud Burst", errors);
+        }
+
+        private static void ValidateVineReleaseContract(GorillaController gorilla, List<string> errors)
+        {
+            if (gorilla.VineReleaseSafetyDuration < 0.95f || gorilla.VineReleaseSafetyClearance < 0.3f)
+            {
+                errors.Add("Vine release safety must preserve at least one second of flight with 0.3 units of danger-line clearance.");
+            }
+
+            if (gorilla.MinimumVineReleaseLift < 3.9f)
+            {
+                errors.Add("Vine release baseline lift is below the production comfort floor.");
+            }
+
+            float duration = gorilla.VineReleaseSafetyDuration;
+            float requiredLift = gorilla.CalculateMinimumSafeVineReleaseLift(MinimumAuthoredVineGrabY);
+            float appliedLift = Mathf.Min(
+                gorilla.MaximumVerticalSpeed,
+                Mathf.Max(gorilla.MinimumVineReleaseLift, requiredLift));
+            float gravityAcceleration = Mathf.Abs(Physics2D.gravity.y * gorilla.GravityScale);
+            float projectedY = MinimumAuthoredVineGrabY + appliedLift * duration -
+                0.5f * gravityAcceleration * duration * duration;
+            float promisedY = gorilla.VineReleaseDangerY + gorilla.VineReleaseSafetyClearance;
+            if (projectedY + 0.01f < promisedY)
+            {
+                errors.Add("Vine release tuning fails the one-second ballistic survival contract at the minimum authored grab height.");
+            }
+
+            GameObject vinePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(SwingableVinePrefabPath);
+            VineSwingTrigger vineTrigger = vinePrefab != null ? vinePrefab.GetComponent<VineSwingTrigger>() : null;
+            if (vineTrigger == null)
+            {
+                return;
+            }
+
+            float grabOffsetY = vinePrefab.transform.InverseTransformPoint(vineTrigger.GrabPoint.position).y;
+            string[] chunkGuids = AssetDatabase.FindAssets("t:RunChunkDefinition", new[] { RunChunkFolder });
+            RunChunkTag blockedAfterVine = RunChunkTag.Hazard | RunChunkTag.Predator;
+            for (int i = 0; i < chunkGuids.Length; i++)
+            {
+                string chunkPath = AssetDatabase.GUIDToAssetPath(chunkGuids[i]);
+                RunChunkDefinition definition = AssetDatabase.LoadAssetAtPath<RunChunkDefinition>(chunkPath);
+                if (definition == null || !definition.AllowInMainPool || (definition.Tags & RunChunkTag.Vine) == 0)
+                {
+                    continue;
+                }
+
+                if ((definition.BlockedNextTags & blockedAfterVine) != blockedAfterVine)
+                {
+                    errors.Add(definition.ChunkId + " must reserve its next route beat from hazards and predators.");
+                }
+
+                RunChunkSpawn[] spawns = definition.Spawns;
+                for (int spawnIndex = 0; spawnIndex < spawns.Length; spawnIndex++)
+                {
+                    RunChunkSpawn spawn = spawns[spawnIndex];
+                    if (spawn == null || spawn.Kind != RunChunkSpawnKind.SwingVine)
+                    {
+                        continue;
+                    }
+
+                    float authoredGrabY = spawn.LocalPosition.y + grabOffsetY;
+                    if (authoredGrabY + 0.01f < MinimumAuthoredVineGrabY)
+                    {
+                        errors.Add(definition.ChunkId + " places a vine grab at " + authoredGrabY.ToString("0.00") +
+                            " Y; the production floor is " + MinimumAuthoredVineGrabY.ToString("0.00") + ".");
+                    }
+                }
+            }
+        }
+
+        private static void ValidateFuelHud(List<string> errors)
+        {
+            FartBarUI fartBar = FindSceneComponent<FartBarUI>();
+            if (fartBar == null)
+            {
+                return;
+            }
+
+            MeterFillUI meter = fartBar.GetComponent<MeterFillUI>();
+            if (meter == null || meter.SegmentCount != 10 || meter.ShowsMaximum)
+            {
+                errors.Add("Fart fuel HUD must use ten wired canister segments and the compact current-value readout.");
+            }
+
+            string[] requiredChildren =
+            {
+                "FuelIconWell",
+                "FuelCloudIcon",
+                "FuelGlassTrack",
+                "Label",
+                "Value"
+            };
+            for (int i = 0; i < requiredChildren.Length; i++)
+            {
+                if (FindChild(fartBar.transform, requiredChildren[i]) == null)
+                {
+                    errors.Add("Fart fuel HUD is missing its " + requiredChildren[i] + " visual lane.");
+                }
+            }
+
+            RectTransform rect = fartBar.GetComponent<RectTransform>();
+            if (rect == null || rect.sizeDelta.x < 390f || rect.sizeDelta.y < 56f)
+            {
+                errors.Add("Fart fuel HUD no longer has the stable release dimensions required for landscape phones.");
+            }
         }
 
         private static bool HasMeshyGorilla()

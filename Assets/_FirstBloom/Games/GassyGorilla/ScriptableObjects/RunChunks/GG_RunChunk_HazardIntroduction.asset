@@ -19,7 +19,7 @@ MonoBehaviour:
   selectionWeight: 0.85
   minimumDifficulty: 0
   maximumDifficulty: 2
-  blockedPreviousTags: 80
+  blockedPreviousTags: 16
   blockedNextTags: 16
   entryHeightRange: {x: 0.6, y: 3.2}
   exitHeightRange: {x: 0.9, y: 3.5}
