@@ -116,9 +116,9 @@ Edge probes:
 
 Published release:
 
-- implementation source: `4cfdf4e0b1db6f60b92ac55087050a3e6273a245`;
-- immutable WebGL payload: `de8d6315e4b8dcd4f96cca012908fb0106c884f9`;
-- Pages activation: `079765e43024db3973a0fbaec0b076a3fff5c35d`;
+- implementation source: `4bae33e9f7bd88bf9bf40a6f28fe9c37766eb82c`;
+- immutable WebGL payload: `910730aa1ceb096a371ee8e5c53b1b761a3fc045`;
+- Pages activation: `937589748655fd8df1ae2bb97aef9062b6717c1f`;
 - playable URL: `https://firstbloomgames.github.io/Gassy-Gorilla/`.
 
-Public browser QA passed at the `0.70` default and at a persisted `0.99` SFX slider. The maximum-setting stress pass held pickup, boost, and failed-boost effective gains to `0.20`, `0.44`, and `0.30`, respectively, with family voice caps intact, no immediate boost repeat, the rare-boost cooldown intact, and zero warning/error-level logs.
+The focused pickup correction passed public browser stress tests at the `0.70` default and with the SFX slider at its maximum setting. Eight rapid pickup attempts consolidated to one active voice at no more than `0.14` effective gain, approximately 9 dB below the previous worst-case overlapping peak. A real collected food pickup used the same `0.14` path. Boost and failed-boost balance remained unchanged, and warning/error-level browser logs remained at zero.
