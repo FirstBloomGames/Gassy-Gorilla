@@ -8,6 +8,19 @@ namespace FirstBloom.Games.GassyGorilla
     [RequireComponent(typeof(Collider2D))]
     public class FartFuelPickup : MonoBehaviour, IArcadePoolable
     {
+        private const float PickupCadenceResetDelay = 0.45f;
+        private static readonly float[] PickupCadencePitchScales =
+        {
+            1f,
+            1.05946f,
+            1.12246f,
+            1.18921f,
+            1.25992f
+        };
+
+        private static float lastPickupAudioTime = float.NegativeInfinity;
+        private static int pickupCadenceStep;
+
         [SerializeField] private FoodPickupType pickupType = FoodPickupType.Bean;
         [SerializeField] private float refillAmount = 20f;
         [SerializeField] private AudioClip pickupSound;
@@ -121,7 +134,10 @@ namespace FirstBloom.Games.GassyGorilla
                 }
                 else
                 {
-                    ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.Pickup);
+                    ArcadeAudioManager.Instance.PlaySfx(
+                        ArcadeSfxType.Pickup,
+                        1f,
+                        GetPickupCadencePitchScale());
                 }
             }
 
@@ -132,6 +148,16 @@ namespace FirstBloom.Games.GassyGorilla
         {
             pickupType = type;
             refillAmount = refill;
+        }
+
+        private static float GetPickupCadencePitchScale()
+        {
+            float now = Time.unscaledTime;
+            pickupCadenceStep = now - lastPickupAudioTime > PickupCadenceResetDelay
+                ? 0
+                : Mathf.Min(pickupCadenceStep + 1, PickupCadencePitchScales.Length - 1);
+            lastPickupAudioTime = now;
+            return PickupCadencePitchScales[pickupCadenceStep];
         }
 
         private IEnumerator CollectRoutine(Transform target)

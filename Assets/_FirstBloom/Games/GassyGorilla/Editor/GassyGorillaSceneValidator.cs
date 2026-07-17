@@ -84,6 +84,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             }
 
             library.AppendValidationErrors(errors, true);
+            ValidateComedicSfxPolicies(library, errors);
             AudioClip baseMusic = library.BaseMusic;
             AudioClip intensityMusic = library.IntensityMusic;
             AudioClip ambience = library.Ambience;
@@ -126,9 +127,107 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     AudioClip clip = entry.Clips[clipIndex];
                     if (clip != null && checkedClips.Add(clip))
                     {
-                        ValidateClipPeak(clip, 0.715f, entry.Type + " SFX", errors);
+                        ValidateClipPeak(clip, 0.505f, entry.Type + " SFX", errors);
+                        ValidateSfxImporter(clip, errors);
                     }
                 }
+            }
+        }
+
+        private static void ValidateComedicSfxPolicies(ArcadeAudioLibrary library, List<string> errors)
+        {
+            ValidateSfxFamilyCount(library, ArcadeSfxType.Boost, 6, errors);
+            ValidateSfxFamilyCount(library, ArcadeSfxType.BoostFailed, 3, errors);
+            ValidateSfxFamilyCount(library, ArcadeSfxType.Pickup, 4, errors);
+
+            if (library.TryGetEntry(ArcadeSfxType.Boost, out ArcadeSfxEntry boost))
+            {
+                if (boost.Volume > 0.63f)
+                {
+                    errors.Add("Boost audio gain must remain at or below 0.63.");
+                }
+
+                if (boost.RareClipIndex != 5 || boost.RareClipCooldownPlays < 8)
+                {
+                    errors.Add("Boost audio must reserve variant 6 as the heroic clip with an eight-play cooldown.");
+                }
+            }
+
+            if (library.TryGetEntry(ArcadeSfxType.Pickup, out ArcadeSfxEntry pickup))
+            {
+                if (pickup.Volume > 0.29f)
+                {
+                    errors.Add("Pickup audio gain must remain at or below 0.29.");
+                }
+
+                if (pickup.MaximumSimultaneousVoices != 2 ||
+                    pickup.VoiceLimitMode != ArcadeSfxVoiceLimitMode.ReplaceOldest)
+                {
+                    errors.Add("Pickup audio must cap at two voices and replace the oldest pickup.");
+                }
+
+                if (pickup.MinimumRetriggerInterval < 0.03f)
+                {
+                    errors.Add("Pickup audio must configure a short retrigger guard.");
+                }
+            }
+
+            ValidateSfxFamilyGain(library, ArcadeSfxType.VineSwing, 0.33f, errors);
+            ValidateSfxFamilyGain(library, ArcadeSfxType.UiClick, 0.35f, errors);
+            ValidateSfxFamilyGain(library, ArcadeSfxType.UiBack, 0.33f, errors);
+            ValidateSfxFamilyGain(library, ArcadeSfxType.UiError, 0.37f, errors);
+
+            ArcadeSfxEntry[] entries = library.SoundEffects;
+            if (entries != null)
+            {
+                for (int i = 0; i < entries.Length; i++)
+                {
+                    if (entries[i] != null && entries[i].Volume > 0.73f)
+                    {
+                        errors.Add(entries[i].Type + " audio gain exceeds the calibrated 0.73 family ceiling.");
+                    }
+                }
+            }
+        }
+
+        private static void ValidateSfxFamilyGain(
+            ArcadeAudioLibrary library,
+            ArcadeSfxType type,
+            float maximumGain,
+            List<string> errors)
+        {
+            if (library.TryGetEntry(type, out ArcadeSfxEntry entry) && entry.Volume > maximumGain)
+            {
+                errors.Add(type + " audio gain must remain at or below " + maximumGain.ToString("F2") + ".");
+            }
+        }
+
+        private static void ValidateSfxFamilyCount(
+            ArcadeAudioLibrary library,
+            ArcadeSfxType type,
+            int expectedCount,
+            List<string> errors)
+        {
+            if (!library.TryGetEntry(type, out ArcadeSfxEntry entry) ||
+                entry.Clips == null ||
+                entry.Clips.Length != expectedCount)
+            {
+                errors.Add(type + " audio must contain exactly " + expectedCount + " production variants.");
+            }
+        }
+
+        private static void ValidateSfxImporter(AudioClip clip, List<string> errors)
+        {
+            string path = AssetDatabase.GetAssetPath(clip);
+            AudioImporter importer = AssetImporter.GetAtPath(path) as AudioImporter;
+            if (clip.channels != 1 || importer == null || !importer.forceToMono)
+            {
+                errors.Add("Production SFX must import as mono: " + path + ".");
+            }
+
+            if (importer == null || !importer.defaultSampleSettings.preloadAudioData)
+            {
+                errors.Add("Production SFX must preload for reliable WebGL playback: " + path + ".");
             }
         }
 
@@ -170,6 +269,16 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             if (manager.UsesGeneratedPlaceholderMusic)
             {
                 errors.Add(sceneLabel + " audio manager still permits generated placeholder music.");
+            }
+
+            if (manager.SfxMixHeadroom > 0.73f)
+            {
+                errors.Add(sceneLabel + " SFX mix headroom must remain at or below 0.73.");
+            }
+
+            if (manager.SfxVolume > 0.71f)
+            {
+                errors.Add(sceneLabel + " default SFX slider must remain at or below 0.71.");
             }
         }
 

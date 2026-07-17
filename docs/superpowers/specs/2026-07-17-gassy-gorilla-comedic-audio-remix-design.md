@@ -1,6 +1,6 @@
 # Gassy Gorilla Comedic Audio Remix Design
 
-**Status:** Approved
+**Status:** Implemented and browser-verified
 
 **Date:** 2026-07-17
 
@@ -42,7 +42,7 @@ The pickup family contains four short, soft reward sounds between approximately 
 
 Pickup playback follows these rules:
 
-- Target library gain is approximately `0.40`, subject to measured mix validation.
+- Shipping library gain is `0.28`.
 - No more than two pickup voices may overlap.
 - Rapid pickups form a restrained rising cadence through small pitch steps.
 - A new pickup lowers or replaces the oldest pickup voice instead of stacking another full-volume chime.
@@ -65,6 +65,8 @@ Targets:
 - Final one-shot masters peak at or below `-6 dBFS`.
 - Successful boost playback is strong but leaves headroom for warnings and voice.
 - Pickup playback is approximately 8 dB quieter than the current effective level.
+- The SFX bus applies a fixed `0.72` mix ceiling after the user slider, so a saved `100%` setting remains comfortable.
+- The fresh-install SFX slider default is `0.70`.
 - No normal two-sound gameplay combination clips the output path.
 - Voice remains intelligible without requiring the player to reduce SFX manually.
 - The heroic boost variant is exciting through shape and timing, not excess loudness.
@@ -85,9 +87,12 @@ Gassy Gorilla configures:
 - six successful boost clips with anti-repeat and heroic cooldown;
 - three failed-boost clips;
 - four pickup clips with a two-voice cap and cadence-friendly retrigger timing;
-- revised entry gains and restrained pitch ranges.
+- revised entry gains and restrained pitch ranges;
+- calibrated family gains of `0.62` boost, `0.42` failed boost, `0.28` pickup, `0.32` vine swing, `0.34` UI confirm, and no routine SFX family above `0.72`.
 
 No runtime audio synthesis is used by the shipping library.
+
+The framework SFX ceiling applies to library one-shots, direct clips, and loops. It is not exposed as a player setting: the player slider controls preference inside the authored mix, while the ceiling defines what `100%` means.
 
 ## 7. Asset and Payload Rules
 
@@ -122,6 +127,8 @@ Only clear balance or masking problems are adjusted. Music composition, gameplay
 8. Confirm music, ambience, SFX, and all milestone voices load and play without console errors.
 9. Run Unity compilation, scene validation, audio validation, and WebGL build.
 10. Measure final compressed payload and compare it with the current release.
+
+Browser verification must include a previously persisted `100%` SFX slider. Under that condition, rapid pickups may not exceed `0.20` effective source gain, successful boosts may not exceed `0.45`, and failed boosts may not exceed `0.30` with the current production family gains.
 
 ## 10. Acceptance Criteria
 

@@ -4,6 +4,12 @@ using UnityEngine;
 
 namespace FirstBloom.ArcadeFramework.Audio
 {
+    public enum ArcadeSfxVoiceLimitMode
+    {
+        ReplaceOldest,
+        RejectNewest
+    }
+
     [Serializable]
     public sealed class ArcadeSfxEntry
     {
@@ -12,6 +18,11 @@ namespace FirstBloom.ArcadeFramework.Audio
         [Range(0f, 1.5f)] [SerializeField] private float volume = 1f;
         [SerializeField] private Vector2 pitchRange = new Vector2(0.98f, 1.02f);
         [SerializeField] private bool loop;
+        [Min(0)] [SerializeField] private int maximumSimultaneousVoices;
+        [Min(0f)] [SerializeField] private float minimumRetriggerInterval;
+        [SerializeField] private ArcadeSfxVoiceLimitMode voiceLimitMode = ArcadeSfxVoiceLimitMode.ReplaceOldest;
+        [Min(-1)] [SerializeField] private int rareClipIndex = -1;
+        [Min(0)] [SerializeField] private int rareClipCooldownPlays;
 
         public ArcadeSfxType Type { get { return type; } }
         public AudioClip[] Clips { get { return clips; } }
@@ -26,19 +37,34 @@ namespace FirstBloom.ArcadeFramework.Audio
             }
         }
         public bool Loop { get { return loop; } }
+        public int MaximumSimultaneousVoices { get { return Mathf.Max(0, maximumSimultaneousVoices); } }
+        public float MinimumRetriggerInterval { get { return Mathf.Max(0f, minimumRetriggerInterval); } }
+        public ArcadeSfxVoiceLimitMode VoiceLimitMode { get { return voiceLimitMode; } }
+        public int RareClipIndex { get { return rareClipIndex; } }
+        public int RareClipCooldownPlays { get { return Mathf.Max(0, rareClipCooldownPlays); } }
 
         public ArcadeSfxEntry(
             ArcadeSfxType type,
             AudioClip[] clips,
             float volume,
             Vector2 pitchRange,
-            bool loop = false)
+            bool loop = false,
+            int maximumSimultaneousVoices = 0,
+            float minimumRetriggerInterval = 0f,
+            ArcadeSfxVoiceLimitMode voiceLimitMode = ArcadeSfxVoiceLimitMode.ReplaceOldest,
+            int rareClipIndex = -1,
+            int rareClipCooldownPlays = 0)
         {
             this.type = type;
             this.clips = clips ?? Array.Empty<AudioClip>();
             this.volume = Mathf.Clamp(volume, 0f, 1.5f);
             this.pitchRange = pitchRange;
             this.loop = loop;
+            this.maximumSimultaneousVoices = Mathf.Max(0, maximumSimultaneousVoices);
+            this.minimumRetriggerInterval = Mathf.Max(0f, minimumRetriggerInterval);
+            this.voiceLimitMode = voiceLimitMode;
+            this.rareClipIndex = rareClipIndex;
+            this.rareClipCooldownPlays = Mathf.Max(0, rareClipCooldownPlays);
         }
     }
 
@@ -152,6 +178,15 @@ namespace FirstBloom.ArcadeFramework.Audio
                     {
                         errors.Add(name + " has a missing " + entry.Type + " clip at index " + clipIndex + ".");
                     }
+                }
+
+                if (entry.RareClipIndex >= clips.Length)
+                {
+                    errors.Add(name + " has an out-of-range rare clip index for " + entry.Type + ".");
+                }
+                else if (entry.RareClipIndex >= 0 && entry.RareClipCooldownPlays <= 0)
+                {
+                    errors.Add(name + " must configure a positive rare clip cooldown for " + entry.Type + ".");
                 }
             }
 

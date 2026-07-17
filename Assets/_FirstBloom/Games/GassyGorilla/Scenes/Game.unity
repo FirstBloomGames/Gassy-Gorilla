@@ -1666,9 +1666,10 @@ MonoBehaviour:
   voiceDuckMultiplier: 0.42
   voiceDuckResponse: 8
   sfxVoiceCount: 8
+  sfxMixHeadroom: 0.72
   masterVolume: 1
   musicVolume: 0.7
-  sfxVolume: 0.85
+  sfxVolume: 0.7
   voiceVolume: 1
 --- !u!4 &539963665
 Transform:
@@ -5397,8 +5398,8 @@ MonoBehaviour:
   runDirector: {fileID: 1106165751}
   gorilla: {fileID: 638116281}
   gameManager: {fileID: 1567969155}
-  swingBaseVolume: 0.14
-  swingSpeedVolume: 0.12
+  swingBaseVolume: 0.1
+  swingSpeedVolume: 0.08
   swingPitchRange: {x: 0.88, y: 1.08}
   fullSwingSpeed: 7
   gameOverStingDelay: 0.28

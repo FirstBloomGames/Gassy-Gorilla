@@ -33,15 +33,18 @@ namespace FirstBloom.ArcadeFramework.Audio
 
         [Header("Sound Effects")]
         [Range(4, 16)] [SerializeField] private int sfxVoiceCount = 8;
+        [Range(0f, 1f)] [SerializeField] private float sfxMixHeadroom = 0.72f;
 
         [Header("Volumes")]
         [Range(0f, 1f)] [SerializeField] private float masterVolume = 1f;
         [Range(0f, 1f)] [SerializeField] private float musicVolume = 0.7f;
-        [Range(0f, 1f)] [SerializeField] private float sfxVolume = 0.85f;
+        [Range(0f, 1f)] [SerializeField] private float sfxVolume = 0.7f;
         [Range(0f, 1f)] [SerializeField] private float voiceVolume = 1f;
 
         private readonly Dictionary<ArcadeSfxType, AudioClip> generatedSfx = new Dictionary<ArcadeSfxType, AudioClip>();
         private readonly Dictionary<ArcadeSfxType, int> lastClipIndices = new Dictionary<ArcadeSfxType, int>();
+        private readonly Dictionary<ArcadeSfxType, float> lastSfxPlayTimes = new Dictionary<ArcadeSfxType, float>();
+        private readonly Dictionary<ArcadeSfxType, int> playsSinceRareClip = new Dictionary<ArcadeSfxType, int>();
         private readonly Dictionary<ArcadeSfxType, LoopVoice> loopVoices = new Dictionary<ArcadeSfxType, LoopVoice>();
         private readonly List<VoiceSlot> sfxVoices = new List<VoiceSlot>();
         private int sfxVoiceCursor;
@@ -52,12 +55,14 @@ namespace FirstBloom.ArcadeFramework.Audio
         private bool musicRequested;
         private bool audioUnlocked;
         private bool audioQaEnabled;
+        private bool audioRemixQaEnabled;
 
         public static ArcadeAudioManager Instance { get; private set; }
 
         public float MasterVolume { get { return masterVolume; } }
         public float MusicVolume { get { return musicVolume; } }
         public float SfxVolume { get { return sfxVolume; } }
+        public float SfxMixHeadroom { get { return sfxMixHeadroom; } }
         public float VoiceVolume { get { return voiceVolume; } }
         public float MusicIntensity { get { return currentMusicIntensity; } }
         public ArcadeAudioLibrary AudioLibrary { get { return audioLibrary; } }
@@ -82,6 +87,7 @@ namespace FirstBloom.ArcadeFramework.Audio
 #if UNITY_WEBGL && !UNITY_EDITOR
             audioUnlocked = false;
             audioQaEnabled = Application.absoluteURL.Contains("qa-audio");
+            audioRemixQaEnabled = Application.absoluteURL.Contains("qa-audio-remix");
 #else
             audioUnlocked = true;
 #endif
@@ -140,6 +146,11 @@ namespace FirstBloom.ArcadeFramework.Audio
             {
                 StartCoroutine(LogAudioQaAfterUnlock());
             }
+
+            if (audioRemixQaEnabled)
+            {
+                StartCoroutine(RunAudioRemixQa());
+            }
         }
 
         public void RequestMusicStart()
@@ -183,25 +194,48 @@ namespace FirstBloom.ArcadeFramework.Audio
 
         public void PlaySfx(ArcadeSfxType type, float volumeScale = 1f)
         {
+            PlaySfx(type, volumeScale, 1f);
+        }
+
+        public void PlaySfx(ArcadeSfxType type, float volumeScale, float pitchScale)
+        {
             if (!audioUnlocked)
             {
                 return;
             }
 
-            if (TrySelectLibraryClip(type, out AudioClip clip, out ArcadeSfxEntry entry))
+            if (audioLibrary != null && audioLibrary.TryGetEntry(type, out ArcadeSfxEntry entry))
             {
+                if (!CanRetrigger(type, entry))
+                {
+                    return;
+                }
+
+                if (!TrySelectLibraryClip(type, entry, out AudioClip clip, out int clipIndex))
+                {
+                    return;
+                }
+
                 Vector2 pitchRange = entry.PitchRange;
-                float pitch = Random.Range(pitchRange.x, pitchRange.y);
-                PlaySfxClip(clip, Mathf.Clamp(volumeScale * entry.Volume, 0f, 1.5f), pitch);
+                float pitch = Random.Range(pitchRange.x, pitchRange.y) * Mathf.Clamp(pitchScale, 0.5f, 2f);
+                float gain = Mathf.Clamp(volumeScale * entry.Volume, 0f, 1.5f);
+                if (PlaySfxClip(type, entry, clip, clipIndex, gain, pitch))
+                {
+                    RecordSfxPlayback(type, entry, clipIndex, gain, pitch);
+                }
+
                 return;
             }
 
-            PlaySfxClip(GetGeneratedSfx(type), Mathf.Clamp01(volumeScale), 1f);
+            PlaySfxClip(GetGeneratedSfx(type), Mathf.Clamp01(volumeScale), Mathf.Clamp(pitchScale, 0.5f, 2f));
         }
 
         public void StartSfxLoop(ArcadeSfxType type, float volumeScale = 1f)
         {
-            if (!audioUnlocked || !TrySelectLibraryClip(type, out AudioClip clip, out ArcadeSfxEntry entry))
+            if (!audioUnlocked ||
+                audioLibrary == null ||
+                !audioLibrary.TryGetEntry(type, out ArcadeSfxEntry entry) ||
+                !TrySelectLibraryClip(type, entry, out AudioClip clip, out int _))
             {
                 return;
             }
@@ -227,7 +261,7 @@ namespace FirstBloom.ArcadeFramework.Audio
             loopVoice.Source.loop = true;
             Vector2 pitchRange = entry.PitchRange;
             loopVoice.Source.pitch = Random.Range(pitchRange.x, pitchRange.y);
-            loopVoice.Source.volume = masterVolume * sfxVolume * loopVoice.Gain;
+            loopVoice.Source.volume = GetSfxOutputVolume(loopVoice.Gain);
             if (!loopVoice.Source.isPlaying)
             {
                 loopVoice.Source.Play();
@@ -243,7 +277,7 @@ namespace FirstBloom.ArcadeFramework.Audio
 
             loopVoice.Gain = Mathf.Clamp(volumeScale, 0f, 1.5f);
             loopVoice.Source.pitch = Mathf.Clamp(pitch, 0.5f, 2f);
-            loopVoice.Source.volume = masterVolume * sfxVolume * loopVoice.Gain;
+            loopVoice.Source.volume = GetSfxOutputVolume(loopVoice.Gain);
         }
 
         public void StopSfxLoop(ArcadeSfxType type, float fadeDuration = 0.08f)
@@ -389,7 +423,7 @@ namespace FirstBloom.ArcadeFramework.Audio
                 VoiceSlot slot = sfxVoices[i];
                 if (slot.Source != null)
                 {
-                    slot.Source.volume = masterVolume * sfxVolume * slot.Gain;
+                    slot.Source.volume = GetSfxOutputVolume(slot.Gain);
                 }
             }
 
@@ -397,7 +431,7 @@ namespace FirstBloom.ArcadeFramework.Audio
             {
                 if (loopVoice.Source != null)
                 {
-                    loopVoice.Source.volume = masterVolume * sfxVolume * loopVoice.Gain;
+                    loopVoice.Source.volume = GetSfxOutputVolume(loopVoice.Gain);
                 }
             }
 
@@ -476,33 +510,87 @@ namespace FirstBloom.ArcadeFramework.Audio
             }
         }
 
+        private bool CanRetrigger(ArcadeSfxType type, ArcadeSfxEntry entry)
+        {
+            float interval = entry != null ? entry.MinimumRetriggerInterval : 0f;
+            return interval <= 0f ||
+                !lastSfxPlayTimes.TryGetValue(type, out float lastPlayTime) ||
+                Time.unscaledTime - lastPlayTime >= interval;
+        }
+
         private bool TrySelectLibraryClip(
             ArcadeSfxType type,
+            ArcadeSfxEntry entry,
             out AudioClip clip,
-            out ArcadeSfxEntry entry)
+            out int selectedIndex)
         {
             clip = null;
-            entry = null;
-            if (audioLibrary == null || !audioLibrary.TryGetEntry(type, out entry))
-            {
-                return false;
-            }
-
+            selectedIndex = -1;
             AudioClip[] clips = entry.Clips;
             if (clips == null || clips.Length == 0)
             {
                 return false;
             }
 
-            int selectedIndex = Random.Range(0, clips.Length);
-            if (clips.Length > 1 && lastClipIndices.TryGetValue(type, out int previousIndex) && selectedIndex == previousIndex)
+            int rareIndex = entry.RareClipIndex >= 0 && entry.RareClipIndex < clips.Length
+                ? entry.RareClipIndex
+                : -1;
+            int playsSinceRare = rareIndex >= 0 && playsSinceRareClip.TryGetValue(type, out int trackedPlays)
+                ? trackedPlays
+                : entry.RareClipCooldownPlays;
+            bool rareAllowed = rareIndex < 0 ||
+                entry.RareClipCooldownPlays <= 0 ||
+                playsSinceRare >= entry.RareClipCooldownPlays;
+            int excludedIndex = rareAllowed ? -1 : rareIndex;
+            int eligibleCount = clips.Length - (excludedIndex >= 0 ? 1 : 0);
+            if (eligibleCount <= 0)
             {
-                selectedIndex = (selectedIndex + 1 + Random.Range(0, clips.Length - 1)) % clips.Length;
+                return false;
+            }
+
+            int selectedOrdinal = Random.Range(0, eligibleCount);
+            selectedIndex = GetEligibleClipIndex(selectedOrdinal, excludedIndex);
+            if (eligibleCount > 1 &&
+                lastClipIndices.TryGetValue(type, out int previousIndex) &&
+                selectedIndex == previousIndex)
+            {
+                int previousOrdinal = GetEligibleClipOrdinal(previousIndex, excludedIndex);
+                int offset = Random.Range(1, eligibleCount);
+                selectedOrdinal = (previousOrdinal + offset) % eligibleCount;
+                selectedIndex = GetEligibleClipIndex(selectedOrdinal, excludedIndex);
             }
 
             lastClipIndices[type] = selectedIndex;
             clip = clips[selectedIndex];
             return clip != null;
+        }
+
+        private static int GetEligibleClipIndex(int ordinal, int excludedIndex)
+        {
+            return excludedIndex >= 0 && ordinal >= excludedIndex ? ordinal + 1 : ordinal;
+        }
+
+        private static int GetEligibleClipOrdinal(int clipIndex, int excludedIndex)
+        {
+            return excludedIndex >= 0 && clipIndex > excludedIndex ? clipIndex - 1 : clipIndex;
+        }
+
+        private bool PlaySfxClip(
+            ArcadeSfxType type,
+            ArcadeSfxEntry entry,
+            AudioClip clip,
+            int clipIndex,
+            float gain,
+            float pitch)
+        {
+            VoiceSlot selected = SelectSfxVoice(type, entry);
+            if (selected == null)
+            {
+                return false;
+            }
+
+            PlaySfxOnVoice(selected, clip, gain, pitch, true, type, clipIndex);
+            return true;
         }
 
         private void PlaySfxClip(AudioClip clip, float gain, float pitch)
@@ -536,14 +624,150 @@ namespace FirstBloom.ArcadeFramework.Audio
                 return;
             }
 
+            PlaySfxOnVoice(selected, clip, gain, pitch, false, default, -1);
+        }
+
+        private VoiceSlot SelectSfxVoice(ArcadeSfxType type, ArcadeSfxEntry entry)
+        {
+            int maximumVoices = entry != null ? entry.MaximumSimultaneousVoices : 0;
+            if (maximumVoices > 0)
+            {
+                int activeFamilyVoices = 0;
+                VoiceSlot oldestFamilyVoice = null;
+                for (int i = 0; i < sfxVoices.Count; i++)
+                {
+                    VoiceSlot slot = sfxVoices[i];
+                    if (slot.Source == null || !slot.Source.isPlaying || !slot.HasType || slot.Type != type)
+                    {
+                        continue;
+                    }
+
+                    activeFamilyVoices++;
+                    if (oldestFamilyVoice == null || slot.StartedAt < oldestFamilyVoice.StartedAt)
+                    {
+                        oldestFamilyVoice = slot;
+                    }
+                }
+
+                if (activeFamilyVoices >= maximumVoices)
+                {
+                    return entry.VoiceLimitMode == ArcadeSfxVoiceLimitMode.ReplaceOldest
+                        ? oldestFamilyVoice
+                        : null;
+                }
+            }
+
+            for (int i = 0; i < sfxVoices.Count; i++)
+            {
+                int index = (sfxVoiceCursor + i) % sfxVoices.Count;
+                VoiceSlot candidate = sfxVoices[index];
+                if (candidate.Source != null && !candidate.Source.isPlaying)
+                {
+                    sfxVoiceCursor = (index + 1) % sfxVoices.Count;
+                    return candidate;
+                }
+            }
+
+            VoiceSlot selected = sfxVoices[sfxVoiceCursor];
+            sfxVoiceCursor = (sfxVoiceCursor + 1) % sfxVoices.Count;
+            return selected;
+        }
+
+        private void PlaySfxOnVoice(
+            VoiceSlot selected,
+            AudioClip clip,
+            float gain,
+            float pitch,
+            bool hasType,
+            ArcadeSfxType type,
+            int clipIndex)
+        {
+            if (selected == null || selected.Source == null || clip == null)
+            {
+                return;
+            }
+
             selected.Source.Stop();
             selected.Source.clip = clip;
             selected.Source.loop = false;
             selected.Source.pitch = Mathf.Clamp(pitch, 0.5f, 2f);
             selected.Gain = Mathf.Clamp(gain, 0f, 1.5f);
-            selected.Source.volume = masterVolume * sfxVolume * selected.Gain;
+            selected.HasType = hasType;
+            selected.Type = type;
+            selected.ClipIndex = clipIndex;
+            selected.StartedAt = Time.unscaledTime;
+            selected.Source.volume = GetSfxOutputVolume(selected.Gain);
             selected.Source.Play();
             LogAudioQaPlayback("sfx", selected.Source, clip);
+        }
+
+        private void RecordSfxPlayback(
+            ArcadeSfxType type,
+            ArcadeSfxEntry entry,
+            int clipIndex,
+            float gain,
+            float pitch)
+        {
+            lastSfxPlayTimes[type] = Time.unscaledTime;
+            if (entry.RareClipIndex >= 0 && entry.RareClipIndex < entry.Clips.Length)
+            {
+                int playsSinceRare = playsSinceRareClip.TryGetValue(type, out int trackedPlays)
+                    ? trackedPlays
+                    : entry.RareClipCooldownPlays;
+                playsSinceRareClip[type] = clipIndex == entry.RareClipIndex
+                    ? 0
+                    : Mathf.Min(playsSinceRare + 1, entry.RareClipCooldownPlays);
+            }
+
+            LogSfxQaPolicy(type, entry, clipIndex, gain, pitch);
+        }
+
+        private void LogSfxQaPolicy(
+            ArcadeSfxType type,
+            ArcadeSfxEntry entry,
+            int clipIndex,
+            float gain,
+            float pitch)
+        {
+            if (!audioQaEnabled)
+            {
+                return;
+            }
+
+            int rareCooldownRemaining = 0;
+            if (entry.RareClipIndex >= 0 && entry.RareClipCooldownPlays > 0)
+            {
+                int playsSinceRare = playsSinceRareClip.TryGetValue(type, out int trackedPlays)
+                    ? trackedPlays
+                    : entry.RareClipCooldownPlays;
+                rareCooldownRemaining = Mathf.Max(0, entry.RareClipCooldownPlays - playsSinceRare);
+            }
+
+            Debug.Log(
+                "[GG_AUDIO_QA] sfxType=" + type +
+                " variant=" + (clipIndex + 1) + "/" + entry.Clips.Length +
+                " activeFamilyVoices=" + CountActiveSfxVoices(type) +
+                " familyGain=" + gain.ToString("F2") +
+                " mixHeadroom=" + sfxMixHeadroom.ToString("F2") +
+                " slider=" + sfxVolume.ToString("F2") +
+                " effectiveGain=" + GetSfxOutputVolume(gain).ToString("F2") +
+                " pitch=" + pitch.ToString("F2") +
+                " rareCooldownRemaining=" + rareCooldownRemaining);
+        }
+
+        private int CountActiveSfxVoices(ArcadeSfxType type)
+        {
+            int count = 0;
+            for (int i = 0; i < sfxVoices.Count; i++)
+            {
+                VoiceSlot slot = sfxVoices[i];
+                if (slot.Source != null && slot.Source.isPlaying && slot.HasType && slot.Type == type)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private IEnumerator LogAudioQaAfterUnlock()
@@ -562,6 +786,39 @@ namespace FirstBloom.ArcadeFramework.Audio
                 " base=" + DescribeAudioSource(musicSource) +
                 " intensity=" + DescribeAudioSource(intensityMusicSource) +
                 " ambience=" + DescribeAudioSource(ambienceSource));
+        }
+
+        private IEnumerator RunAudioRemixQa()
+        {
+            yield return new WaitForSecondsRealtime(0.35f);
+            Debug.Log("[GG_AUDIO_REMIX_QA] begin");
+
+            float[] pickupPitches = { 1f, 1.05946f, 1.12246f, 1.18921f, 1.25992f };
+            for (int i = 0; i < 8; i++)
+            {
+                PlaySfx(ArcadeSfxType.Pickup, 1f, pickupPitches[Mathf.Min(i, pickupPitches.Length - 1)]);
+                yield return new WaitForSecondsRealtime(0.04f);
+            }
+
+            yield return new WaitForSecondsRealtime(0.3f);
+            Random.State previousRandomState = Random.state;
+            Random.InitState(20260717);
+            for (int i = 0; i < 48; i++)
+            {
+                PlaySfx(ArcadeSfxType.Boost);
+                yield return new WaitForSecondsRealtime(0.055f);
+            }
+
+            Random.state = previousRandomState;
+            yield return new WaitForSecondsRealtime(0.35f);
+            for (int i = 0; i < 6; i++)
+            {
+                PlaySfx(ArcadeSfxType.BoostFailed);
+                yield return new WaitForSecondsRealtime(0.075f);
+            }
+
+            yield return new WaitForSecondsRealtime(0.45f);
+            Debug.Log("[GG_AUDIO_REMIX_QA] complete");
         }
 
         private void LogAudioQaPlayback(string channel, AudioSource source, AudioClip clip)
@@ -600,7 +857,7 @@ namespace FirstBloom.ArcadeFramework.Audio
             {
                 elapsed += Time.unscaledDeltaTime;
                 loopVoice.Gain = Mathf.Lerp(startGain, 0f, Mathf.Clamp01(elapsed / duration));
-                loopVoice.Source.volume = masterVolume * sfxVolume * loopVoice.Gain;
+                loopVoice.Source.volume = GetSfxOutputVolume(loopVoice.Gain);
                 yield return null;
             }
 
@@ -611,6 +868,11 @@ namespace FirstBloom.ArcadeFramework.Audio
 
             loopVoice.Gain = 0f;
             loopVoice.StopRoutine = null;
+        }
+
+        private float GetSfxOutputVolume(float gain)
+        {
+            return masterVolume * sfxVolume * sfxMixHeadroom * gain;
         }
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -743,6 +1005,10 @@ namespace FirstBloom.ArcadeFramework.Audio
         {
             public readonly AudioSource Source;
             public float Gain = 1f;
+            public bool HasType;
+            public ArcadeSfxType Type;
+            public int ClipIndex = -1;
+            public float StartedAt;
 
             public VoiceSlot(AudioSource source)
             {

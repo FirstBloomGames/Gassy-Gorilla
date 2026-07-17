@@ -2,6 +2,8 @@
 
 **Design:** `docs/superpowers/specs/2026-07-17-gassy-gorilla-comedic-audio-remix-design.md`
 
+**Status:** Implemented; final publication pending
+
 ## Goal
 
 Ship a quieter, non-stacking pickup family and a six-variant comedic fart family while preserving WebGL audio unlock, settings persistence, frame pacing, and download budgets.
@@ -55,9 +57,11 @@ Generate the boost and sputter source performances with literal, family-specific
 
 The generator must preserve approved boost masters on rebuild, regenerate deterministic pickup masters, assign the new family counts, and configure:
 
-- Boost: six clips, gain near `0.78`, subtle pitch range, heroic clip at index 5, eight-play rare cooldown.
-- BoostFailed: three clips, gain near `0.58`.
-- Pickup: four clips, gain near `0.40`, two-voice cap, short retrigger interval, replace-oldest behavior.
+- Boost: six clips, gain `0.62`, subtle pitch range, heroic clip at index 5, eight-play rare cooldown.
+- BoostFailed: three clips, gain `0.42`.
+- Pickup: four clips, gain `0.28`, two-voice cap, short retrigger interval, replace-oldest behavior.
+- Framework SFX bus: fixed `0.72` mix headroom after the persistent user slider.
+- Fresh-install SFX default: `0.70`.
 
 Rebalance other library gains only where needed to retain the approved mix hierarchy.
 

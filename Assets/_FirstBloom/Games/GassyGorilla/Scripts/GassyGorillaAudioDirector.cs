@@ -13,8 +13,8 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private GassyGorillaGameManager gameManager;
 
         [Header("Vine Motion")]
-        [Range(0f, 1f)] [SerializeField] private float swingBaseVolume = 0.14f;
-        [Range(0f, 1f)] [SerializeField] private float swingSpeedVolume = 0.12f;
+        [Range(0f, 1f)] [SerializeField] private float swingBaseVolume = 0.1f;
+        [Range(0f, 1f)] [SerializeField] private float swingSpeedVolume = 0.08f;
         [SerializeField] private Vector2 swingPitchRange = new Vector2(0.88f, 1.08f);
         [Min(0.1f)] [SerializeField] private float fullSwingSpeed = 7f;
 

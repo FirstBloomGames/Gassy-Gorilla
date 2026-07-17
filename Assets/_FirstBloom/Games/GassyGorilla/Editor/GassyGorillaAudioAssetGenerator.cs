@@ -34,9 +34,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             WriteWaveAsset(MusicRoot + "/GG_Music_JungleStride_Intensity.wav", GenerateIntensityMusic(), 2, 0.45f);
             WriteWaveAsset(MusicRoot + "/GG_Ambience_JungleWater.wav", GenerateAmbience(), 2, 0.3f);
 
-            GenerateSfxFamily("Boost", 4, SfxKind.Boost);
-            GenerateSfxFamily("BoostFailed", 2, SfxKind.BoostFailed);
-            GenerateSfxFamily("Pickup", 3, SfxKind.Pickup);
+            RequireAuthoredSfxFamily("Boost", 6);
+            RequireAuthoredSfxFamily("BoostFailed", 3);
+            GenerateSfxFamily("Pickup", 4, SfxKind.Pickup);
             GenerateSfxFamily("VineGrab", 2, SfxKind.VineGrab);
             GenerateSfxFamily("VineSwing", 2, SfxKind.VineSwing);
             GenerateSfxFamily("VineRelease", 3, SfxKind.VineRelease);
@@ -76,7 +76,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             EditorUtility.SetDirty(library);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            Debug.Log("Generated the original Gassy Gorilla production music, ambience, and SFX library.");
+            Debug.Log("Generated the Gassy Gorilla production mix while preserving the authored comedic boost families.");
             return AssetDatabase.LoadAssetAtPath<ArcadeAudioLibrary>(LibraryPath);
         }
 
@@ -84,21 +84,53 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             return new[]
             {
-                Entry(ArcadeSfxType.Boost, "Boost", 4, 0.94f, 0.96f, 1.05f),
-                Entry(ArcadeSfxType.BoostFailed, "BoostFailed", 2, 0.78f, 0.96f, 1.04f),
-                Entry(ArcadeSfxType.Pickup, "Pickup", 3, 0.82f, 0.98f, 1.06f),
-                Entry(ArcadeSfxType.VineGrab, "VineGrab", 2, 0.9f, 0.96f, 1.03f),
-                Entry(ArcadeSfxType.VineSwing, "VineSwing", 2, 0.52f, 0.96f, 1.02f, true),
-                Entry(ArcadeSfxType.VineRelease, "VineRelease", 3, 0.9f, 0.97f, 1.05f),
-                Entry(ArcadeSfxType.Crash, "Crash", 2, 0.94f, 0.95f, 1.02f),
-                Entry(ArcadeSfxType.UiClick, "UIConfirm", 1, 0.7f, 0.99f, 1.02f),
-                Entry(ArcadeSfxType.UiBack, "UIBack", 1, 0.68f, 0.99f, 1.02f),
-                Entry(ArcadeSfxType.UiError, "UIError", 1, 0.68f, 0.99f, 1.01f),
-                Entry(ArcadeSfxType.Splash, "Splash", 2, 0.9f, 0.96f, 1.03f),
-                Entry(ArcadeSfxType.Chomp, "Chomp", 2, 0.93f, 0.96f, 1.03f),
-                Entry(ArcadeSfxType.CrocodileWarning, "CrocodileWarning", 2, 0.86f, 0.97f, 1.02f),
-                Entry(ArcadeSfxType.Milestone, "Milestone", 2, 0.78f, 0.99f, 1.02f),
-                Entry(ArcadeSfxType.GameOver, "GameOver", 1, 0.82f, 1f, 1f)
+                Entry(
+                    ArcadeSfxType.Boost,
+                    "Boost",
+                    6,
+                    0.62f,
+                    0.985f,
+                    1.015f,
+                    false,
+                    3,
+                    0f,
+                    ArcadeSfxVoiceLimitMode.ReplaceOldest,
+                    5,
+                    8),
+                Entry(
+                    ArcadeSfxType.BoostFailed,
+                    "BoostFailed",
+                    3,
+                    0.42f,
+                    0.985f,
+                    1.015f,
+                    false,
+                    2,
+                    0.05f,
+                    ArcadeSfxVoiceLimitMode.ReplaceOldest),
+                Entry(
+                    ArcadeSfxType.Pickup,
+                    "Pickup",
+                    4,
+                    0.28f,
+                    0.995f,
+                    1.005f,
+                    false,
+                    2,
+                    0.035f,
+                    ArcadeSfxVoiceLimitMode.ReplaceOldest),
+                Entry(ArcadeSfxType.VineGrab, "VineGrab", 2, 0.62f, 0.96f, 1.03f),
+                Entry(ArcadeSfxType.VineSwing, "VineSwing", 2, 0.32f, 0.96f, 1.02f, true),
+                Entry(ArcadeSfxType.VineRelease, "VineRelease", 3, 0.6f, 0.97f, 1.05f),
+                Entry(ArcadeSfxType.Crash, "Crash", 2, 0.72f, 0.95f, 1.02f),
+                Entry(ArcadeSfxType.UiClick, "UIConfirm", 1, 0.34f, 0.99f, 1.02f),
+                Entry(ArcadeSfxType.UiBack, "UIBack", 1, 0.32f, 0.99f, 1.02f),
+                Entry(ArcadeSfxType.UiError, "UIError", 1, 0.36f, 0.99f, 1.01f),
+                Entry(ArcadeSfxType.Splash, "Splash", 2, 0.64f, 0.96f, 1.03f),
+                Entry(ArcadeSfxType.Chomp, "Chomp", 2, 0.68f, 0.96f, 1.03f),
+                Entry(ArcadeSfxType.CrocodileWarning, "CrocodileWarning", 2, 0.68f, 0.97f, 1.02f),
+                Entry(ArcadeSfxType.Milestone, "Milestone", 2, 0.42f, 0.99f, 1.02f),
+                Entry(ArcadeSfxType.GameOver, "GameOver", 1, 0.56f, 1f, 1f)
             };
         }
 
@@ -109,14 +141,24 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             float volume,
             float minPitch,
             float maxPitch,
-            bool loop = false)
+            bool loop = false,
+            int maximumSimultaneousVoices = 0,
+            float minimumRetriggerInterval = 0f,
+            ArcadeSfxVoiceLimitMode voiceLimitMode = ArcadeSfxVoiceLimitMode.ReplaceOldest,
+            int rareClipIndex = -1,
+            int rareClipCooldownPlays = 0)
         {
             return new ArcadeSfxEntry(
                 type,
                 LoadSfxFamily(family, count),
                 volume,
                 new Vector2(minPitch, maxPitch),
-                loop);
+                loop,
+                maximumSimultaneousVoices,
+                minimumRetriggerInterval,
+                voiceLimitMode,
+                rareClipIndex,
+                rareClipCooldownPlays);
         }
 
         private static void GenerateSfxFamily(string family, int count, SfxKind kind)
@@ -125,7 +167,19 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             {
                 float[] samples = GenerateSfx(kind, i);
                 string path = SfxRoot + "/GG_SFX_" + family + "_" + (i + 1).ToString("D2") + ".wav";
-                WriteWaveAsset(path, samples, 1, 0.68f);
+                WriteWaveAsset(path, samples, 1, 0.5f);
+            }
+        }
+
+        private static void RequireAuthoredSfxFamily(string family, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                string path = SfxRoot + "/GG_SFX_" + family + "_" + (i + 1).ToString("D2") + ".wav";
+                if (!File.Exists(ToFullPath(path)))
+                {
+                    throw new InvalidOperationException("Missing authored production SFX: " + path + ".");
+                }
             }
         }
 
@@ -296,11 +350,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
         private static float[] GeneratePickup(int variant)
         {
-            float[] data = NewBuffer(0.36f, 1);
-            int root = 76 + variant * 2;
-            AddBell(data, 1, 0f, 0.3f, MidiToFrequency(root), 0.22f, 0f);
-            AddBell(data, 1, 0.055f, 0.28f, MidiToFrequency(root + 4), 0.19f, 0f);
-            AddBell(data, 1, 0.11f, 0.24f, MidiToFrequency(root + 7), 0.17f, 0f);
+            float[] data = NewBuffer(0.16f + variant * 0.006f, 1);
+            int root = 69 + variant * 2;
+            AddMarimba(data, 1, 0f, 0.13f, MidiToFrequency(root), 0.17f, 0f);
+            AddBell(data, 1, 0.04f, 0.11f, MidiToFrequency(root + 4), 0.065f, 0f);
+            ApplyEdgeFade(data, 1, 0.003f);
             return data;
         }
 

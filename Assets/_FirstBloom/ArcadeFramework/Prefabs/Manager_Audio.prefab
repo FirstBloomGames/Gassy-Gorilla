@@ -449,9 +449,10 @@ MonoBehaviour:
   voiceDuckMultiplier: 0.42
   voiceDuckResponse: 8
   sfxVoiceCount: 8
+  sfxMixHeadroom: 0.72
   masterVolume: 1
   musicVolume: 0.7
-  sfxVolume: 0.85
+  sfxVolume: 0.7
   voiceVolume: 1
 --- !u!1 &3327312725631513877
 GameObject:
