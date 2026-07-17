@@ -437,11 +437,21 @@ namespace FirstBloom.Games.GassyGorilla
 
             float releasePower = currentReleasePower;
             Vector2 releaseVelocity = CalculateVineReleaseVelocity(releasePower);
+            Vector2 releasePosition = transform.position;
+
+            if (gameManager != null && gameManager.IsVineQaMode)
+            {
+                Debug.Log("[GG_VINE_QA] Release position=" + transform.position + " angle=" +
+                    currentSwingAngleDegrees.ToString("0.00") + " power=" + releasePower.ToString("0.00") +
+                    " velocity=" + releaseVelocity + " staleBodyPosition=" + body.position + ".", this);
+            }
 
             IsSwinging = false;
             transform.rotation = Quaternion.identity;
+            body.position = releasePosition;
             body.bodyType = RigidbodyType2D.Dynamic;
             body.gravityScale = originalGravityScale;
+            body.position = releasePosition;
             SetVelocity(releaseVelocity);
 
             if (currentVine != null)

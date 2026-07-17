@@ -20223,6 +20223,7 @@ MonoBehaviour:
   leftHandBoneName: LeftHand
   rightHandBoneName: RightHand
   gripTargetOffset: {x: 0, y: 0}
+  gripReleasePositionBlendSpeed: 18
   boostPoseHold: 0.24
   releasePoseHold: 0.42
   failedPoseHold: 0.1

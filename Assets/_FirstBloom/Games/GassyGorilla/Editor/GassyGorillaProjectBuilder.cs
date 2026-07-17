@@ -2155,6 +2155,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetBool(modelVisual, "lockSwingPose", true);
             SetFloat(modelVisual, "swingGripPoseNormalizedTime", 0.38f);
             SetVector2(modelVisual, "gripTargetOffset", Vector2.zero);
+            SetFloat(modelVisual, "gripReleasePositionBlendSpeed", 18f);
             SetFloat(modelVisual, "swingLeanDegrees", 0.5f);
             SetFloat(modelVisual, "swingPosePulseDegrees", 1.1f);
             SetFloat(modelVisual, "travelYawDegrees", -42f);

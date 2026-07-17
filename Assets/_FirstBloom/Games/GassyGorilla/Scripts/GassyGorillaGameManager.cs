@@ -57,6 +57,7 @@ namespace FirstBloom.Games.GassyGorilla
         public static GassyGorillaGameManager Instance { get; private set; }
 
         public bool IsRunActive { get { return CurrentState == ArcadeGameState.Running; } }
+        public bool IsVineQaMode { get; private set; }
 
         private Coroutine introRoutine;
         private Coroutine outroRoutine;
@@ -185,6 +186,7 @@ namespace FirstBloom.Games.GassyGorilla
             RunChunkDirector runDirector = FindAnyObjectByType<RunChunkDirector>();
             if (vineQa)
             {
+                IsVineQaMode = true;
                 if (runDirector != null)
                 {
                     runDirector.ConfigureOpeningForQa("LowVineRescue");
@@ -230,6 +232,14 @@ namespace FirstBloom.Games.GassyGorilla
             if (CurrentState == ArcadeGameState.GameOver)
             {
                 return false;
+            }
+
+            if (IsVineQaMode && player != null)
+            {
+                Rigidbody2D playerBody = player.GetComponent<Rigidbody2D>();
+                Vector2 velocity = playerBody != null ? playerBody.linearVelocity : Vector2.zero;
+                Debug.Log("[GG_VINE_QA] Game over reason='" + reason + "' position=" + player.transform.position +
+                    " velocity=" + velocity + " swinging=" + player.IsSwinging + ".", this);
             }
 
             SetState(ArcadeGameState.GameOver);

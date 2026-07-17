@@ -43,6 +43,7 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private string leftHandBoneName = "LeftHand";
         [SerializeField] private string rightHandBoneName = "RightHand";
         [SerializeField] private Vector2 gripTargetOffset;
+        [SerializeField] private float gripReleasePositionBlendSpeed = 18f;
 
         [Header("Animation Polish")]
         [SerializeField] private float boostPoseHold = 0.2f;
@@ -86,6 +87,7 @@ namespace FirstBloom.Games.GassyGorilla
         private Transform rightHand;
         private bool swingPoseLocked;
         private bool gripLockActive;
+        private bool gripReleaseBlendActive;
 
         private void Awake()
         {
@@ -208,6 +210,8 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 ReleaseGripPreservingWorldPose();
             }
+
+            BlendReleasedGripBackToBody();
         }
 
         private void HandleBoosted()
@@ -377,6 +381,7 @@ namespace FirstBloom.Games.GassyGorilla
             correction.z = 0f;
             modelRoot.transform.position += correction;
             gripLockActive = true;
+            gripReleaseBlendActive = false;
             UpdateColliderForGrip();
         }
 
@@ -435,28 +440,29 @@ namespace FirstBloom.Games.GassyGorilla
                 return;
             }
 
-            Vector3 lockedModelPosition = modelRoot.transform.position;
-            modelRoot.transform.localPosition = modelBaseLocalPosition;
-            Vector3 bodyCorrection = lockedModelPosition - modelRoot.transform.position;
-            bodyCorrection.z = 0f;
-
-            if (gorilla != null)
-            {
-                Vector3 bodyPosition = gorilla.transform.position + bodyCorrection;
-                if (velocitySource != null)
-                {
-                    velocitySource.position = new Vector2(bodyPosition.x, bodyPosition.y);
-                }
-
-                gorilla.transform.position = bodyPosition;
-            }
-
             if (bodyCollider != null)
             {
                 bodyCollider.offset = bodyColliderBaseOffset;
             }
 
             gripLockActive = false;
+            gripReleaseBlendActive = true;
+        }
+
+        private void BlendReleasedGripBackToBody()
+        {
+            if (!gripReleaseBlendActive || modelRoot == null)
+            {
+                return;
+            }
+
+            float blend = 1f - Mathf.Exp(-Mathf.Max(0.01f, gripReleasePositionBlendSpeed) * Time.deltaTime);
+            modelRoot.transform.localPosition = Vector3.Lerp(modelRoot.transform.localPosition, modelBaseLocalPosition, blend);
+            if ((modelRoot.transform.localPosition - modelBaseLocalPosition).sqrMagnitude <= 0.0001f)
+            {
+                modelRoot.transform.localPosition = modelBaseLocalPosition;
+                gripReleaseBlendActive = false;
+            }
         }
 
         private void ResetGripVisual()
@@ -472,6 +478,7 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             gripLockActive = false;
+            gripReleaseBlendActive = false;
             swingPoseLocked = false;
         }
 
