@@ -2,7 +2,7 @@
 
 **Design:** `docs/superpowers/specs/2026-07-17-gassy-gorilla-comedic-audio-remix-design.md`
 
-**Status:** Implemented; final publication pending
+**Status:** Implemented, verified, and published
 
 ## Goal
 
@@ -113,3 +113,12 @@ Edge probes:
 4. Fast-forward the production checkout.
 5. Publish immutable WebGL payload and activate GitHub Pages.
 6. Verify the public URL on desktop and mobile-sized viewports.
+
+Published release:
+
+- implementation source: `4cfdf4e0b1db6f60b92ac55087050a3e6273a245`;
+- immutable WebGL payload: `de8d6315e4b8dcd4f96cca012908fb0106c884f9`;
+- Pages activation: `079765e43024db3973a0fbaec0b076a3fff5c35d`;
+- playable URL: `https://firstbloomgames.github.io/Gassy-Gorilla/`.
+
+Public browser QA passed at the `0.70` default and at a persisted `0.99` SFX slider. The maximum-setting stress pass held pickup, boost, and failed-boost effective gains to `0.20`, `0.44`, and `0.30`, respectively, with family voice caps intact, no immediate boost repeat, the rare-boost cooldown intact, and zero warning/error-level logs.
