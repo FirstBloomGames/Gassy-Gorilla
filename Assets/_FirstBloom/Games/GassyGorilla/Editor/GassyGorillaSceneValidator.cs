@@ -34,6 +34,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string RunChunkFolder = GameRoot + "/ScriptableObjects/RunChunks";
         private const string DifficultyProfilePath = GameRoot + "/ScriptableObjects/GG_RunDifficulty.asset";
         private const string AudioLibraryPath = GameRoot + "/ScriptableObjects/GG_AudioLibrary.asset";
+        private const string VoiceRoot = GameRoot + "/Audio/Voice";
         private const float MinimumAuthoredVineGrabY = 1.25f;
 
         [MenuItem("First Bloom/Gassy Gorilla/Validate Built Scenes")]
@@ -75,6 +76,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
         private static void ValidateProductionAudio(List<string> errors)
         {
+            ValidateVoiceImporters(errors);
             ArcadeAudioLibrary library = AssetDatabase.LoadAssetAtPath<ArcadeAudioLibrary>(AudioLibraryPath);
             if (library == null)
             {
@@ -126,6 +128,26 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     {
                         ValidateClipPeak(clip, 0.715f, entry.Type + " SFX", errors);
                     }
+                }
+            }
+        }
+
+        private static void ValidateVoiceImporters(List<string> errors)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:AudioClip", new[] { VoiceRoot });
+            if (guids.Length == 0)
+            {
+                errors.Add("Production milestone voice clips are missing.");
+                return;
+            }
+
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                AudioImporter importer = AssetImporter.GetAtPath(path) as AudioImporter;
+                if (importer == null || !importer.defaultSampleSettings.preloadAudioData)
+                {
+                    errors.Add("Voice clip must preload for reliable WebGL playback: " + path + ".");
                 }
             }
         }
@@ -349,6 +371,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             EditorSceneManager.OpenScene(MainMenuScenePath, OpenSceneMode.Single);
 
+            ValidateSceneAudioListener("Main menu", errors);
             ArcadeAudioManager audioManager = RequireComponent<ArcadeAudioManager>("Main menu audio manager", errors);
             ValidateAudioManager(audioManager, "Main menu", errors);
             RequireComponent<ArcadeTimeController>("Main menu time manager", errors);
@@ -370,6 +393,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             EditorSceneManager.OpenScene(GameScenePath, OpenSceneMode.Single);
 
+            ValidateSceneAudioListener("Game", errors);
             ArcadeAudioManager audioManager = RequireComponent<ArcadeAudioManager>("Game audio manager", errors);
             ValidateAudioManager(audioManager, "Game", errors);
             RequireComponent<ArcadeTimeController>("Game time manager", errors);
@@ -414,6 +438,32 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             RequireNoSpriteRenderers("Game scene", errors);
             RequireTexturedWorldRenderers("Game scene", errors);
+        }
+
+        private static void ValidateSceneAudioListener(string sceneLabel, List<string> errors)
+        {
+            AudioListener[] listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Include);
+            if (listeners.Length != 1)
+            {
+                errors.Add(sceneLabel + " scene must contain exactly one AudioListener; found " + listeners.Length + ".");
+                return;
+            }
+
+            AudioListener listener = listeners[0];
+            if (!listener.isActiveAndEnabled)
+            {
+                errors.Add(sceneLabel + " AudioListener must be active and enabled.");
+            }
+
+            UnityEngine.Camera mainCamera = UnityEngine.Camera.main;
+            if (mainCamera == null)
+            {
+                errors.Add(sceneLabel + " scene has no active camera tagged MainCamera.");
+            }
+            else if (listener.gameObject != mainCamera.gameObject)
+            {
+                errors.Add(sceneLabel + " AudioListener must be attached to the MainCamera.");
+            }
         }
 
         private static void RequireNoLegacyGameplaySpawners(List<string> errors)

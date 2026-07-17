@@ -51,6 +51,7 @@ namespace FirstBloom.ArcadeFramework.Audio
         private float voiceGain = 1f;
         private bool musicRequested;
         private bool audioUnlocked;
+        private bool audioQaEnabled;
 
         public static ArcadeAudioManager Instance { get; private set; }
 
@@ -80,6 +81,7 @@ namespace FirstBloom.ArcadeFramework.Audio
 
 #if UNITY_WEBGL && !UNITY_EDITOR
             audioUnlocked = false;
+            audioQaEnabled = Application.absoluteURL.Contains("qa-audio");
 #else
             audioUnlocked = true;
 #endif
@@ -134,6 +136,10 @@ namespace FirstBloom.ArcadeFramework.Audio
             audioUnlocked = true;
             AudioListener.pause = false;
             TryStartMusicSet();
+            if (audioQaEnabled)
+            {
+                StartCoroutine(LogAudioQaAfterUnlock());
+            }
         }
 
         public void RequestMusicStart()
@@ -284,6 +290,7 @@ namespace FirstBloom.ArcadeFramework.Audio
             voiceSource.pitch = 1f;
             voiceSource.volume = masterVolume * voiceVolume * voiceGain;
             voiceSource.Play();
+            LogAudioQaPlayback("voice", voiceSource, clip);
         }
 
         public void SetMasterVolume(float value)
@@ -536,6 +543,53 @@ namespace FirstBloom.ArcadeFramework.Audio
             selected.Gain = Mathf.Clamp(gain, 0f, 1.5f);
             selected.Source.volume = masterVolume * sfxVolume * selected.Gain;
             selected.Source.Play();
+            LogAudioQaPlayback("sfx", selected.Source, clip);
+        }
+
+        private IEnumerator LogAudioQaAfterUnlock()
+        {
+            yield return new WaitForSecondsRealtime(0.25f);
+
+            AudioListener[] listeners = FindObjectsByType<AudioListener>(FindObjectsInactive.Include);
+            Debug.Log(
+                "[GG_AUDIO_QA] unlocked=" + audioUnlocked +
+                " listeners=" + listeners.Length +
+                " listenerPaused=" + AudioListener.pause +
+                " master=" + masterVolume.ToString("F2") +
+                " music=" + musicVolume.ToString("F2") +
+                " sfx=" + sfxVolume.ToString("F2") +
+                " voice=" + voiceVolume.ToString("F2") +
+                " base=" + DescribeAudioSource(musicSource) +
+                " intensity=" + DescribeAudioSource(intensityMusicSource) +
+                " ambience=" + DescribeAudioSource(ambienceSource));
+        }
+
+        private void LogAudioQaPlayback(string channel, AudioSource source, AudioClip clip)
+        {
+            if (!audioQaEnabled || source == null || clip == null)
+            {
+                return;
+            }
+
+            Debug.Log(
+                "[GG_AUDIO_QA] channel=" + channel +
+                " clip=" + clip.name +
+                " load=" + clip.loadState +
+                " playing=" + source.isPlaying +
+                " volume=" + source.volume.ToString("F2"));
+        }
+
+        private static string DescribeAudioSource(AudioSource source)
+        {
+            if (source == null)
+            {
+                return "missing";
+            }
+
+            string clipDescription = source.clip == null
+                ? "none"
+                : source.clip.name + ":" + source.clip.loadState;
+            return clipDescription + ":playing=" + source.isPlaying + ":volume=" + source.volume.ToString("F2");
         }
 
         private IEnumerator FadeAndStopLoop(LoopVoice loopVoice, float duration)

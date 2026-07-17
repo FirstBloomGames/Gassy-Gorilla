@@ -81,6 +81,15 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             Debug.Log("Gassy Gorilla 1.0 playable framework, prefabs, and scenes have been rebuilt.");
         }
 
+        [MenuItem("First Bloom/Gassy Gorilla/Repair Scene Audio Listeners")]
+        public static void RepairSceneAudioListeners()
+        {
+            EnsureSceneAudioListener(MainMenuScenePath);
+            EnsureSceneAudioListener(GameScenePath);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Gassy Gorilla scene audio listeners are repaired and ready for validation.");
+        }
+
         [MenuItem("First Bloom/Gassy Gorilla/Rebuild Authored Run Chunks")]
         public static void RebuildRunChunksOnly()
         {
@@ -2741,6 +2750,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             cameraObject.tag = "MainCamera";
             cameraObject.transform.position = position;
             UnityEngine.Camera camera = cameraObject.AddComponent<UnityEngine.Camera>();
+            cameraObject.AddComponent<AudioListener>();
             camera.orthographic = true;
             camera.orthographicSize = orthographicSize;
             camera.backgroundColor = background;
@@ -2749,6 +2759,40 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             camera.useOcclusionCulling = false;
             camera.depthTextureMode = DepthTextureMode.None;
             return camera;
+        }
+
+        private static void EnsureSceneAudioListener(string scenePath)
+        {
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            UnityEngine.Camera[] cameras = UnityEngine.Object.FindObjectsByType<UnityEngine.Camera>(FindObjectsInactive.Include);
+            UnityEngine.Camera mainCamera = null;
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                if (cameras[i].CompareTag("MainCamera"))
+                {
+                    mainCamera = cameras[i];
+                    break;
+                }
+            }
+
+            if (mainCamera == null)
+            {
+                throw new InvalidOperationException(scenePath + " has no camera tagged MainCamera.");
+            }
+
+            AudioListener[] listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Include);
+            if (listeners.Length > 1)
+            {
+                throw new InvalidOperationException(scenePath + " has multiple AudioListeners. Resolve the duplicate before repairing audio output.");
+            }
+
+            AudioListener listener = listeners.Length == 1
+                ? listeners[0]
+                : mainCamera.gameObject.AddComponent<AudioListener>();
+            listener.enabled = true;
+            EditorUtility.SetDirty(listener);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, scenePath);
         }
 
         private static GameObject CreateAudioManagerRoot()

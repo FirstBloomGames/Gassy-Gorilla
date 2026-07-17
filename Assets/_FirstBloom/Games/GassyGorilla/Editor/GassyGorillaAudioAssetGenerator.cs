@@ -12,6 +12,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string GameRoot = "Assets/_FirstBloom/Games/GassyGorilla";
         private const string MusicRoot = GameRoot + "/Audio/Music";
         private const string SfxRoot = GameRoot + "/Audio/SFX";
+        private const string VoiceRoot = GameRoot + "/Audio/Voice";
         private const string LibraryPath = GameRoot + "/ScriptableObjects/GG_AudioLibrary.asset";
         private const int SampleRate = 32000;
         private const float BeatsPerMinute = 88f;
@@ -54,6 +55,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ConfigureMusicImporter(MusicRoot + "/GG_Music_JungleStride_Intensity.wav");
             ConfigureMusicImporter(MusicRoot + "/GG_Ambience_JungleWater.wav");
             ConfigureAllSfxImporters();
+            ConfigureAllVoiceImporters();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
             ArcadeAudioLibrary library = AssetDatabase.LoadAssetAtPath<ArcadeAudioLibrary>(LibraryPath);
@@ -844,6 +846,32 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 settings.loadType = AudioClipLoadType.DecompressOnLoad;
                 settings.compressionFormat = AudioCompressionFormat.Vorbis;
                 settings.quality = 0.48f;
+                settings.sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate;
+                settings.preloadAudioData = true;
+                importer.defaultSampleSettings = settings;
+                importer.SetOverrideSampleSettings("WebGL", settings);
+                importer.SaveAndReimport();
+            }
+        }
+
+        private static void ConfigureAllVoiceImporters()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:AudioClip", new[] { VoiceRoot });
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                AudioImporter importer = AssetImporter.GetAtPath(path) as AudioImporter;
+                if (importer == null)
+                {
+                    continue;
+                }
+
+                importer.forceToMono = true;
+                importer.loadInBackground = false;
+                AudioImporterSampleSettings settings = importer.defaultSampleSettings;
+                settings.loadType = AudioClipLoadType.DecompressOnLoad;
+                settings.compressionFormat = AudioCompressionFormat.Vorbis;
+                settings.quality = 0.52f;
                 settings.sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate;
                 settings.preloadAudioData = true;
                 importer.defaultSampleSettings = settings;
