@@ -59,7 +59,7 @@ The generator must preserve approved boost masters on rebuild, regenerate determ
 
 - Boost: six clips, gain `0.62`, subtle pitch range, heroic clip at index 5, eight-play rare cooldown.
 - BoostFailed: three clips, gain `0.42`.
-- Pickup: four clips, gain `0.28`, two-voice cap, short retrigger interval, replace-oldest behavior.
+- Pickup: four clips, gain `0.20`, one-voice cap, `0.06`-second retrigger interval, replace-oldest behavior.
 - Framework SFX bus: fixed `0.72` mix headroom after the persistent user slider.
 - Fresh-install SFX default: `0.70`.
 

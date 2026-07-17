@@ -54,11 +54,11 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 5b79c4e51db593546b57c74d6c822301, type: 3}
     - {fileID: 8300000, guid: 7ff5d9a28f3601a45808a989573c13d0, type: 3}
     - {fileID: 8300000, guid: 2eba3d912a3358a4eb397b4802468ff0, type: 3}
-    volume: 0.28
+    volume: 0.2
     pitchRange: {x: 0.995, y: 1.005}
     loop: 0
-    maximumSimultaneousVoices: 2
-    minimumRetriggerInterval: 0.035
+    maximumSimultaneousVoices: 1
+    minimumRetriggerInterval: 0.06
     voiceLimitMode: 0
     rareClipIndex: -1
     rareClipCooldownPlays: 0

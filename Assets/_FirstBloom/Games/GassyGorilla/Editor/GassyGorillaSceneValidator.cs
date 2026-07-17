@@ -155,20 +155,20 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             if (library.TryGetEntry(ArcadeSfxType.Pickup, out ArcadeSfxEntry pickup))
             {
-                if (pickup.Volume > 0.29f)
+                if (pickup.Volume > 0.21f)
                 {
-                    errors.Add("Pickup audio gain must remain at or below 0.29.");
+                    errors.Add("Pickup audio gain must remain at or below 0.21.");
                 }
 
-                if (pickup.MaximumSimultaneousVoices != 2 ||
+                if (pickup.MaximumSimultaneousVoices != 1 ||
                     pickup.VoiceLimitMode != ArcadeSfxVoiceLimitMode.ReplaceOldest)
                 {
-                    errors.Add("Pickup audio must cap at two voices and replace the oldest pickup.");
+                    errors.Add("Pickup audio must cap at one voice and replace the previous pickup.");
                 }
 
-                if (pickup.MinimumRetriggerInterval < 0.03f)
+                if (pickup.MinimumRetriggerInterval < 0.055f)
                 {
-                    errors.Add("Pickup audio must configure a short retrigger guard.");
+                    errors.Add("Pickup audio must consolidate dense chains with at least a 0.055-second retrigger guard.");
                 }
             }
 

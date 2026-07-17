@@ -42,8 +42,9 @@ The pickup family contains four short, soft reward sounds between approximately 
 
 Pickup playback follows these rules:
 
-- Shipping library gain is `0.28`.
-- No more than two pickup voices may overlap.
+- Shipping library gain is `0.20`.
+- Only one pickup voice may play at a time; a new valid pickup replaces the previous pickup voice.
+- Dense chains consolidate through a `0.06`-second retrigger guard.
 - Rapid pickups form a restrained rising cadence through small pitch steps.
 - A new pickup lowers or replaces the oldest pickup voice instead of stacking another full-volume chime.
 - Pitch and cadence reset after a short break in collections.
@@ -86,9 +87,9 @@ Gassy Gorilla configures:
 
 - six successful boost clips with anti-repeat and heroic cooldown;
 - three failed-boost clips;
-- four pickup clips with a two-voice cap and cadence-friendly retrigger timing;
+- four pickup clips with a one-voice cap and cadence-friendly retrigger timing;
 - revised entry gains and restrained pitch ranges;
-- calibrated family gains of `0.62` boost, `0.42` failed boost, `0.28` pickup, `0.32` vine swing, `0.34` UI confirm, and no routine SFX family above `0.72`.
+- calibrated family gains of `0.62` boost, `0.42` failed boost, `0.20` pickup, `0.32` vine swing, `0.34` UI confirm, and no routine SFX family above `0.72`.
 
 No runtime audio synthesis is used by the shipping library.
 
@@ -128,7 +129,7 @@ Only clear balance or masking problems are adjusted. Music composition, gameplay
 9. Run Unity compilation, scene validation, audio validation, and WebGL build.
 10. Measure final compressed payload and compare it with the current release.
 
-Browser verification must include a previously persisted `100%` SFX slider. Under that condition, rapid pickups may not exceed `0.20` effective source gain, successful boosts may not exceed `0.45`, and failed boosts may not exceed `0.30` with the current production family gains.
+Browser verification must include a previously persisted `100%` SFX slider. Under that condition, rapid pickups may not exceed one active family voice or `0.15` effective source gain, successful boosts may not exceed `0.45`, and failed boosts may not exceed `0.30` with the current production family gains.
 
 ## 10. Acceptance Criteria
 

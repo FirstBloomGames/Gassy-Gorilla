@@ -793,7 +793,7 @@ namespace FirstBloom.ArcadeFramework.Audio
             yield return new WaitForSecondsRealtime(0.35f);
             Debug.Log("[GG_AUDIO_REMIX_QA] begin");
 
-            float[] pickupPitches = { 1f, 1.05946f, 1.12246f, 1.18921f, 1.25992f };
+            float[] pickupPitches = { 1f, 1.02930f, 1.05946f, 1.09051f, 1.12246f };
             for (int i = 0; i < 8; i++)
             {
                 PlaySfx(ArcadeSfxType.Pickup, 1f, pickupPitches[Mathf.Min(i, pickupPitches.Length - 1)]);

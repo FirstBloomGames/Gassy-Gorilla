@@ -12,10 +12,10 @@ namespace FirstBloom.Games.GassyGorilla
         private static readonly float[] PickupCadencePitchScales =
         {
             1f,
+            1.02930f,
             1.05946f,
-            1.12246f,
-            1.18921f,
-            1.25992f
+            1.09051f,
+            1.12246f
         };
 
         private static float lastPickupAudioTime = float.NegativeInfinity;
