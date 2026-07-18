@@ -1,6 +1,6 @@
 # Gassy Gorilla Two-Mode Story Implementation Plan
 
-**Status:** Release candidate verified locally; public deployment pending
+**Status:** Complete - public release verified
 
 **Date:** 2026-07-17
 
@@ -70,3 +70,14 @@ Each route reuses validated optimized chunks and intentionally alternates pressu
   - `home-before-dessert`: fuel 100 / 45 and chapter completion.
 - Browser QA confirmed ordered unlock persistence, Expedition failure/retry, separate Endless failure/best-distance behavior, settings interaction, 844 x 390 landscape presentation, and 390 x 844 portrait rotation protection.
 - The final browser run reported no warnings or errors.
+
+## 8. Public Release Evidence
+
+- Public game: <https://firstbloomgames.github.io/Gassy-Gorilla/>.
+- Unity source release: `682f919d8689e45b2dce0fd4da30663f25565d40`.
+- Immutable WebGL payload: `815363cf745683fd600d13e8b4f3b56c9b1239fd`.
+- Pages activation: `4b7eeac0b84b9689269e1157c7f018e00d8c17ab`.
+- Successful GitHub Pages deployment run: `29659050566`.
+- The live index and all four hashed WebGL artifacts returned HTTP 200.
+- Public browser QA completed The Dinner Bell, persisted its three-star result, unlocked The Bean Trail, launched Endless Run, and exercised the portrait rotation gate.
+- The public browser console reported no warnings or errors.
