@@ -28,6 +28,12 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private Text expeditionStatusText;
         [SerializeField] private Button expeditionPlayButton;
 
+        [Header("Jungle Badges")]
+        [SerializeField] private CanvasGroupPanel badgePanel;
+        [SerializeField] private Text badgeSummaryText;
+        [SerializeField] private Text[] badgeEntryTexts;
+        [SerializeField] private Text badgeButtonText;
+
         private int selectedExpeditionIndex;
 
         public GassyExpeditionCatalog ExpeditionCatalog { get { return expeditionCatalog; } }
@@ -49,6 +55,18 @@ namespace FirstBloom.Games.GassyGorilla
             }
         }
 
+        public bool IsBadgeUiConfigured
+        {
+            get
+            {
+                return badgePanel != null &&
+                    badgeSummaryText != null &&
+                    badgeEntryTexts != null &&
+                    badgeEntryTexts.Length == GassyBadgeService.Count &&
+                    badgeButtonText != null;
+            }
+        }
+
         private void Start()
         {
             if (ArcadeTimeController.Instance != null)
@@ -65,7 +83,9 @@ namespace FirstBloom.Games.GassyGorilla
                 return;
             }
 
+            GassyBadgeService.Reconcile(expeditionCatalog, false);
             UpdateBestDistance();
+            RefreshBadgePanel();
             SetMainActionsVisible(true);
             SelectInitialExpedition();
             RefreshExpeditionPanel();
@@ -155,6 +175,30 @@ namespace FirstBloom.Games.GassyGorilla
                 settingsMenu.Close();
             }
 
+            SetMainActionsVisible(true);
+        }
+
+        public void OpenBadges()
+        {
+            NotifyUserGesture();
+            RefreshBadgePanel();
+            if (badgePanel != null)
+            {
+                badgePanel.Show();
+            }
+
+            SetMainActionsVisible(false);
+        }
+
+        public void CloseBadges()
+        {
+            NotifyUserGesture();
+            if (badgePanel != null)
+            {
+                badgePanel.Hide();
+            }
+
+            RefreshBadgePanel();
             SetMainActionsVisible(true);
         }
 
@@ -281,6 +325,44 @@ namespace FirstBloom.Games.GassyGorilla
                 {
                     playLabel.text = selectedUnlocked ? "START EXPEDITION" : "LOCKED";
                 }
+            }
+        }
+
+        private void RefreshBadgePanel()
+        {
+            int unlockedCount = GassyBadgeService.GetUnlockedCount();
+            if (badgeSummaryText != null)
+            {
+                badgeSummaryText.text = unlockedCount + " / " + GassyBadgeService.Count + " EARNED";
+            }
+
+            if (badgeButtonText != null)
+            {
+                badgeButtonText.text = "BADGES  " + unlockedCount + "/" + GassyBadgeService.Count;
+            }
+
+            GassyBadgeDefinition[] definitions = GassyBadgeService.Definitions;
+            if (badgeEntryTexts == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < badgeEntryTexts.Length && i < definitions.Length; i++)
+            {
+                Text entryText = badgeEntryTexts[i];
+                GassyBadgeDefinition definition = definitions[i];
+                if (entryText == null || definition == null)
+                {
+                    continue;
+                }
+
+                bool unlocked = GassyBadgeService.IsUnlocked(definition);
+                int progress = GassyBadgeService.GetProgress(definition);
+                entryText.text = definition.DisplayTitle.ToUpperInvariant() + "\n" +
+                    (unlocked ? "EARNED" : definition.FormatProgress(progress));
+                entryText.color = unlocked
+                    ? new Color(0.78f, 1f, 0.68f, 1f)
+                    : new Color(1f, 1f, 1f, 0.76f);
             }
         }
 

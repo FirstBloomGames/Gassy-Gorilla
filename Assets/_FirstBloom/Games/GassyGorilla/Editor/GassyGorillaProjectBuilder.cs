@@ -2801,8 +2801,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             UnityEventTools.AddPersistentListener(expeditionsButton.onClick, menu.OpenExpeditions);
 
             Button settingsButton = CreateButton("SettingsButton", mainActionsRoot.transform, "SETTINGS", new Color(0.22f, 0.55f, 0.78f, 1f));
-            SetRect(settingsButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -92f), new Vector2(220f, 48f));
+            SetRect(settingsButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-88f, -92f), new Vector2(164f, 48f));
             UnityEventTools.AddPersistentListener(settingsButton.onClick, menu.OpenSettings);
+
+            Button badgesButton = CreateButton("BadgesButton", mainActionsRoot.transform, "BADGES  0/8", new Color(0.58f, 0.42f, 0.18f, 1f));
+            SetRect(badgesButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(88f, -92f), new Vector2(164f, 48f));
+            UnityEventTools.AddPersistentListener(badgesButton.onClick, menu.OpenBadges);
 
             CanvasGroupPanel expeditionPanel = CreateExpeditionSelectPanel(
                 canvas.transform,
@@ -2816,6 +2820,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 out Button expeditionCloseButton);
 
             ArcadeSettingsMenu settingsMenu = CreateSettingsPanel(canvas.transform, "SettingsPanel_Menu");
+            CanvasGroupPanel badgePanel = CreateBadgePanel(
+                canvas.transform,
+                out Text badgeSummaryText,
+                out Text[] badgeEntryTexts,
+                out Button badgeCloseButton);
             expeditionCatalog = LoadExpeditionCatalogOrThrow();
             SetObject(menu, "bestDistanceText", best);
             SetObject(menu, "settingsMenu", settingsMenu);
@@ -2829,6 +2838,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(menu, "expeditionStoryText", expeditionStory);
             SetObject(menu, "expeditionStatusText", expeditionStatus);
             SetObject(menu, "expeditionPlayButton", expeditionPlayButton);
+            SetObject(menu, "badgePanel", badgePanel);
+            SetObject(menu, "badgeSummaryText", badgeSummaryText);
+            SetObjectArray(menu, "badgeEntryTexts", badgeEntryTexts);
+            SetObject(menu, "badgeButtonText", badgesButton.GetComponentInChildren<Text>());
 
             UnityEventTools.AddPersistentListener(expeditionButtons[0].onClick, menu.SelectExpedition1);
             UnityEventTools.AddPersistentListener(expeditionButtons[1].onClick, menu.SelectExpedition2);
@@ -2842,6 +2855,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             Button closeButton = settingsMenu.transform.Find("CloseButton").GetComponent<Button>();
             SetEnum(closeButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
             UnityEventTools.AddPersistentListener(closeButton.onClick, menu.CloseSettings);
+            SetEnum(badgeCloseButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
+            UnityEventTools.AddPersistentListener(badgeCloseButton.onClick, menu.CloseBadges);
 
             EditorSceneManager.SaveScene(scene, MainMenuScenePath);
         }
@@ -2903,14 +2918,20 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             FartBarUI fartBar = CreateFartBar(canvas.transform, gorilla, sprites);
             TextOverlay milestoneOverlay = CreateMilestoneOverlay(canvas.transform);
             TextOverlay tutorialOverlay = CreateTutorialOverlay(canvas.transform);
+            TextOverlay badgeToast = CreateBadgeToast(canvas.transform);
             ArcadeSettingsMenu settingsMenu = CreateSettingsPanel(canvas.transform, "SettingsPanel_Game");
             Button gameSettingsCloseButton = settingsMenu.transform.Find("CloseButton").GetComponent<Button>();
             SetEnum(gameSettingsCloseButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
-            UnityEventTools.AddPersistentListener(gameSettingsCloseButton.onClick, settingsMenu.Close);
 
-            Button settingsButton = CreateButton("SettingsButton", canvas.transform, "SETTINGS", new Color(0.19f, 0.5f, 0.68f, 1f));
-            SetRect(settingsButton.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-82f, -72f), new Vector2(132f, 38f));
-            UnityEventTools.AddPersistentListener(settingsButton.onClick, settingsMenu.Toggle);
+            Button pauseButton = CreatePauseIconButton(canvas.transform);
+            SetRect(pauseButton.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-44f, -76f), new Vector2(44f, 44f));
+
+            ArcadePausePanel pausePanel = CreatePausePanel(
+                canvas.transform,
+                out Button resumeButton,
+                out Button pauseSettingsButton,
+                out Button pauseRestartButton,
+                out Button pauseMainMenuButton);
 
             GameObject scoreObject = new GameObject("Manager_Score");
             DistanceScoreTracker distanceTracker = scoreObject.AddComponent<DistanceScoreTracker>();
@@ -3009,6 +3030,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(gameManager, "hudBestDistanceText", bestHudText);
             SetObject(gameManager, "gameOverTitleText", gameOverTitleText);
             SetObject(gameManager, "gameOverReasonText", gameOverReasonText);
+            SetObject(gameManager, "pausePanel", pausePanel);
+            SetObject(gameManager, "settingsMenu", settingsMenu);
             expeditionCatalog = LoadExpeditionCatalogOrThrow();
             SetObject(gameManager, "expeditionCatalog", expeditionCatalog);
             SetObject(gameManager, "expeditionRunController", expeditionController);
@@ -3030,6 +3053,25 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(audioDirector, "gorilla", gorilla);
             SetObject(audioDirector, "gameManager", gameManager);
 
+            GameObject feedbackDirectorObject = new GameObject("Director_Feedback");
+            GassyFeedbackDirector feedbackDirector = feedbackDirectorObject.AddComponent<GassyFeedbackDirector>();
+            SetObject(feedbackDirector, "gorilla", gorilla);
+
+            GameObject badgeTrackerObject = new GameObject("Manager_JungleBadges");
+            GassyBadgeTracker badgeTracker = badgeTrackerObject.AddComponent<GassyBadgeTracker>();
+            SetObject(badgeTracker, "gorilla", gorilla);
+            SetObject(badgeTracker, "scoreManager", scoreManager);
+            SetObject(badgeTracker, "gameManager", gameManager);
+            SetObject(badgeTracker, "expeditionCatalog", expeditionCatalog);
+            SetObject(badgeTracker, "badgeToast", badgeToast);
+
+            UnityEventTools.AddPersistentListener(pauseButton.onClick, gameManager.PauseRun);
+            UnityEventTools.AddPersistentListener(resumeButton.onClick, gameManager.ResumeRun);
+            UnityEventTools.AddPersistentListener(pauseSettingsButton.onClick, gameManager.OpenSettingsFromPause);
+            UnityEventTools.AddPersistentListener(pauseRestartButton.onClick, gameManager.RestartRun);
+            SetEnum(pauseMainMenuButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
+            UnityEventTools.AddPersistentListener(pauseMainMenuButton.onClick, gameManager.ReturnToMainMenu);
+            UnityEventTools.AddPersistentListener(gameSettingsCloseButton.onClick, gameManager.CloseSettingsToPause);
             UnityEventTools.AddPersistentListener(retryButton.onClick, gameManager.RestartRun);
             SetEnum(mainMenuButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
             UnityEventTools.AddPersistentListener(mainMenuButton.onClick, gameManager.ReturnToMainMenu);
@@ -3770,6 +3812,131 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return overlay;
         }
 
+        private static TextOverlay CreateBadgeToast(Transform parent)
+        {
+            GameObject root = new GameObject("BadgeToast");
+            root.transform.SetParent(parent, false);
+            CanvasGroup group = root.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            RectTransform rect = root.AddComponent<RectTransform>();
+            SetRect(rect, new Vector2(0.5f, 0.66f), new Vector2(0.5f, 0.66f), Vector2.zero, new Vector2(390f, 72f));
+
+            Image backing = root.AddComponent<Image>();
+            backing.sprite = UiPanelSprite();
+            backing.type = Image.Type.Sliced;
+            backing.color = new Color(0.04f, 0.14f, 0.09f, 0.92f);
+            Outline outline = root.AddComponent<Outline>();
+            outline.effectColor = new Color(0.78f, 0.68f, 0.24f, 0.6f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            Text text = CreateText(
+                "BadgeText",
+                root.transform,
+                "",
+                18,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(0.86f, 1f, 0.7f, 1f));
+            SetRect(text.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(-26f, -12f));
+
+            TextOverlay overlay = root.AddComponent<TextOverlay>();
+            SetObject(overlay, "group", group);
+            SetObject(overlay, "messageText", text);
+            SetFloat(overlay, "fadeInDuration", 0.1f);
+            SetFloat(overlay, "fadeOutDuration", 0.2f);
+            return overlay;
+        }
+
+        private static CanvasGroupPanel CreateBadgePanel(
+            Transform parent,
+            out Text summaryText,
+            out Text[] badgeEntryTexts,
+            out Button closeButton)
+        {
+            GameObject panel = new GameObject("UI_JungleBadgesPanel");
+            panel.transform.SetParent(parent, false);
+            RectTransform rect = panel.AddComponent<RectTransform>();
+            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(840f, 530f));
+            Image image = panel.AddComponent<Image>();
+            image.sprite = UiPanelSprite();
+            image.type = Image.Type.Sliced;
+            image.color = new Color(0.035f, 0.095f, 0.075f, 0.98f);
+            Shadow shadow = panel.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
+            shadow.effectDistance = new Vector2(0f, -9f);
+            CanvasGroup group = panel.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.interactable = false;
+            group.blocksRaycasts = false;
+            CanvasGroupPanel panelController = panel.AddComponent<CanvasGroupPanel>();
+            SetObject(panelController, "canvasGroup", group);
+
+            Text heading = CreateText(
+                "Heading",
+                panel.transform,
+                "JUNGLE BADGES",
+                36,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(1f, 0.87f, 0.34f, 1f));
+            SetRect(heading.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -38f), new Vector2(500f, 48f));
+
+            summaryText = CreateText(
+                "Summary",
+                panel.transform,
+                "0 / 8 EARNED",
+                16,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(0.74f, 1f, 0.7f, 1f));
+            SetRect(summaryText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -79f), new Vector2(300f, 30f));
+
+            Image centerDivider = new GameObject("CenterDivider").AddComponent<Image>();
+            centerDivider.transform.SetParent(panel.transform, false);
+            centerDivider.color = new Color(0.55f, 0.82f, 0.48f, 0.24f);
+            SetRect(centerDivider.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -8f), new Vector2(2f, 318f));
+
+            badgeEntryTexts = new Text[GassyBadgeService.Count];
+            for (int i = 0; i < badgeEntryTexts.Length; i++)
+            {
+                int column = i % 2;
+                int row = i / 2;
+                float x = column == 0 ? -205f : 205f;
+                float y = 118f - row * 82f;
+
+                Text entry = CreateText(
+                    "Badge_" + (i + 1).ToString("D2"),
+                    panel.transform,
+                    "BADGE\n0 / 1",
+                    15,
+                    FontStyle.Bold,
+                    TextAnchor.MiddleCenter,
+                    new Color(1f, 1f, 1f, 0.76f));
+                entry.resizeTextForBestFit = true;
+                entry.resizeTextMinSize = 11;
+                entry.resizeTextMaxSize = 15;
+                SetRect(entry.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, y), new Vector2(340f, 58f));
+                badgeEntryTexts[i] = entry;
+
+                if (row < 3)
+                {
+                    Image divider = new GameObject("BadgeDivider_" + (i + 1).ToString("D2")).AddComponent<Image>();
+                    divider.transform.SetParent(panel.transform, false);
+                    divider.color = new Color(0.55f, 0.82f, 0.48f, 0.16f);
+                    SetRect(
+                        divider.rectTransform,
+                        new Vector2(0.5f, 0.5f),
+                        new Vector2(0.5f, 0.5f),
+                        new Vector2(x, y - 41f),
+                        new Vector2(330f, 1f));
+                }
+            }
+
+            closeButton = CreateButton("CloseButton", panel.transform, "CLOSE", new Color(0.36f, 0.78f, 0.28f, 1f));
+            SetRect(closeButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(210f, 48f));
+            return panelController;
+        }
+
         private static CanvasGroupPanel CreateExpeditionSelectPanel(
             Transform parent,
             out Button[] expeditionButtons,
@@ -4214,6 +4381,116 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return finishLine;
         }
 
+        private static Button CreatePauseIconButton(Transform parent)
+        {
+            GameObject root = new GameObject("PauseButton");
+            root.transform.SetParent(parent, false);
+            root.AddComponent<RectTransform>();
+            Image background = root.AddComponent<Image>();
+            background.sprite = UiPanelSprite();
+            background.type = Image.Type.Sliced;
+            background.color = new Color(0.045f, 0.13f, 0.11f, 0.9f);
+            Button button = root.AddComponent<Button>();
+            button.targetGraphic = background;
+            ColorBlock colors = button.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1.12f, 1.12f, 1.12f, 1f);
+            colors.pressedColor = new Color(0.82f, 0.9f, 0.84f, 1f);
+            colors.selectedColor = colors.normalColor;
+            button.colors = colors;
+            ArcadeButtonFeedback feedback = root.AddComponent<ArcadeButtonFeedback>();
+            SetEnum(feedback, "clickSfx", (int)ArcadeSfxType.UiClick);
+
+            for (int i = 0; i < 2; i++)
+            {
+                Image bar = new GameObject(i == 0 ? "PauseBar_Left" : "PauseBar_Right").AddComponent<Image>();
+                bar.transform.SetParent(root.transform, false);
+                bar.color = new Color(1f, 0.9f, 0.35f, 1f);
+                SetRect(
+                    bar.rectTransform,
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(i == 0 ? -5f : 5f, 0f),
+                    new Vector2(5f, 19f));
+            }
+
+            return button;
+        }
+
+        private static ArcadePausePanel CreatePausePanel(
+            Transform parent,
+            out Button resumeButton,
+            out Button settingsButton,
+            out Button restartButton,
+            out Button mainMenuButton)
+        {
+            GameObject root = new GameObject("UI_PausePanel");
+            root.transform.SetParent(parent, false);
+            RectTransform rootRect = root.AddComponent<RectTransform>();
+            SetRect(rootRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            Image scrim = root.AddComponent<Image>();
+            scrim.color = new Color(0.01f, 0.035f, 0.025f, 0.58f);
+            scrim.raycastTarget = true;
+            CanvasGroup group = root.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.interactable = false;
+            group.blocksRaycasts = false;
+            CanvasGroupPanel panelController = root.AddComponent<CanvasGroupPanel>();
+            SetObject(panelController, "canvasGroup", group);
+            ArcadePausePanel pausePanel = root.AddComponent<ArcadePausePanel>();
+            SetObject(pausePanel, "panel", panelController);
+
+            GameObject content = new GameObject("PauseContent");
+            content.transform.SetParent(root.transform, false);
+            RectTransform contentRect = content.AddComponent<RectTransform>();
+            SetRect(
+                contentRect,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                Vector2.zero,
+                new Vector2(460f, 500f));
+            Image image = content.AddComponent<Image>();
+            image.sprite = UiPanelSprite();
+            image.type = Image.Type.Sliced;
+            image.color = new Color(0.04f, 0.1f, 0.08f, 0.98f);
+            Shadow shadow = content.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.48f);
+            shadow.effectDistance = new Vector2(0f, -8f);
+
+            Text heading = CreateText(
+                "Heading",
+                content.transform,
+                "PAUSED",
+                40,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(1f, 0.88f, 0.34f, 1f));
+            SetRect(heading.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -54f), new Vector2(340f, 58f));
+
+            Text status = CreateText(
+                "Status",
+                content.transform,
+                "THE JUNGLE CAN WAIT",
+                15,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(0.72f, 1f, 0.7f, 0.86f));
+            SetRect(status.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -96f), new Vector2(340f, 30f));
+
+            resumeButton = CreateButton("ResumeButton", content.transform, "RESUME", new Color(0.36f, 0.78f, 0.28f, 1f));
+            SetRect(resumeButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 82f), new Vector2(240f, 54f));
+
+            settingsButton = CreateButton("SettingsButton", content.transform, "SETTINGS", new Color(0.22f, 0.55f, 0.78f, 1f));
+            SetRect(settingsButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 18f), new Vector2(240f, 50f));
+
+            restartButton = CreateButton("RestartButton", content.transform, "RESTART RUN", new Color(0.68f, 0.46f, 0.18f, 1f));
+            SetRect(restartButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -44f), new Vector2(240f, 50f));
+
+            mainMenuButton = CreateButton("MainMenuButton", content.transform, "MAIN MENU", new Color(0.18f, 0.42f, 0.5f, 1f));
+            SetRect(mainMenuButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -106f), new Vector2(240f, 48f));
+            return pausePanel;
+        }
+
         private static CanvasGroupPanel CreateGameOverPanel(
             Transform parent,
             out Text title,
@@ -4270,7 +4547,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GameObject panel = new GameObject(name);
             panel.transform.SetParent(parent, false);
             RectTransform rect = panel.AddComponent<RectTransform>();
-            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(500f, 430f));
+            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(500f, 540f));
             Image image = panel.AddComponent<Image>();
             image.sprite = UiPanelSprite();
             image.type = Image.Type.Sliced;
@@ -4285,22 +4562,99 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ArcadeSettingsMenu menu = panel.AddComponent<ArcadeSettingsMenu>();
 
             Text title = CreateText("Title", panel.transform, "SETTINGS", 36, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.9f, 0.35f, 1f));
-            SetRect(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(360f, 54f));
+            SetRect(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -42f), new Vector2(360f, 50f));
 
-            Slider master = CreateSlider("MasterVolume", panel.transform, "MASTER", new Vector2(0f, -110f));
-            Slider music = CreateSlider("MusicVolume", panel.transform, "MUSIC", new Vector2(0f, -172f));
-            Slider sfx = CreateSlider("SfxVolume", panel.transform, "SFX", new Vector2(0f, -234f));
-            Slider voice = CreateSlider("VoiceVolume", panel.transform, "VOICE", new Vector2(0f, -296f));
+            Slider master = CreateSlider("MasterVolume", panel.transform, "MASTER", new Vector2(0f, -92f));
+            Slider music = CreateSlider("MusicVolume", panel.transform, "MUSIC", new Vector2(0f, -144f));
+            Slider sfx = CreateSlider("SfxVolume", panel.transform, "SFX", new Vector2(0f, -196f));
+            Slider voice = CreateSlider("VoiceVolume", panel.transform, "VOICE", new Vector2(0f, -248f));
+
+            Text accessibilityLabel = CreateText(
+                "AccessibilityLabel",
+                panel.transform,
+                "ACCESSIBILITY",
+                14,
+                FontStyle.Bold,
+                TextAnchor.MiddleLeft,
+                new Color(1f, 0.87f, 0.34f, 0.9f));
+            SetRect(accessibilityLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -302f), new Vector2(360f, 26f));
+
+            Toggle reducedMotion = CreateToggle("ReducedMotion", panel.transform, "REDUCED MOTION", new Vector2(0f, -340f));
+            Toggle haptics = CreateToggle("Haptics", panel.transform, "HAPTICS", new Vector2(0f, -386f));
 
             Button close = CreateButton("CloseButton", panel.transform, "CLOSE", new Color(0.36f, 0.78f, 0.28f, 1f));
-            SetRect(close.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 36f), new Vector2(210f, 52f));
+            SetRect(close.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(210f, 48f));
 
             SetObject(menu, "panelGroup", group);
             SetObject(menu, "masterSlider", master);
             SetObject(menu, "musicSlider", music);
             SetObject(menu, "sfxSlider", sfx);
             SetObject(menu, "voiceSlider", voice);
+            SetObject(menu, "reducedMotionToggle", reducedMotion);
+            SetObject(menu, "hapticsToggle", haptics);
             return menu;
+        }
+
+        private static Toggle CreateToggle(string name, Transform parent, string label, Vector2 anchoredPosition)
+        {
+            GameObject root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+            RectTransform rootRect = root.AddComponent<RectTransform>();
+            SetRect(rootRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), anchoredPosition, new Vector2(360f, 40f));
+
+            Text labelText = CreateText("Label", root.transform, label, 15, FontStyle.Bold, TextAnchor.MiddleLeft, Color.white);
+            SetRect(labelText.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(112f, 0f), new Vector2(220f, 34f));
+
+            GameObject toggleObject = new GameObject("Toggle");
+            toggleObject.transform.SetParent(root.transform, false);
+            RectTransform toggleRect = toggleObject.AddComponent<RectTransform>();
+            SetRect(toggleRect, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-34f, 0f), new Vector2(58f, 30f));
+
+            Image background = toggleObject.AddComponent<Image>();
+            background.sprite = UiPanelSprite();
+            background.type = Image.Type.Sliced;
+            background.color = new Color(0.025f, 0.07f, 0.065f, 1f);
+
+            Text stateText = CreateText(
+                "StateText",
+                toggleObject.transform,
+                "ON",
+                10,
+                FontStyle.Bold,
+                TextAnchor.MiddleLeft,
+                Color.white);
+            SetRect(
+                stateText.rectTransform,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                Vector2.zero,
+                new Vector2(46f, 24f));
+
+            GameObject knobObject = new GameObject("Knob");
+            knobObject.transform.SetParent(toggleObject.transform, false);
+            RectTransform knobRect = knobObject.AddComponent<RectTransform>();
+            SetRect(
+                knobRect,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(14f, 0f),
+                new Vector2(22f, 22f));
+            Image knob = knobObject.AddComponent<Image>();
+            knob.sprite = UiPanelSprite();
+            knob.type = Image.Type.Sliced;
+            knob.color = new Color(1f, 0.88f, 0.32f, 1f);
+
+            Toggle toggle = toggleObject.AddComponent<Toggle>();
+            toggle.targetGraphic = background;
+            toggle.graphic = null;
+            toggle.isOn = true;
+            toggle.transition = Selectable.Transition.ColorTint;
+            ArcadeToggleVisual toggleVisual = toggleObject.AddComponent<ArcadeToggleVisual>();
+            SetObject(toggleVisual, "toggle", toggle);
+            SetObject(toggleVisual, "track", background);
+            SetObject(toggleVisual, "knob", knobRect);
+            SetObject(toggleVisual, "stateText", stateText);
+            return toggle;
         }
 
         private static Slider CreateSlider(string name, Transform parent, string label, Vector2 anchoredPosition)

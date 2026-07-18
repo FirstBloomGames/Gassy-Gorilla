@@ -41,6 +41,11 @@ namespace FirstBloom.ArcadeFramework.Audio
         [Range(0f, 1f)] [SerializeField] private float sfxVolume = 0.7f;
         [Range(0f, 1f)] [SerializeField] private float voiceVolume = 1f;
 
+        [Header("Pause Mix")]
+        [Range(0f, 1f)] [SerializeField] private float pausedMusicMultiplier = 0.68f;
+        [Range(0f, 1f)] [SerializeField] private float pausedSfxMultiplier = 0.72f;
+        [Range(0f, 1f)] [SerializeField] private float pausedVoiceMultiplier = 0.8f;
+
         private readonly Dictionary<ArcadeSfxType, AudioClip> generatedSfx = new Dictionary<ArcadeSfxType, AudioClip>();
         private readonly Dictionary<ArcadeSfxType, int> lastClipIndices = new Dictionary<ArcadeSfxType, int>();
         private readonly Dictionary<ArcadeSfxType, float> lastSfxPlayTimes = new Dictionary<ArcadeSfxType, float>();
@@ -56,6 +61,7 @@ namespace FirstBloom.ArcadeFramework.Audio
         private bool audioUnlocked;
         private bool audioQaEnabled;
         private bool audioRemixQaEnabled;
+        private bool pauseMixActive;
 
         public static ArcadeAudioManager Instance { get; private set; }
 
@@ -67,6 +73,7 @@ namespace FirstBloom.ArcadeFramework.Audio
         public float MusicIntensity { get { return currentMusicIntensity; } }
         public ArcadeAudioLibrary AudioLibrary { get { return audioLibrary; } }
         public bool UsesGeneratedPlaceholderMusic { get { return generatePlaceholderMusic; } }
+        public bool PauseMixActive { get { return pauseMixActive; } }
 
         private void Awake()
         {
@@ -322,7 +329,7 @@ namespace FirstBloom.ArcadeFramework.Audio
             voiceSource.Stop();
             voiceSource.clip = clip;
             voiceSource.pitch = 1f;
-            voiceSource.volume = masterVolume * voiceVolume * voiceGain;
+            voiceSource.volume = GetVoiceOutputVolume();
             voiceSource.Play();
             LogAudioQaPlayback("voice", voiceSource, clip);
         }
@@ -353,6 +360,17 @@ namespace FirstBloom.ArcadeFramework.Audio
             voiceVolume = Mathf.Clamp01(value);
             PlayerPrefs.SetFloat(VoiceVolumeKey, voiceVolume);
             ApplyVolumesAndSave();
+        }
+
+        public void SetPauseMixActive(bool active)
+        {
+            if (pauseMixActive == active)
+            {
+                return;
+            }
+
+            pauseMixActive = active;
+            ApplyVolumes();
         }
 
         private void EnsureSources()
@@ -437,7 +455,7 @@ namespace FirstBloom.ArcadeFramework.Audio
 
             if (voiceSource != null)
             {
-                voiceSource.volume = masterVolume * voiceVolume * voiceGain;
+                voiceSource.volume = GetVoiceOutputVolume();
             }
         }
 
@@ -446,7 +464,8 @@ namespace FirstBloom.ArcadeFramework.Audio
             float baseGain = audioLibrary != null ? audioLibrary.BaseMusicGain : 1f;
             float intensityGain = audioLibrary != null ? audioLibrary.IntensityMusicGain : 0f;
             float ambienceGain = audioLibrary != null ? audioLibrary.AmbienceGain : 0f;
-            float busVolume = masterVolume * musicVolume * currentMusicDuck;
+            float pauseMultiplier = pauseMixActive ? pausedMusicMultiplier : 1f;
+            float busVolume = masterVolume * musicVolume * currentMusicDuck * pauseMultiplier;
 
             if (musicSource != null)
             {
@@ -872,7 +891,14 @@ namespace FirstBloom.ArcadeFramework.Audio
 
         private float GetSfxOutputVolume(float gain)
         {
-            return masterVolume * sfxVolume * sfxMixHeadroom * gain;
+            float pauseMultiplier = pauseMixActive ? pausedSfxMultiplier : 1f;
+            return masterVolume * sfxVolume * sfxMixHeadroom * gain * pauseMultiplier;
+        }
+
+        private float GetVoiceOutputVolume()
+        {
+            float pauseMultiplier = pauseMixActive ? pausedVoiceMultiplier : 1f;
+            return masterVolume * voiceVolume * voiceGain * pauseMultiplier;
         }
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)

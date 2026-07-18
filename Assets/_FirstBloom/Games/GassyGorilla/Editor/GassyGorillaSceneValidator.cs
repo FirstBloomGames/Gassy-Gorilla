@@ -36,6 +36,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string AudioLibraryPath = GameRoot + "/ScriptableObjects/GG_AudioLibrary.asset";
         private const string ExpeditionCatalogPath = GameRoot + "/ScriptableObjects/GG_ExpeditionCatalog.asset";
         private const string VoiceRoot = GameRoot + "/Audio/Voice";
+        private const string IosHapticsPluginPath = "Assets/_FirstBloom/ArcadeFramework/Plugins/iOS/FirstBloomHaptics.mm";
         private const float MinimumAuthoredVineGrabY = 1.25f;
 
         [MenuItem("First Bloom/Gassy Gorilla/Validate Built Scenes")]
@@ -53,7 +54,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 throw new InvalidOperationException("Gassy Gorilla scene validation failed:\n - " + string.Join("\n - ", errors));
             }
 
-            Debug.Log("Gassy Gorilla scene validation passed. Endless Run, five finite story Expeditions, progression UI, authored routes, textured 3D world art, audio, camera, and game loop are wired.");
+            Debug.Log("Gassy Gorilla scene validation passed. Endless Run, five finite story Expeditions, pause, accessibility, Jungle Badges, authored routes, textured 3D world art, audio, camera, and game loop are wired.");
         }
 
         private static void ValidateRequiredAssets(List<string> errors)
@@ -66,7 +67,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireAsset(DifficultyProfilePath, errors);
             RequireAsset(AudioLibraryPath, errors);
             RequireAsset(ExpeditionCatalogPath, errors);
+            RequireAsset(IosHapticsPluginPath, errors);
             ValidateExpeditionCatalog(errors);
+            ValidateBadgeContract(errors);
             ValidateCrocodileAssets(errors);
             ValidateProductionAudio(errors);
 
@@ -488,7 +491,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ValidateAudioManager(audioManager, "Main menu", errors);
             RequireComponent<ArcadeTimeController>("Main menu time manager", errors);
             MainMenuController menuController = RequireComponent<MainMenuController>("Main menu controller", errors);
-            RequireComponent<ArcadeSettingsMenu>("Main menu settings menu", errors);
+            ArcadeSettingsMenu settingsMenu =
+                RequireComponent<ArcadeSettingsMenu>("Main menu settings menu", errors);
             RequireComponent<CanvasScaler>("Main menu canvas scaler", errors);
             RequireSceneObject("Menu_GorillaHero", errors);
             RequireSceneObject("Menu_FartCloud", errors);
@@ -499,6 +503,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireSceneObject("ExpeditionsButton", errors);
             RequireSceneObject("UI_ExpeditionSelectPanel", errors);
             RequireSceneObject("StartExpeditionButton", errors);
+            RequireSceneObject("BadgesButton", errors);
+            RequireSceneObject("UI_JungleBadgesPanel", errors);
             for (int i = 1; i <= 5; i++)
             {
                 RequireSceneObject("ExpeditionButton_" + i, errors);
@@ -507,6 +513,23 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             if (menuController != null && !menuController.IsExpeditionUiConfigured)
             {
                 errors.Add("Main menu Expedition selector is not fully wired to its five-level catalog.");
+            }
+
+            if (menuController != null && !menuController.IsBadgeUiConfigured)
+            {
+                errors.Add("Main menu Jungle Badges panel is not fully wired.");
+            }
+
+            if (settingsMenu != null && !settingsMenu.HasAccessibilityControls)
+            {
+                errors.Add("Main menu settings must expose Reduced Motion and Haptics.");
+            }
+
+            ValidateToggleVisuals("Main menu", errors);
+
+            for (int i = 1; i <= GassyBadgeService.Count; i++)
+            {
+                RequireSceneObject("Badge_" + i.ToString("D2"), errors);
             }
 
             ValidateRenderableVisual("Menu_GorillaHero", errors);
@@ -531,6 +554,14 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireComponent<GassyTutorialPromptController>("Tutorial prompt controller", errors);
             RequireComponent<MilestoneEventManager>("Milestone manager", errors);
             RequireComponent<GassyGorillaAudioDirector>("Gassy Gorilla audio director", errors);
+            GassyFeedbackDirector feedbackDirector =
+                RequireComponent<GassyFeedbackDirector>("Haptic feedback director", errors);
+            GassyBadgeTracker badgeTracker =
+                RequireComponent<GassyBadgeTracker>("Jungle Badge tracker", errors);
+            ArcadePausePanel pausePanel =
+                RequireComponent<ArcadePausePanel>("Pause panel", errors);
+            ArcadeSettingsMenu settingsMenu =
+                RequireComponent<ArcadeSettingsMenu>("Game settings menu", errors);
             RequireComponent<TextOverlay>("Tutorial text overlay", errors);
             GassyExpeditionRunController expeditionRun =
                 RequireComponent<GassyExpeditionRunController>("Expedition run controller", errors);
@@ -540,6 +571,33 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             if (gameManager != null && !gameManager.IsExpeditionConfigured)
             {
                 errors.Add("Game manager does not have the complete Expedition story, objective, and success flow wired.");
+            }
+
+            if (gameManager != null && !gameManager.IsPauseConfigured)
+            {
+                errors.Add("Game manager does not have the complete pause and settings return flow wired.");
+            }
+
+            if (pausePanel != null && !pausePanel.IsConfigured)
+            {
+                errors.Add("Pause panel is missing its CanvasGroup transition controller.");
+            }
+
+            if (settingsMenu != null && !settingsMenu.HasAccessibilityControls)
+            {
+                errors.Add("Game settings must expose Reduced Motion and Haptics.");
+            }
+
+            ValidateToggleVisuals("Game", errors);
+
+            if (feedbackDirector != null && !feedbackDirector.IsConfigured)
+            {
+                errors.Add("Haptic feedback director is not connected to the gorilla.");
+            }
+
+            if (badgeTracker != null && !badgeTracker.IsConfigured)
+            {
+                errors.Add("Jungle Badge tracker is missing gameplay events, catalog, or toast wiring.");
             }
 
             if (expeditionRun != null && !expeditionRun.IsConfigured)
@@ -582,6 +640,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireSceneObject("UI_ExpeditionStoryPanel", errors);
             RequireSceneObject("UI_ExpeditionSuccessPanel", errors);
             RequireSceneObject("ExpeditionFinishLine_3D", errors);
+            RequireSceneObject("PauseButton", errors);
+            RequireSceneObject("UI_PausePanel", errors);
+            RequireSceneObject("PauseContent", errors);
+            RequireSceneObject("BadgeToast", errors);
+            RequireSceneObject("Director_Feedback", errors);
+            RequireSceneObject("Manager_JungleBadges", errors);
             RequireSceneObjectAbsent("Ground_3D", errors);
             RequireSceneObjectAbsent("Distant_MeshyForestDepth_3D", errors);
             RequireSceneObjectAbsent("Foreground_3DDecor", errors);
@@ -598,6 +662,91 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             if (catalog != null)
             {
                 catalog.AppendValidationErrors(errors);
+            }
+        }
+
+        private static void ValidateBadgeContract(List<string> errors)
+        {
+            GassyBadgeDefinition[] definitions = GassyBadgeService.Definitions;
+            if (definitions == null || definitions.Length != 8)
+            {
+                errors.Add("Jungle Badges must contain exactly eight launch definitions.");
+                return;
+            }
+
+            HashSet<string> ids = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < definitions.Length; i++)
+            {
+                GassyBadgeDefinition definition = definitions[i];
+                if (definition == null)
+                {
+                    errors.Add("Jungle Badge definition " + i + " is null.");
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(definition.Id) || !ids.Add(definition.Id))
+                {
+                    errors.Add("Jungle Badge IDs must be non-empty and unique.");
+                }
+
+                if (string.IsNullOrWhiteSpace(definition.DisplayTitle) ||
+                    string.IsNullOrWhiteSpace(definition.Description) ||
+                    definition.Target <= 0)
+                {
+                    errors.Add("Jungle Badge " + definition.Id + " is missing release-ready copy or a valid target.");
+                }
+            }
+
+            RequireBadge(definitions, "first-blast", GassyBadgeMetric.SuccessfulBoosts, 1, errors);
+            RequireBadge(definitions, "vine-time", GassyBadgeMetric.VineReleases, 10, errors);
+            RequireBadge(definitions, "bean-counter", GassyBadgeMetric.FoodPickups, 50, errors);
+            RequireBadge(definitions, "swamp-smarts", GassyBadgeMetric.CrocodileDodges, 5, errors);
+            RequireBadge(definitions, "hundred-meter-hero", GassyBadgeMetric.EndlessDistance, 100, errors);
+            RequireBadge(definitions, "jungle-legend", GassyBadgeMetric.EndlessDistance, 500, errors);
+            RequireBadge(definitions, "star-collector", GassyBadgeMetric.ExpeditionStars, 10, errors);
+            RequireBadge(definitions, "home-for-dinner", GassyBadgeMetric.CompletedExpeditions, 5, errors);
+        }
+
+        private static void RequireBadge(
+            GassyBadgeDefinition[] definitions,
+            string id,
+            GassyBadgeMetric metric,
+            int target,
+            List<string> errors)
+        {
+            for (int i = 0; i < definitions.Length; i++)
+            {
+                GassyBadgeDefinition definition = definitions[i];
+                if (definition != null && definition.Id == id)
+                {
+                    if (definition.Metric != metric || definition.Target != target)
+                    {
+                        errors.Add("Jungle Badge " + id + " does not match its launch metric and target.");
+                    }
+
+                    return;
+                }
+            }
+
+            errors.Add("Jungle Badge contract is missing " + id + ".");
+        }
+
+        private static void ValidateToggleVisuals(string sceneLabel, List<string> errors)
+        {
+            ArcadeToggleVisual[] visuals =
+                UnityEngine.Object.FindObjectsByType<ArcadeToggleVisual>(FindObjectsInactive.Include);
+            if (visuals.Length != 2)
+            {
+                errors.Add(sceneLabel + " scene must contain exactly two accessible switch visuals.");
+                return;
+            }
+
+            for (int i = 0; i < visuals.Length; i++)
+            {
+                if (!visuals[i].IsConfigured)
+                {
+                    errors.Add(sceneLabel + " accessibility switch visual is not fully wired.");
+                }
             }
         }
 

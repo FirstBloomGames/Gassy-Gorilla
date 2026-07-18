@@ -1,3 +1,4 @@
+using FirstBloom.ArcadeFramework.Accessibility;
 using UnityEngine;
 
 namespace FirstBloom.ArcadeFramework.Camera
@@ -79,7 +80,7 @@ namespace FirstBloom.ArcadeFramework.Camera
             float effectiveSmoothTime = Mathf.Max(0.01f, smoothTime * followSmoothingMultiplier);
             Vector3 position = Vector3.SmoothDamp(transform.position, desired, ref velocity, effectiveSmoothTime);
 
-            if (shakeTimeRemaining > 0f)
+            if (!ArcadeAccessibilitySettings.ReducedMotion && shakeTimeRemaining > 0f)
             {
                 shakeTimeRemaining -= Time.unscaledDeltaTime;
                 float fade = shakeDuration <= 0f ? 0f : Mathf.Clamp01(shakeTimeRemaining / shakeDuration);
@@ -97,14 +98,22 @@ namespace FirstBloom.ArcadeFramework.Camera
 
             if (dynamicZoom && cameraComponent != null && cameraComponent.orthographic)
             {
-                float speed = Mathf.Clamp(targetVelocity.magnitude, 0f, maxZoomSpeed);
-                float targetSize = baseOrthographicSize + Mathf.InverseLerp(0f, maxZoomSpeed, speed) * zoomOutAtSpeed;
+                float speed = ArcadeAccessibilitySettings.ReducedMotion
+                    ? 0f
+                    : Mathf.Clamp(targetVelocity.magnitude, 0f, maxZoomSpeed);
+                float targetSize = baseOrthographicSize +
+                    Mathf.InverseLerp(0f, maxZoomSpeed, speed) * zoomOutAtSpeed;
                 cameraComponent.orthographicSize = Mathf.SmoothDamp(cameraComponent.orthographicSize, targetSize, ref zoomVelocity, zoomSmoothTime);
             }
         }
 
         public void Shake(float intensity, float duration)
         {
+            if (ArcadeAccessibilitySettings.ReducedMotion)
+            {
+                return;
+            }
+
             if (duration >= shakeTimeRemaining)
             {
                 shakeDuration = Mathf.Max(0.01f, duration);

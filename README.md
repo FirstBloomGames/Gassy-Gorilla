@@ -4,11 +4,22 @@ Gassy Gorilla is a one-touch comedy arcade runner built in Unity. The player use
 
 This repository is the production Unity project and the first implementation of the First Bloom Arcade Framework.
 
+The current release candidate includes:
+
+- Endless Run plus five finite story Expeditions.
+- Magnetic vine catches, player-held swinging, release momentum, crocodile ambushes, and progressive difficulty.
+- Persistent best distance, Expedition stars, and eight Jungle Badges.
+- Music, voice, calibrated comedic SFX, pause mixing, and volume controls.
+- Pause/resume, controller-equivalent input, Reduced Motion, and optional iOS haptics.
+- Optimized desktop and phone WebGL presentation with a portrait rotation gate.
+
 ## Play
 
 [Play the current Gassy Gorilla WebGL build](https://firstbloomgames.github.io/Gassy-Gorilla/)
 
 The optimized web release is published from the `gh-pages` branch. Production Unity source remains on `main`.
+
+The verified WebGL package is 8.6 MB compressed and 14.6 MB uncompressed.
 
 ## Unity Version
 

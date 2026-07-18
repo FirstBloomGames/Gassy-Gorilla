@@ -74,6 +74,8 @@ MonoBehaviour:
   hudBestDistanceText: {fileID: 0}
   gameOverTitleText: {fileID: 0}
   gameOverReasonText: {fileID: 0}
+  pausePanel: {fileID: 0}
+  settingsMenu: {fileID: 0}
   expeditionCatalog: {fileID: 0}
   expeditionRunController: {fileID: 0}
   expeditionStoryPanel: {fileID: 0}

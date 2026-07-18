@@ -1,4 +1,5 @@
 using System.Collections;
+using FirstBloom.ArcadeFramework.Accessibility;
 using UnityEngine;
 
 namespace FirstBloom.ArcadeFramework.UI
@@ -12,6 +13,11 @@ namespace FirstBloom.ArcadeFramework.UI
         [SerializeField] private Transform scaleRoot;
 
         private Coroutine transitionRoutine;
+
+        public bool IsVisible
+        {
+            get { return canvasGroup != null && canvasGroup.alpha > 0.5f; }
+        }
 
         private void Awake()
         {
@@ -57,7 +63,7 @@ namespace FirstBloom.ArcadeFramework.UI
                 transitionRoutine = null;
             }
 
-            if (!animated || fadeDuration <= 0f)
+            if (!animated || fadeDuration <= 0f || ArcadeAccessibilitySettings.ReducedMotion)
             {
                 SetVisibleInstant(visible);
                 return;

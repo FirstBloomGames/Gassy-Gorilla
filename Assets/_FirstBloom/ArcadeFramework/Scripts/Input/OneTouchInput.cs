@@ -30,10 +30,18 @@ namespace FirstBloom.ArcadeFramework.Input
             {
                 return UnityEngine.Input.GetKeyDown(KeyCode.Space)
                     || UnityEngine.Input.GetKeyDown(KeyCode.UpArrow)
-                    || UnityEngine.Input.GetKeyDown(KeyCode.W);
+                    || UnityEngine.Input.GetKeyDown(KeyCode.W)
+                    || UnityEngine.Input.GetKeyDown(KeyCode.JoystickButton0);
             }
 
             return false;
+        }
+
+        public static bool WasPausePressedThisFrame()
+        {
+            return UnityEngine.Input.GetKeyDown(KeyCode.Escape)
+                || UnityEngine.Input.GetKeyDown(KeyCode.P)
+                || UnityEngine.Input.GetKeyDown(KeyCode.JoystickButton7);
         }
 
         private static bool IsPointerOverUi()

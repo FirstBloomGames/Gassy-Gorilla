@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
+using FirstBloom.ArcadeFramework.Accessibility;
 using FirstBloom.ArcadeFramework.Audio;
 using FirstBloom.ArcadeFramework.Camera;
 using FirstBloom.ArcadeFramework.Core;
+using FirstBloom.ArcadeFramework.Input;
 using FirstBloom.ArcadeFramework.Save;
 using FirstBloom.ArcadeFramework.Spawning;
 using FirstBloom.ArcadeFramework.UI;
@@ -57,6 +59,10 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private Text gameOverTitleText;
         [SerializeField] private Text gameOverReasonText;
 
+        [Header("Pause")]
+        [SerializeField] private ArcadePausePanel pausePanel;
+        [SerializeField] private ArcadeSettingsMenu settingsMenu;
+
         [Header("Expedition Run")]
         [SerializeField] private GassyExpeditionCatalog expeditionCatalog;
         [SerializeField] private GassyExpeditionRunController expeditionRunController;
@@ -78,6 +84,17 @@ namespace FirstBloom.Games.GassyGorilla
         public bool IsVineQaMode { get; private set; }
         public bool IsExpedition { get { return currentExpedition != null; } }
         public GassyExpeditionDefinition CurrentExpedition { get { return currentExpedition; } }
+        public bool IsPaused { get { return CurrentState == ArcadeGameState.Paused; } }
+        public bool IsPauseConfigured
+        {
+            get
+            {
+                return pausePanel != null &&
+                    pausePanel.IsConfigured &&
+                    settingsMenu != null &&
+                    settingsMenu.HasAccessibilityControls;
+            }
+        }
         public bool IsExpeditionConfigured
         {
             get
@@ -121,6 +138,16 @@ namespace FirstBloom.Games.GassyGorilla
             else
             {
                 Time.timeScale = 1f;
+            }
+
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.SetPauseMixActive(false);
+            }
+
+            if (pausePanel != null)
+            {
+                pausePanel.Hide();
             }
 
             if (gameOverPanel != null)
@@ -203,6 +230,11 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void Update()
         {
+            if (OneTouchInput.WasPausePressedThisFrame())
+            {
+                TogglePause();
+            }
+
             if (crocodileQaMode && Time.unscaledTime >= nextCrocodileQaSafetyRefresh)
             {
                 nextCrocodileQaSafetyRefresh = Time.unscaledTime + 0.75f;
@@ -224,6 +256,149 @@ namespace FirstBloom.Games.GassyGorilla
                 {
                     GameOver("Fell into the jungle.");
                 }
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus)
+            {
+                PauseRun();
+            }
+        }
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus)
+            {
+                PauseRun();
+            }
+        }
+
+        public void TogglePause()
+        {
+            if (CurrentState == ArcadeGameState.Running)
+            {
+                PauseRun();
+                return;
+            }
+
+            if (CurrentState != ArcadeGameState.Paused)
+            {
+                return;
+            }
+
+            if (settingsMenu != null && settingsMenu.IsVisible)
+            {
+                CloseSettingsToPause();
+            }
+            else
+            {
+                ResumeRun();
+            }
+        }
+
+        public void PauseRun()
+        {
+            if (CurrentState != ArcadeGameState.Running)
+            {
+                return;
+            }
+
+            SetState(ArcadeGameState.Paused);
+            if (scoreManager != null)
+            {
+                scoreManager.SetRunning(false);
+            }
+
+            if (settingsMenu != null)
+            {
+                settingsMenu.Close();
+            }
+
+            if (tutorialPrompt != null)
+            {
+                tutorialPrompt.PauseForSystemMenu();
+            }
+
+            if (pausePanel != null)
+            {
+                pausePanel.Show();
+            }
+
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.NotifyUserGesture();
+                ArcadeAudioManager.Instance.SetPauseMixActive(true);
+            }
+
+            ArcadeHaptics.Play(ArcadeHapticType.Light);
+            SetPausedTime(true);
+        }
+
+        public void ResumeRun()
+        {
+            if (CurrentState != ArcadeGameState.Paused)
+            {
+                return;
+            }
+
+            if (settingsMenu != null)
+            {
+                settingsMenu.Close();
+            }
+
+            if (pausePanel != null)
+            {
+                pausePanel.Hide();
+            }
+
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.NotifyUserGesture();
+                ArcadeAudioManager.Instance.SetPauseMixActive(false);
+            }
+
+            SetPausedTime(false);
+            SetState(ArcadeGameState.Running);
+            if (scoreManager != null)
+            {
+                scoreManager.SetRunning(true);
+            }
+
+            if (tutorialPrompt != null)
+            {
+                tutorialPrompt.ResumeAfterSystemMenu();
+            }
+
+            ArcadeHaptics.Play(ArcadeHapticType.Light);
+        }
+
+        public void OpenSettingsFromPause()
+        {
+            if (CurrentState != ArcadeGameState.Paused || settingsMenu == null)
+            {
+                return;
+            }
+
+            if (pausePanel != null)
+            {
+                pausePanel.Hide();
+            }
+
+            settingsMenu.Open();
+        }
+
+        public void CloseSettingsToPause()
+        {
+            if (settingsMenu != null)
+            {
+                settingsMenu.Close();
+            }
+
+            if (CurrentState == ArcadeGameState.Paused && pausePanel != null)
+            {
+                pausePanel.Show();
             }
         }
 
@@ -286,6 +461,7 @@ namespace FirstBloom.Games.GassyGorilla
             int stars = currentExpedition.CalculateStars(finishFuel);
             int catalogCount = expeditionCatalog != null ? expeditionCatalog.Count : 0;
             GassyExpeditionProgressStore.Complete(currentExpedition, stars, catalogCount);
+            GassyBadgeService.Reconcile(expeditionCatalog, true);
 
             if (expeditionSuccessTitleText != null)
             {
@@ -331,6 +507,8 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 cameraFollow.Shake(0.16f, 0.34f);
             }
+
+            ArcadeHaptics.Play(ArcadeHapticType.Success);
 
             if (expeditionSuccessRoutine != null)
             {
@@ -771,6 +949,8 @@ namespace FirstBloom.Games.GassyGorilla
                 cameraFollow.Shake(shakeIntensity, shakeDuration);
             }
 
+            ArcadeHaptics.Play(ArcadeHapticType.Failure);
+
             if (outroRoutine != null)
             {
                 StopCoroutine(outroRoutine);
@@ -802,6 +982,24 @@ namespace FirstBloom.Games.GassyGorilla
             UnityEngine.Camera activeCamera = GetSceneCamera();
             if (activeCamera == null || player == null)
             {
+                BeginRun();
+                yield break;
+            }
+
+            if (ArcadeAccessibilitySettings.ReducedMotion)
+            {
+                if (cameraFollow != null)
+                {
+                    cameraFollow.SnapToTarget();
+                }
+                else
+                {
+                    Vector3 stablePosition = player.transform.position + introEndOffset;
+                    stablePosition.z = activeCamera.transform.position.z;
+                    activeCamera.transform.position = stablePosition;
+                }
+
+                introRoutine = null;
                 BeginRun();
                 yield break;
             }
@@ -856,6 +1054,23 @@ namespace FirstBloom.Games.GassyGorilla
             UnityEngine.Camera activeCamera = GetSceneCamera();
             if (activeCamera == null || player == null)
             {
+                yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, resultRevealDelay));
+                ShowGameOverPanel();
+                outroRoutine = null;
+                yield break;
+            }
+
+            if (ArcadeAccessibilitySettings.ReducedMotion)
+            {
+                if (cameraFollow != null)
+                {
+                    cameraFollow.enabled = false;
+                }
+
+                Transform reducedFocus = focusTarget != null ? focusTarget : player.transform;
+                Vector3 stablePosition = reducedFocus.position + outroOffset;
+                stablePosition.z = activeCamera.transform.position.z;
+                activeCamera.transform.position = stablePosition;
                 yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, resultRevealDelay));
                 ShowGameOverPanel();
                 outroRoutine = null;
@@ -975,6 +1190,11 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void ResetTimeAndLoad(string sceneName)
         {
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.SetPauseMixActive(false);
+            }
+
             if (ArcadeTimeController.Instance != null)
             {
                 ArcadeTimeController.Instance.ResetTimeScale();
@@ -985,6 +1205,18 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             SceneManager.LoadScene(sceneName);
+        }
+
+        private static void SetPausedTime(bool paused)
+        {
+            if (ArcadeTimeController.Instance != null)
+            {
+                ArcadeTimeController.Instance.SetHardPaused(paused);
+            }
+            else
+            {
+                Time.timeScale = paused ? 0f : 1f;
+            }
         }
 
         private void SetSpawnersActive(bool active)

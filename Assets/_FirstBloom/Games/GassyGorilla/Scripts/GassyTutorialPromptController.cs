@@ -152,5 +152,23 @@ namespace FirstBloom.Games.GassyGorilla
                 openingRoutine = StartCoroutine(OpeningPromptRoutine());
             }
         }
+
+        public void PauseForSystemMenu()
+        {
+            StopAllCoroutines();
+            openingRoutine = null;
+            if (overlay != null)
+            {
+                overlay.HideInstant();
+            }
+        }
+
+        public void ResumeAfterSystemMenu()
+        {
+            if (openingAllowed && !sawBoost && openingRoutine == null)
+            {
+                openingRoutine = StartCoroutine(OpeningPromptRoutine());
+            }
+        }
     }
 }

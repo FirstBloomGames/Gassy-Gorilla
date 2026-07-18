@@ -1,3 +1,4 @@
+using FirstBloom.ArcadeFramework.Accessibility;
 using FirstBloom.ArcadeFramework.Audio;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,9 +12,21 @@ namespace FirstBloom.ArcadeFramework.UI
         [SerializeField] private Slider musicSlider;
         [SerializeField] private Slider sfxSlider;
         [SerializeField] private Slider voiceSlider;
+        [SerializeField] private Toggle reducedMotionToggle;
+        [SerializeField] private Toggle hapticsToggle;
         [SerializeField] private bool startClosed = true;
 
         private bool initialized;
+
+        public bool IsVisible
+        {
+            get { return panelGroup != null && panelGroup.alpha > 0.5f; }
+        }
+
+        public bool HasAccessibilityControls
+        {
+            get { return reducedMotionToggle != null && hapticsToggle != null; }
+        }
 
         private void Awake()
         {
@@ -27,6 +40,7 @@ namespace FirstBloom.ArcadeFramework.UI
         {
             BindSliders();
             SyncFromAudio();
+            SyncFromAccessibility();
 
             if (startClosed)
             {
@@ -62,11 +76,22 @@ namespace FirstBloom.ArcadeFramework.UI
             {
                 voiceSlider.onValueChanged.AddListener(SetVoiceVolume);
             }
+
+            if (reducedMotionToggle != null)
+            {
+                reducedMotionToggle.onValueChanged.AddListener(SetReducedMotion);
+            }
+
+            if (hapticsToggle != null)
+            {
+                hapticsToggle.onValueChanged.AddListener(SetHapticsEnabled);
+            }
         }
 
         public void Open()
         {
             SyncFromAudio();
+            SyncFromAccessibility();
             SetVisible(true);
         }
 
@@ -115,6 +140,33 @@ namespace FirstBloom.ArcadeFramework.UI
             }
         }
 
+        private void SyncFromAccessibility()
+        {
+            if (reducedMotionToggle != null)
+            {
+                SyncToggle(
+                    reducedMotionToggle,
+                    ArcadeAccessibilitySettings.ReducedMotion);
+            }
+
+            if (hapticsToggle != null)
+            {
+                SyncToggle(
+                    hapticsToggle,
+                    ArcadeAccessibilitySettings.HapticsEnabled);
+            }
+        }
+
+        private static void SyncToggle(Toggle toggle, bool value)
+        {
+            toggle.SetIsOnWithoutNotify(value);
+            ArcadeToggleVisual visual = toggle.GetComponent<ArcadeToggleVisual>();
+            if (visual != null)
+            {
+                visual.Refresh();
+            }
+        }
+
         private void SetVisible(bool visible)
         {
             if (panelGroup == null)
@@ -158,6 +210,16 @@ namespace FirstBloom.ArcadeFramework.UI
             {
                 ArcadeAudioManager.Instance.SetVoiceVolume(value);
             }
+        }
+
+        private static void SetReducedMotion(bool value)
+        {
+            ArcadeAccessibilitySettings.SetReducedMotion(value);
+        }
+
+        private static void SetHapticsEnabled(bool value)
+        {
+            ArcadeAccessibilitySettings.SetHapticsEnabled(value);
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections;
+using FirstBloom.ArcadeFramework.Accessibility;
 using UnityEngine;
 
 namespace FirstBloom.ArcadeFramework.VFX
@@ -34,6 +35,16 @@ namespace FirstBloom.ArcadeFramework.VFX
 
         public void PlaySlowMotion(float timeScale, float duration)
         {
+            if (ArcadeAccessibilitySettings.ReducedMotion)
+            {
+                if (!hardPaused)
+                {
+                    SetScale(1f);
+                }
+
+                return;
+            }
+
             if (slowMotionRoutine != null)
             {
                 StopCoroutine(slowMotionRoutine);
