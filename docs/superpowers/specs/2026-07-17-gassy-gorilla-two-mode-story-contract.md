@@ -1,6 +1,6 @@
 # Gassy Gorilla Two-Mode Story Contract
 
-**Status:** Required for Version 1.0; implementation pending
+**Status:** Complete - released and publicly verified July 18, 2026
 
 **Date:** 2026-07-17
 
@@ -83,4 +83,10 @@ The two-mode release is complete only when:
 - Story panels are readable on landscape phones and skippable without breaking progression.
 - Completing one mode never leaks score, objective, spawn, or result state into the other.
 - The public WebGL build passes the full menu-to-mode-to-result flow with zero warning or error logs.
+
+## 7. Acceptance Result
+
+All acceptance gates passed. Endless Run remains intact, all five story Expeditions support their complete select-to-result flows, progression persists independently, and the final desktop and mobile WebGL checks reported no warnings or errors.
+
+Detailed implementation and release evidence is recorded in `docs/superpowers/plans/2026-07-17-gassy-gorilla-two-mode-story-implementation.md`.
 
