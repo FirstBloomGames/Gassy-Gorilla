@@ -34,6 +34,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string RunChunkFolder = GameRoot + "/ScriptableObjects/RunChunks";
         private const string DifficultyProfilePath = GameRoot + "/ScriptableObjects/GG_RunDifficulty.asset";
         private const string AudioLibraryPath = GameRoot + "/ScriptableObjects/GG_AudioLibrary.asset";
+        private const string ExpeditionCatalogPath = GameRoot + "/ScriptableObjects/GG_ExpeditionCatalog.asset";
         private const string VoiceRoot = GameRoot + "/Audio/Voice";
         private const float MinimumAuthoredVineGrabY = 1.25f;
 
@@ -52,7 +53,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 throw new InvalidOperationException("Gassy Gorilla scene validation failed:\n - " + string.Join("\n - ", errors));
             }
 
-            Debug.Log("Gassy Gorilla scene validation passed. Menu, authored predator chunks, textured 3D world art, HUD, camera, tutorial, and game loop are wired.");
+            Debug.Log("Gassy Gorilla scene validation passed. Endless Run, five finite story Expeditions, progression UI, authored routes, textured 3D world art, audio, camera, and game loop are wired.");
         }
 
         private static void ValidateRequiredAssets(List<string> errors)
@@ -64,6 +65,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireAsset(CrocodileAmbushChunkPath, errors);
             RequireAsset(DifficultyProfilePath, errors);
             RequireAsset(AudioLibraryPath, errors);
+            RequireAsset(ExpeditionCatalogPath, errors);
+            ValidateExpeditionCatalog(errors);
             ValidateCrocodileAssets(errors);
             ValidateProductionAudio(errors);
 
@@ -484,13 +487,27 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ArcadeAudioManager audioManager = RequireComponent<ArcadeAudioManager>("Main menu audio manager", errors);
             ValidateAudioManager(audioManager, "Main menu", errors);
             RequireComponent<ArcadeTimeController>("Main menu time manager", errors);
-            RequireComponent<MainMenuController>("Main menu controller", errors);
+            MainMenuController menuController = RequireComponent<MainMenuController>("Main menu controller", errors);
             RequireComponent<ArcadeSettingsMenu>("Main menu settings menu", errors);
             RequireComponent<CanvasScaler>("Main menu canvas scaler", errors);
             RequireSceneObject("Menu_GorillaHero", errors);
             RequireSceneObject("Menu_FartCloud", errors);
             RequireSceneObject("Menu_PaintedJungleBackdrop_3D", errors);
             RequireSceneObject("World_KeyLight_Menu", errors);
+            RequireSceneObject("UI_MainMenuActions", errors);
+            RequireSceneObject("EndlessRunButton", errors);
+            RequireSceneObject("ExpeditionsButton", errors);
+            RequireSceneObject("UI_ExpeditionSelectPanel", errors);
+            RequireSceneObject("StartExpeditionButton", errors);
+            for (int i = 1; i <= 5; i++)
+            {
+                RequireSceneObject("ExpeditionButton_" + i, errors);
+            }
+
+            if (menuController != null && !menuController.IsExpeditionUiConfigured)
+            {
+                errors.Add("Main menu Expedition selector is not fully wired to its five-level catalog.");
+            }
 
             ValidateRenderableVisual("Menu_GorillaHero", errors);
             ValidateRenderableVisual("Menu_FartCloud", errors);
@@ -506,7 +523,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ArcadeAudioManager audioManager = RequireComponent<ArcadeAudioManager>("Game audio manager", errors);
             ValidateAudioManager(audioManager, "Game", errors);
             RequireComponent<ArcadeTimeController>("Game time manager", errors);
-            RequireComponent<GassyGorillaGameManager>("Game manager", errors);
+            GassyGorillaGameManager gameManager = RequireComponent<GassyGorillaGameManager>("Game manager", errors);
             RequireComponent<GassyScoreManager>("Score manager", errors);
             RequireComponent<DistanceScoreTracker>("Distance tracker", errors);
             RequireComponent<SmoothCameraFollow2D>("Camera follow", errors);
@@ -515,6 +532,25 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireComponent<MilestoneEventManager>("Milestone manager", errors);
             RequireComponent<GassyGorillaAudioDirector>("Gassy Gorilla audio director", errors);
             RequireComponent<TextOverlay>("Tutorial text overlay", errors);
+            GassyExpeditionRunController expeditionRun =
+                RequireComponent<GassyExpeditionRunController>("Expedition run controller", errors);
+            ExpeditionFinishLine finishLine =
+                RequireComponent<ExpeditionFinishLine>("Expedition finish line", errors);
+
+            if (gameManager != null && !gameManager.IsExpeditionConfigured)
+            {
+                errors.Add("Game manager does not have the complete Expedition story, objective, and success flow wired.");
+            }
+
+            if (expeditionRun != null && !expeditionRun.IsConfigured)
+            {
+                errors.Add("Expedition run controller is missing player, HUD, objective, remaining-distance, or finish-line wiring.");
+            }
+
+            if (finishLine != null && !finishLine.IsConfigured)
+            {
+                errors.Add("Expedition finish line is missing its trigger, pulse root, or glow renderers.");
+            }
 
             RunChunkDirector runDirector = RequireComponent<RunChunkDirector>("Run chunk director", errors);
             if (runDirector != null)
@@ -541,12 +577,28 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireSceneObject("PaintedJungleBackdrop_3D", errors);
             RequireSceneObject("DeathZone", errors);
             RequireSceneObject("World_KeyLight_Game", errors);
+            RequireSceneObject("Manager_ExpeditionRun", errors);
+            RequireSceneObject("UI_ExpeditionHUD", errors);
+            RequireSceneObject("UI_ExpeditionStoryPanel", errors);
+            RequireSceneObject("UI_ExpeditionSuccessPanel", errors);
+            RequireSceneObject("ExpeditionFinishLine_3D", errors);
             RequireSceneObjectAbsent("Ground_3D", errors);
             RequireSceneObjectAbsent("Distant_MeshyForestDepth_3D", errors);
             RequireSceneObjectAbsent("Foreground_3DDecor", errors);
 
             RequireNoSpriteRenderers("Game scene", errors);
+            ValidateRenderableVisual("ExpeditionFinishLine_3D", errors);
             RequireTexturedWorldRenderers("Game scene", errors);
+        }
+
+        private static void ValidateExpeditionCatalog(List<string> errors)
+        {
+            GassyExpeditionCatalog catalog =
+                AssetDatabase.LoadAssetAtPath<GassyExpeditionCatalog>(ExpeditionCatalogPath);
+            if (catalog != null)
+            {
+                catalog.AppendValidationErrors(errors);
+            }
         }
 
         private static void ValidateSceneAudioListener(string sceneLabel, List<string> errors)

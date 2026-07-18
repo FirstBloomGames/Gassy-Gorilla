@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9868dc9a516eae45932b63c1c76328d, type: 3}
+  m_Name: GG_Expedition_03_CanopyShortcut
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
+  expeditionId: canopy-shortcut
+  orderIndex: 2
+  displayTitle: Canopy Shortcut
+  openingStory: The ground route is blocked, but the glowing vines form a swinging
+    highway. Hold tight, choose the arc, and release like a legend.
+  successStory: Three clean releases and only one deeply questionable noise. The
+    canopy shortcut officially works.
+  objectiveType: 2
+  objectiveText: Release from 3 vines, then reach the finish.
+  targetCount: 3
+  targetFuel: 0
+  route:
+  - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
+  - {fileID: 11400000, guid: e1769fe815c237648a5f242a652287ba, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: 74d664f623f097b4283952ca739ce0e5, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: 1ecf295b5dd18a24da4d710c52d3390c, type: 2}
+  - {fileID: 11400000, guid: ab175b48be1537d4a84c3d19c2bf5c68, type: 2}
+  - {fileID: 11400000, guid: 53848556d9ba2ce4c81574ea66ca6191, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  finishInset: 1.2
+  twoStarFuel: 40
+  threeStarFuel: 66

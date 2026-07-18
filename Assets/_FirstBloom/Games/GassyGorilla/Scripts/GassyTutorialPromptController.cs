@@ -16,6 +16,7 @@ namespace FirstBloom.Games.GassyGorilla
 
         private bool sawBoost;
         private bool sawVine;
+        private bool openingAllowed = true;
         private Coroutine openingRoutine;
 
         private void OnEnable()
@@ -47,7 +48,10 @@ namespace FirstBloom.Games.GassyGorilla
                 overlay.HideInstant();
             }
 
-            openingRoutine = StartCoroutine(OpeningPromptRoutine());
+            if (openingAllowed)
+            {
+                openingRoutine = StartCoroutine(OpeningPromptRoutine());
+            }
         }
 
         private IEnumerator OpeningPromptRoutine()
@@ -122,6 +126,30 @@ namespace FirstBloom.Games.GassyGorilla
             if (overlay != null)
             {
                 overlay.HideInstant();
+            }
+        }
+
+        public void PauseForStory()
+        {
+            openingAllowed = false;
+            if (openingRoutine != null)
+            {
+                StopCoroutine(openingRoutine);
+                openingRoutine = null;
+            }
+
+            if (overlay != null)
+            {
+                overlay.HideInstant();
+            }
+        }
+
+        public void BeginForRun()
+        {
+            openingAllowed = true;
+            if (!sawBoost && openingRoutine == null)
+            {
+                openingRoutine = StartCoroutine(OpeningPromptRoutine());
             }
         }
     }

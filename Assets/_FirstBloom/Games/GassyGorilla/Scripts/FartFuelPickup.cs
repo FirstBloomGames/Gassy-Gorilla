@@ -125,6 +125,7 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             gorilla.RefillFuel(refillAmount, true);
+            GassyRunEvents.RaiseFoodCollected(pickupType);
 
             if (ArcadeAudioManager.Instance != null)
             {

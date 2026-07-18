@@ -33,6 +33,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string GeneratedTextureRoot = TextureRoot + "/Generated3D";
         private const string ProceduralTextureRoot = GeneratedTextureRoot + "/Procedural";
         private const string RunChunkRoot = GameRoot + "/ScriptableObjects/RunChunks";
+        private const string ExpeditionRoot = GameRoot + "/ScriptableObjects/Expeditions";
+        private const string ExpeditionCatalogPath = GameRoot + "/ScriptableObjects/GG_ExpeditionCatalog.asset";
         private const string DifficultyProfilePath = GameRoot + "/ScriptableObjects/GG_RunDifficulty.asset";
         private const string AudioLibraryPath = GameRoot + "/ScriptableObjects/GG_AudioLibrary.asset";
         private const string PaintedJungleTexturePath = GeneratedTextureRoot + "/GG_JungleBackdrop_Painted3D_v1.png";
@@ -71,9 +73,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             PrefabSet prefabs = BuildPrefabs(sprites, gorillaModel, crocodileModel, meshyAssets);
             RunDifficultyProfile difficultyProfile = BuildRunDifficultyProfile();
             RunChunkSet runChunks = BuildRunChunkDefinitions(prefabs);
+            ExpeditionSet expeditions = BuildExpeditionDefinitions(runChunks);
 
-            BuildMainMenuScene(sprites, gorillaModel, meshyAssets);
-            BuildGameScene(sprites, prefabs, meshyAssets, runChunks, difficultyProfile);
+            BuildMainMenuScene(sprites, gorillaModel, meshyAssets, expeditions.Catalog);
+            BuildGameScene(sprites, prefabs, meshyAssets, runChunks, difficultyProfile, expeditions.Catalog);
             ConfigureBuildSettings();
 
             AssetDatabase.SaveAssets();
@@ -180,6 +183,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 GameRoot + "/Textures/Generated3D/Procedural",
                 GameRoot + "/ScriptableObjects",
                 RunChunkRoot,
+                ExpeditionRoot,
                 GameRoot + "/Editor"
             };
 
@@ -1955,6 +1959,228 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             };
         }
 
+        private static ExpeditionSet BuildExpeditionDefinitions(RunChunkSet runChunks)
+        {
+            GassyExpeditionDefinition dinnerBell = CreateOrUpdateExpedition(
+                "01_DinnerBell",
+                "dinner-bell",
+                0,
+                "The Dinner Bell",
+                "The dinner bell is echoing through the canopy. Gassy Gorilla has one heroic shortcut and absolutely no time for dignity.",
+                "The banyan gate! Dinner is still warm, and the jungle now knows exactly who is coming through.",
+                GassyExpeditionObjectiveType.ReachFinish,
+                "Reach the old banyan gate.",
+                0,
+                0f,
+                new[]
+                {
+                    FindChunk(runChunks, "OpeningBoost"),
+                    FindChunk(runChunks, "SafeVine"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "FuelArc"),
+                    FindChunk(runChunks, "BoostGap"),
+                    FindChunk(runChunks, "Recovery")
+                },
+                1.2f,
+                42f,
+                68f);
+
+            GassyExpeditionDefinition beanTrail = CreateOrUpdateExpedition(
+                "02_BeanTrail",
+                "bean-trail",
+                1,
+                "The Bean Trail",
+                "A suspiciously perfect trail of beans leads deeper into the jungle. Heroism says hurry home. Hunger has filed an appeal.",
+                "Every bean accounted for. Mostly. Gassy Gorilla feels magnificently overqualified for the road ahead.",
+                GassyExpeditionObjectiveType.CollectFood,
+                "Collect 10 foods, then reach the finish.",
+                10,
+                0f,
+                new[]
+                {
+                    FindChunk(runChunks, "OpeningBoost"),
+                    FindChunk(runChunks, "FuelArc"),
+                    FindChunk(runChunks, "FuelChoiceFork"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "LongBoostGap"),
+                    FindChunk(runChunks, "FuelArc"),
+                    FindChunk(runChunks, "Recovery")
+                },
+                1.2f,
+                45f,
+                72f);
+
+            GassyExpeditionDefinition canopyShortcut = CreateOrUpdateExpedition(
+                "03_CanopyShortcut",
+                "canopy-shortcut",
+                2,
+                "Canopy Shortcut",
+                "The ground route is blocked, but the glowing vines form a swinging highway. Hold tight, choose the arc, and release like a legend.",
+                "Three clean releases and only one deeply questionable noise. The canopy shortcut officially works.",
+                GassyExpeditionObjectiveType.VineReleases,
+                "Release from 3 vines, then reach the finish.",
+                3,
+                0f,
+                new[]
+                {
+                    FindChunk(runChunks, "OpeningBoost"),
+                    FindChunk(runChunks, "SafeVine"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "VineBoostRelay"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "HighVineArc"),
+                    FindChunk(runChunks, "FuelArc"),
+                    FindChunk(runChunks, "LowVineRescue"),
+                    FindChunk(runChunks, "Recovery")
+                },
+                1.2f,
+                40f,
+                66f);
+
+            GassyExpeditionDefinition crocodileCrossing = CreateOrUpdateExpedition(
+                "04_CrocodileCrossing",
+                "crocodile-crossing",
+                3,
+                "Crocodile Crossing",
+                "The lagoon is awake. Watch the warning ripples, keep one boost ready, and do not accept dinner invitations from anything with that many teeth.",
+                "Two crocodiles dodged. Neither is impressed. Gassy Gorilla is extremely impressed with himself.",
+                GassyExpeditionObjectiveType.CrocodileDodges,
+                "Dodge 2 crocodile ambushes, then finish.",
+                2,
+                0f,
+                new[]
+                {
+                    FindChunk(runChunks, "OpeningBoost"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "CrocodileAmbush"),
+                    FindChunk(runChunks, "PostPredatorFeast"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "CrocodileBaitLift"),
+                    FindChunk(runChunks, "Recovery")
+                },
+                1.2f,
+                38f,
+                62f);
+
+            GassyExpeditionDefinition homeBeforeDessert = CreateOrUpdateExpedition(
+                "05_HomeBeforeDessert",
+                "home-before-dessert",
+                4,
+                "Home Before Dessert",
+                "The home clearing is close, dessert is closer, and the whole jungle has arranged one final objection. Save enough fuel for the last heroic push.",
+                "Home before dessert. Barely. The family agrees this was a completely normal way to arrive.",
+                GassyExpeditionObjectiveType.FinishWithFuel,
+                "Reach home with at least 45 fuel.",
+                0,
+                45f,
+                new[]
+                {
+                    FindChunk(runChunks, "OpeningBoost"),
+                    FindChunk(runChunks, "SafeVine"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "HazardIntroduction"),
+                    FindChunk(runChunks, "FuelChoiceFork"),
+                    FindChunk(runChunks, "CrocodileAmbush"),
+                    FindChunk(runChunks, "PostPredatorFeast"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "VineBoostRelay"),
+                    FindChunk(runChunks, "FuelArc"),
+                    FindChunk(runChunks, "ThornTimingLane"),
+                    FindChunk(runChunks, "Recovery")
+                },
+                1.2f,
+                58f,
+                78f);
+
+            GassyExpeditionCatalog catalog = AssetDatabase.LoadAssetAtPath<GassyExpeditionCatalog>(ExpeditionCatalogPath);
+            if (catalog == null)
+            {
+                catalog = ScriptableObject.CreateInstance<GassyExpeditionCatalog>();
+                AssetDatabase.CreateAsset(catalog, ExpeditionCatalogPath);
+            }
+
+            GassyExpeditionDefinition[] definitions =
+            {
+                dinnerBell,
+                beanTrail,
+                canopyShortcut,
+                crocodileCrossing,
+                homeBeforeDessert
+            };
+            catalog.Configure(definitions);
+            EditorUtility.SetDirty(catalog);
+            AssetDatabase.SaveAssets();
+
+            return new ExpeditionSet
+            {
+                Catalog = catalog,
+                All = definitions
+            };
+        }
+
+        private static GassyExpeditionDefinition CreateOrUpdateExpedition(
+            string assetKey,
+            string id,
+            int orderIndex,
+            string title,
+            string openingStory,
+            string successStory,
+            GassyExpeditionObjectiveType objectiveType,
+            string objectiveText,
+            int targetCount,
+            float targetFuel,
+            RunChunkDefinition[] route,
+            float finishInset,
+            float twoStarFuel,
+            float threeStarFuel)
+        {
+            string path = ExpeditionRoot + "/GG_Expedition_" + assetKey + ".asset";
+            GassyExpeditionDefinition definition =
+                AssetDatabase.LoadAssetAtPath<GassyExpeditionDefinition>(path);
+            if (definition == null)
+            {
+                definition = ScriptableObject.CreateInstance<GassyExpeditionDefinition>();
+                AssetDatabase.CreateAsset(definition, path);
+            }
+
+            definition.Configure(
+                id,
+                orderIndex,
+                title,
+                openingStory,
+                successStory,
+                objectiveType,
+                objectiveText,
+                targetCount,
+                targetFuel,
+                route,
+                finishInset,
+                twoStarFuel,
+                threeStarFuel);
+            EditorUtility.SetDirty(definition);
+            return definition;
+        }
+
+        private static RunChunkDefinition FindChunk(RunChunkSet runChunks, string chunkId)
+        {
+            if (runChunks == null || runChunks.All == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < runChunks.All.Length; i++)
+            {
+                RunChunkDefinition definition = runChunks.All[i];
+                if (definition != null &&
+                    string.Equals(definition.ChunkId, chunkId, StringComparison.Ordinal))
+                {
+                    return definition;
+                }
+            }
+
+            return null;
+        }
+
         private static RunChunkDefinition CreateOrUpdateRunChunk(
             string id,
             RunChunkTag tags,
@@ -2537,7 +2763,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return SavePrefab(root, PrefabRoot + "/" + name + ".prefab");
         }
 
-        private static void BuildMainMenuScene(SpriteSet sprites, GorillaModelAssets gorillaModel, MeshyGameAssets meshyAssets)
+        private static void BuildMainMenuScene(
+            SpriteSet sprites,
+            GorillaModelAssets gorillaModel,
+            MeshyGameAssets meshyAssets,
+            GassyExpeditionCatalog expeditionCatalog)
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -2551,24 +2781,63 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             Canvas canvas = CreateCanvas("MainMenuCanvas");
             MainMenuController menu = new GameObject("Manager_MainMenu").AddComponent<MainMenuController>();
+            GameObject mainActionsRoot = new GameObject("UI_MainMenuActions");
+            mainActionsRoot.transform.SetParent(canvas.transform, false);
+            RectTransform mainActionsRect = mainActionsRoot.AddComponent<RectTransform>();
+            SetRect(mainActionsRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-            Text title = CreateText("Title", canvas.transform, "GASSY GORILLA", 54, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.93f, 0.38f, 1f));
+            Text title = CreateText("Title", mainActionsRoot.transform, "GASSY GORILLA", 54, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.93f, 0.38f, 1f));
             SetRect(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -82f), new Vector2(720f, 76f));
 
-            Text best = CreateText("Best Distance", canvas.transform, "Best Distance: 0 m", 22, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
+            Text best = CreateText("Best Distance", mainActionsRoot.transform, "Best Distance: 0 m", 22, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
             SetRect(best.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -146f), new Vector2(420f, 44f));
 
-            Button playButton = CreateButton("PlayButton", canvas.transform, "PLAY", new Color(0.36f, 0.78f, 0.28f, 1f));
-            SetRect(playButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 34f), new Vector2(244f, 64f));
-            UnityEventTools.AddPersistentListener(playButton.onClick, menu.Play);
+            Button playButton = CreateButton("EndlessRunButton", mainActionsRoot.transform, "ENDLESS RUN", new Color(0.36f, 0.78f, 0.28f, 1f));
+            SetRect(playButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 46f), new Vector2(280f, 62f));
+            UnityEventTools.AddPersistentListener(playButton.onClick, menu.PlayEndless);
 
-            Button settingsButton = CreateButton("SettingsButton", canvas.transform, "SETTINGS", new Color(0.22f, 0.55f, 0.78f, 1f));
-            SetRect(settingsButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -40f), new Vector2(244f, 54f));
+            Button expeditionsButton = CreateButton("ExpeditionsButton", mainActionsRoot.transform, "EXPEDITIONS", new Color(0.92f, 0.58f, 0.16f, 1f));
+            SetRect(expeditionsButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -24f), new Vector2(280f, 60f));
+            UnityEventTools.AddPersistentListener(expeditionsButton.onClick, menu.OpenExpeditions);
+
+            Button settingsButton = CreateButton("SettingsButton", mainActionsRoot.transform, "SETTINGS", new Color(0.22f, 0.55f, 0.78f, 1f));
+            SetRect(settingsButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -92f), new Vector2(220f, 48f));
             UnityEventTools.AddPersistentListener(settingsButton.onClick, menu.OpenSettings);
 
+            CanvasGroupPanel expeditionPanel = CreateExpeditionSelectPanel(
+                canvas.transform,
+                out Button[] expeditionButtons,
+                out Text[] expeditionButtonLabels,
+                out Text expeditionTitle,
+                out Text expeditionObjective,
+                out Text expeditionStory,
+                out Text expeditionStatus,
+                out Button expeditionPlayButton,
+                out Button expeditionCloseButton);
+
             ArcadeSettingsMenu settingsMenu = CreateSettingsPanel(canvas.transform, "SettingsPanel_Menu");
+            expeditionCatalog = LoadExpeditionCatalogOrThrow();
             SetObject(menu, "bestDistanceText", best);
             SetObject(menu, "settingsMenu", settingsMenu);
+            SetObject(menu, "mainActionsRoot", mainActionsRoot);
+            SetObject(menu, "expeditionCatalog", expeditionCatalog);
+            SetObject(menu, "expeditionPanel", expeditionPanel);
+            SetObjectArray(menu, "expeditionButtons", expeditionButtons);
+            SetObjectArray(menu, "expeditionButtonLabels", expeditionButtonLabels);
+            SetObject(menu, "expeditionTitleText", expeditionTitle);
+            SetObject(menu, "expeditionObjectiveText", expeditionObjective);
+            SetObject(menu, "expeditionStoryText", expeditionStory);
+            SetObject(menu, "expeditionStatusText", expeditionStatus);
+            SetObject(menu, "expeditionPlayButton", expeditionPlayButton);
+
+            UnityEventTools.AddPersistentListener(expeditionButtons[0].onClick, menu.SelectExpedition1);
+            UnityEventTools.AddPersistentListener(expeditionButtons[1].onClick, menu.SelectExpedition2);
+            UnityEventTools.AddPersistentListener(expeditionButtons[2].onClick, menu.SelectExpedition3);
+            UnityEventTools.AddPersistentListener(expeditionButtons[3].onClick, menu.SelectExpedition4);
+            UnityEventTools.AddPersistentListener(expeditionButtons[4].onClick, menu.SelectExpedition5);
+            UnityEventTools.AddPersistentListener(expeditionPlayButton.onClick, menu.PlaySelectedExpedition);
+            SetEnum(expeditionCloseButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
+            UnityEventTools.AddPersistentListener(expeditionCloseButton.onClick, menu.CloseExpeditions);
 
             Button closeButton = settingsMenu.transform.Find("CloseButton").GetComponent<Button>();
             SetEnum(closeButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
@@ -2582,7 +2851,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             PrefabSet prefabs,
             MeshyGameAssets meshyAssets,
             RunChunkSet runChunks,
-            RunDifficultyProfile difficultyProfile)
+            RunDifficultyProfile difficultyProfile,
+            GassyExpeditionCatalog expeditionCatalog)
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -2614,6 +2884,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             CreateGameBackdrop(camera.transform, meshyAssets);
             CreateFallDeathZone(camera.transform);
+            ExpeditionFinishLine expeditionFinishLine = CreateExpeditionFinishLine();
 
             Canvas canvas = CreateCanvas("GameCanvas");
             CreateHudScrim(canvas.transform);
@@ -2622,6 +2893,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             Text bestHudText = CreateText("BestText", canvas.transform, "Best 0 m", 16, FontStyle.Normal, TextAnchor.MiddleRight, new Color(1f, 0.94f, 0.72f, 1f));
             SetRect(bestHudText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-106f, -32f), new Vector2(188f, 40f));
+
+            CreateExpeditionHud(
+                canvas.transform,
+                out GameObject expeditionHudRoot,
+                out Text expeditionObjectiveHudText,
+                out Text expeditionRemainingHudText);
 
             FartBarUI fartBar = CreateFartBar(canvas.transform, gorilla, sprites);
             TextOverlay milestoneOverlay = CreateMilestoneOverlay(canvas.transform);
@@ -2671,7 +2948,38 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(tutorial, "overlay", tutorialOverlay);
             SetFloat(tutorial, "openingDelay", 1.35f);
 
-            CanvasGroupPanel gameOverPanel = CreateGameOverPanel(canvas.transform, out Text currentDistanceText, out Text bestDistanceText, out Button retryButton, out Button mainMenuButton);
+            CanvasGroupPanel expeditionStoryPanel = CreateExpeditionStoryPanel(
+                canvas.transform,
+                out Text expeditionStoryTitle,
+                out Text expeditionStoryBody,
+                out Text expeditionStoryObjective,
+                out Button expeditionStoryStartButton);
+            CanvasGroupPanel expeditionSuccessPanel = CreateExpeditionSuccessPanel(
+                canvas.transform,
+                out Text expeditionSuccessTitle,
+                out Text expeditionSuccessObjective,
+                out Text expeditionSuccessStars,
+                out Text expeditionSuccessStory,
+                out Button expeditionNextButton,
+                out Button expeditionRetryButton,
+                out Button expeditionSelectButton);
+            CanvasGroupPanel gameOverPanel = CreateGameOverPanel(
+                canvas.transform,
+                out Text gameOverTitleText,
+                out Text gameOverReasonText,
+                out Text currentDistanceText,
+                out Text bestDistanceText,
+                out Button retryButton,
+                out Button mainMenuButton);
+
+            GameObject expeditionControllerObject = new GameObject("Manager_ExpeditionRun");
+            GassyExpeditionRunController expeditionController =
+                expeditionControllerObject.AddComponent<GassyExpeditionRunController>();
+            SetObject(expeditionController, "player", gorilla);
+            SetObject(expeditionController, "finishLine", expeditionFinishLine);
+            SetObject(expeditionController, "hudRoot", expeditionHudRoot);
+            SetObject(expeditionController, "objectiveText", expeditionObjectiveHudText);
+            SetObject(expeditionController, "remainingText", expeditionRemainingHudText);
 
             GameObject gameManagerObject = new GameObject("Manager_Game");
             GassyGorillaGameManager gameManager = gameManagerObject.AddComponent<GassyGorillaGameManager>();
@@ -2699,6 +3007,22 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(gameManager, "currentDistanceText", currentDistanceText);
             SetObject(gameManager, "bestDistanceText", bestDistanceText);
             SetObject(gameManager, "hudBestDistanceText", bestHudText);
+            SetObject(gameManager, "gameOverTitleText", gameOverTitleText);
+            SetObject(gameManager, "gameOverReasonText", gameOverReasonText);
+            expeditionCatalog = LoadExpeditionCatalogOrThrow();
+            SetObject(gameManager, "expeditionCatalog", expeditionCatalog);
+            SetObject(gameManager, "expeditionRunController", expeditionController);
+            SetObject(gameManager, "expeditionStoryPanel", expeditionStoryPanel);
+            SetObject(gameManager, "expeditionStoryTitleText", expeditionStoryTitle);
+            SetObject(gameManager, "expeditionStoryBodyText", expeditionStoryBody);
+            SetObject(gameManager, "expeditionStoryObjectiveText", expeditionStoryObjective);
+            SetObject(gameManager, "expeditionSuccessPanel", expeditionSuccessPanel);
+            SetObject(gameManager, "expeditionSuccessTitleText", expeditionSuccessTitle);
+            SetObject(gameManager, "expeditionSuccessObjectiveText", expeditionSuccessObjective);
+            SetObject(gameManager, "expeditionSuccessStarsText", expeditionSuccessStars);
+            SetObject(gameManager, "expeditionSuccessStoryText", expeditionSuccessStory);
+            SetObject(gameManager, "expeditionNextButton", expeditionNextButton);
+            SetFloat(gameManager, "expeditionSuccessRevealDelay", 0.72f);
 
             GameObject audioDirectorObject = new GameObject("Director_Audio");
             GassyGorillaAudioDirector audioDirector = audioDirectorObject.AddComponent<GassyGorillaAudioDirector>();
@@ -2709,8 +3033,27 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             UnityEventTools.AddPersistentListener(retryButton.onClick, gameManager.RestartRun);
             SetEnum(mainMenuButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
             UnityEventTools.AddPersistentListener(mainMenuButton.onClick, gameManager.ReturnToMainMenu);
+            UnityEventTools.AddPersistentListener(expeditionStoryStartButton.onClick, gameManager.BeginExpeditionFromStory);
+            UnityEventTools.AddPersistentListener(expeditionNextButton.onClick, gameManager.PlayNextExpedition);
+            UnityEventTools.AddPersistentListener(expeditionRetryButton.onClick, gameManager.RestartRun);
+            SetEnum(expeditionSelectButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
+            UnityEventTools.AddPersistentListener(expeditionSelectButton.onClick, gameManager.ReturnToExpeditionSelect);
 
             EditorSceneManager.SaveScene(scene, GameScenePath);
+        }
+
+        private static GassyExpeditionCatalog LoadExpeditionCatalogOrThrow()
+        {
+            GassyExpeditionCatalog catalog =
+                AssetDatabase.LoadAssetAtPath<GassyExpeditionCatalog>(ExpeditionCatalogPath);
+            if (catalog == null)
+            {
+                throw new InvalidOperationException(
+                    "Generated Expedition catalog could not be loaded from " +
+                    ExpeditionCatalogPath + ".");
+            }
+
+            return catalog;
         }
 
         private static void ConfigureBuildSettings()
@@ -3427,12 +3770,463 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return overlay;
         }
 
-        private static CanvasGroupPanel CreateGameOverPanel(Transform parent, out Text currentDistanceText, out Text bestDistanceText, out Button retryButton, out Button mainMenuButton)
+        private static CanvasGroupPanel CreateExpeditionSelectPanel(
+            Transform parent,
+            out Button[] expeditionButtons,
+            out Text[] expeditionButtonLabels,
+            out Text expeditionTitle,
+            out Text expeditionObjective,
+            out Text expeditionStory,
+            out Text expeditionStatus,
+            out Button playButton,
+            out Button closeButton)
+        {
+            GameObject panel = new GameObject("UI_ExpeditionSelectPanel");
+            panel.transform.SetParent(parent, false);
+            RectTransform rect = panel.AddComponent<RectTransform>();
+            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1000f, 570f));
+            Image image = panel.AddComponent<Image>();
+            image.sprite = UiPanelSprite();
+            image.type = Image.Type.Sliced;
+            image.color = new Color(0.035f, 0.095f, 0.075f, 1f);
+            Shadow shadow = panel.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
+            shadow.effectDistance = new Vector2(0f, -9f);
+            CanvasGroup group = panel.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.interactable = false;
+            group.blocksRaycasts = false;
+            CanvasGroupPanel panelController = panel.AddComponent<CanvasGroupPanel>();
+            SetObject(panelController, "canvasGroup", group);
+
+            Text heading = CreateText(
+                "Heading",
+                panel.transform,
+                "EXPEDITIONS",
+                38,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(1f, 0.87f, 0.34f, 1f));
+            SetRect(heading.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -42f), new Vector2(500f, 54f));
+
+            Image divider = new GameObject("Divider").AddComponent<Image>();
+            divider.transform.SetParent(panel.transform, false);
+            divider.color = new Color(0.55f, 0.82f, 0.48f, 0.28f);
+            SetRect(divider.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-44f, -4f), new Vector2(2f, 390f));
+
+            expeditionButtons = new Button[5];
+            expeditionButtonLabels = new Text[5];
+            for (int i = 0; i < expeditionButtons.Length; i++)
+            {
+                Button levelButton = CreateButton(
+                    "ExpeditionButton_" + (i + 1),
+                    panel.transform,
+                    (i + 1) + "  EXPEDITION",
+                    i == 0
+                        ? new Color(0.29f, 0.66f, 0.28f, 1f)
+                        : new Color(0.16f, 0.38f, 0.3f, 1f));
+                SetRect(
+                    levelButton.GetComponent<RectTransform>(),
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(-270f, 150f - i * 68f),
+                    new Vector2(390f, 56f));
+                Text label = levelButton.GetComponentInChildren<Text>();
+                label.fontSize = 19;
+                label.resizeTextMinSize = 13;
+                label.alignment = TextAnchor.MiddleLeft;
+                label.rectTransform.offsetMin = new Vector2(18f, 0f);
+                label.rectTransform.offsetMax = new Vector2(-12f, 0f);
+                expeditionButtons[i] = levelButton;
+                expeditionButtonLabels[i] = label;
+            }
+
+            expeditionTitle = CreateText(
+                "ExpeditionTitle",
+                panel.transform,
+                "THE DINNER BELL",
+                30,
+                FontStyle.Bold,
+                TextAnchor.MiddleLeft,
+                new Color(1f, 0.93f, 0.5f, 1f));
+            SetRect(expeditionTitle.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, 150f), new Vector2(430f, 48f));
+
+            expeditionObjective = CreateText(
+                "ExpeditionObjective",
+                panel.transform,
+                "OBJECTIVE",
+                20,
+                FontStyle.Bold,
+                TextAnchor.UpperLeft,
+                new Color(0.66f, 1f, 0.68f, 1f));
+            SetRect(expeditionObjective.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, 89f), new Vector2(430f, 70f));
+
+            expeditionStory = CreateText(
+                "ExpeditionStory",
+                panel.transform,
+                "",
+                20,
+                FontStyle.Normal,
+                TextAnchor.UpperLeft,
+                new Color(0.94f, 0.98f, 0.91f, 1f));
+            SetRect(expeditionStory.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, -5f), new Vector2(430f, 126f));
+
+            expeditionStatus = CreateText(
+                "ExpeditionStatus",
+                panel.transform,
+                "NOT YET COMPLETED",
+                18,
+                FontStyle.Bold,
+                TextAnchor.MiddleLeft,
+                new Color(0.72f, 0.9f, 1f, 1f));
+            SetRect(expeditionStatus.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, -102f), new Vector2(430f, 34f));
+
+            playButton = CreateButton(
+                "StartExpeditionButton",
+                panel.transform,
+                "START EXPEDITION",
+                new Color(0.9f, 0.55f, 0.13f, 1f));
+            SetRect(playButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, -160f), new Vector2(300f, 56f));
+            playButton.GetComponentInChildren<Text>().fontSize = 21;
+
+            closeButton = CreateButton(
+                "CloseButton",
+                panel.transform,
+                "BACK",
+                new Color(0.2f, 0.48f, 0.66f, 1f));
+            SetRect(closeButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 34f), new Vector2(190f, 46f));
+            closeButton.GetComponentInChildren<Text>().fontSize = 20;
+
+            return panelController;
+        }
+
+        private static void CreateExpeditionHud(
+            Transform parent,
+            out GameObject root,
+            out Text objectiveText,
+            out Text remainingText)
+        {
+            root = new GameObject("UI_ExpeditionHUD");
+            root.transform.SetParent(parent, false);
+            RectTransform rect = root.AddComponent<RectTransform>();
+            SetRect(rect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -102f), new Vector2(720f, 48f));
+            Image image = root.AddComponent<Image>();
+            image.sprite = UiPanelSprite();
+            image.type = Image.Type.Sliced;
+            image.color = new Color(0.035f, 0.11f, 0.085f, 0.9f);
+            Shadow shadow = root.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.34f);
+            shadow.effectDistance = new Vector2(0f, -4f);
+
+            objectiveText = CreateText(
+                "ObjectiveText",
+                root.transform,
+                "OBJECTIVE",
+                16,
+                FontStyle.Bold,
+                TextAnchor.MiddleLeft,
+                new Color(0.74f, 1f, 0.64f, 1f));
+            SetRect(objectiveText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(-76f, 0f), new Vector2(-164f, -8f));
+
+            remainingText = CreateText(
+                "RemainingText",
+                root.transform,
+                "0 m TO FINISH",
+                16,
+                FontStyle.Bold,
+                TextAnchor.MiddleRight,
+                new Color(1f, 0.86f, 0.35f, 1f));
+            SetRect(remainingText.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-88f, 0f), new Vector2(164f, -8f));
+            root.SetActive(false);
+        }
+
+        private static CanvasGroupPanel CreateExpeditionStoryPanel(
+            Transform parent,
+            out Text title,
+            out Text story,
+            out Text objective,
+            out Button startButton)
+        {
+            GameObject panel = new GameObject("UI_ExpeditionStoryPanel");
+            panel.transform.SetParent(parent, false);
+            RectTransform rect = panel.AddComponent<RectTransform>();
+            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(780f, 430f));
+            Image image = panel.AddComponent<Image>();
+            image.sprite = UiPanelSprite();
+            image.type = Image.Type.Sliced;
+            image.color = new Color(0.035f, 0.095f, 0.075f, 0.975f);
+            Shadow shadow = panel.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
+            shadow.effectDistance = new Vector2(0f, -8f);
+            CanvasGroup group = panel.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.interactable = false;
+            group.blocksRaycasts = false;
+            CanvasGroupPanel panelController = panel.AddComponent<CanvasGroupPanel>();
+            SetObject(panelController, "canvasGroup", group);
+
+            Text eyebrow = CreateText(
+                "Eyebrow",
+                panel.transform,
+                "EXPEDITION",
+                17,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(0.62f, 1f, 0.62f, 1f));
+            SetRect(eyebrow.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -34f), new Vector2(300f, 28f));
+
+            title = CreateText(
+                "Title",
+                panel.transform,
+                "THE DINNER BELL",
+                38,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(1f, 0.88f, 0.34f, 1f));
+            SetRect(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -74f), new Vector2(680f, 54f));
+
+            story = CreateText(
+                "Story",
+                panel.transform,
+                "",
+                23,
+                FontStyle.Normal,
+                TextAnchor.MiddleCenter,
+                new Color(0.95f, 0.99f, 0.92f, 1f));
+            SetRect(story.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 34f), new Vector2(650f, 126f));
+
+            objective = CreateText(
+                "Objective",
+                panel.transform,
+                "OBJECTIVE",
+                21,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(0.7f, 1f, 0.65f, 1f));
+            SetRect(objective.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -64f), new Vector2(650f, 60f));
+
+            startButton = CreateButton(
+                "StartButton",
+                panel.transform,
+                "START",
+                new Color(0.9f, 0.55f, 0.13f, 1f));
+            SetRect(startButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 44f), new Vector2(240f, 58f));
+            return panelController;
+        }
+
+        private static CanvasGroupPanel CreateExpeditionSuccessPanel(
+            Transform parent,
+            out Text title,
+            out Text objective,
+            out Text stars,
+            out Text story,
+            out Button nextButton,
+            out Button retryButton,
+            out Button selectButton)
+        {
+            GameObject panel = new GameObject("UI_ExpeditionSuccessPanel");
+            panel.transform.SetParent(parent, false);
+            RectTransform rect = panel.AddComponent<RectTransform>();
+            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(780f, 520f));
+            Image image = panel.AddComponent<Image>();
+            image.sprite = UiPanelSprite();
+            image.type = Image.Type.Sliced;
+            image.color = new Color(0.035f, 0.105f, 0.075f, 0.98f);
+            Shadow shadow = panel.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.52f);
+            shadow.effectDistance = new Vector2(0f, -9f);
+            CanvasGroup group = panel.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.interactable = false;
+            group.blocksRaycasts = false;
+            CanvasGroupPanel panelController = panel.AddComponent<CanvasGroupPanel>();
+            SetObject(panelController, "canvasGroup", group);
+
+            title = CreateText(
+                "Title",
+                panel.transform,
+                "EXPEDITION COMPLETE",
+                38,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(1f, 0.87f, 0.3f, 1f));
+            SetRect(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(700f, 54f));
+
+            stars = CreateText(
+                "Stars",
+                panel.transform,
+                "***",
+                30,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(1f, 0.93f, 0.36f, 1f));
+            SetRect(stars.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -112f), new Vector2(420f, 62f));
+
+            objective = CreateText(
+                "Objective",
+                panel.transform,
+                "",
+                20,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(0.7f, 1f, 0.68f, 1f));
+            SetRect(objective.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 72f), new Vector2(650f, 72f));
+
+            story = CreateText(
+                "Story",
+                panel.transform,
+                "",
+                21,
+                FontStyle.Normal,
+                TextAnchor.MiddleCenter,
+                new Color(0.95f, 0.99f, 0.92f, 1f));
+            SetRect(story.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -16f), new Vector2(650f, 104f));
+
+            nextButton = CreateButton(
+                "NextButton",
+                panel.transform,
+                "NEXT EXPEDITION",
+                new Color(0.9f, 0.55f, 0.13f, 1f));
+            SetRect(nextButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 112f), new Vector2(270f, 54f));
+            nextButton.GetComponentInChildren<Text>().fontSize = 21;
+
+            retryButton = CreateButton(
+                "RetryButton",
+                panel.transform,
+                "RETRY",
+                new Color(0.34f, 0.74f, 0.28f, 1f));
+            SetRect(retryButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-140f, 48f), new Vector2(250f, 48f));
+            retryButton.GetComponentInChildren<Text>().fontSize = 20;
+
+            selectButton = CreateButton(
+                "LevelSelectButton",
+                panel.transform,
+                "LEVEL SELECT",
+                new Color(0.2f, 0.5f, 0.68f, 1f));
+            SetRect(selectButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(140f, 48f), new Vector2(250f, 48f));
+            selectButton.GetComponentInChildren<Text>().fontSize = 20;
+
+            return panelController;
+        }
+
+        private static ExpeditionFinishLine CreateExpeditionFinishLine()
+        {
+            GameObject root = new GameObject("ExpeditionFinishLine_3D");
+            root.transform.position = new Vector3(0f, 0f, 0f);
+            BoxCollider2D trigger = root.AddComponent<BoxCollider2D>();
+            trigger.isTrigger = true;
+            trigger.size = new Vector2(1.55f, 8.5f);
+            trigger.offset = new Vector2(0f, 1.55f);
+
+            Material bark = CreateColorMaterial(
+                "GG_ExpeditionFinish_Bark_3D",
+                new Color(0.3f, 0.16f, 0.07f, 1f),
+                false);
+            Material leaf = CreateColorMaterial(
+                "GG_ExpeditionFinish_Leaf_3D",
+                new Color(0.12f, 0.52f, 0.2f, 1f),
+                false);
+            Material gold = CreateColorMaterial(
+                "GG_ExpeditionFinish_Gold_3D",
+                new Color(1f, 0.72f, 0.18f, 1f),
+                false);
+            Material glow = CreateColorMaterial(
+                "GG_ExpeditionFinish_Glow_3D",
+                new Color(0.58f, 1f, 0.3f, 0.68f),
+                true);
+
+            GameObject visualRoot = new GameObject("FinishGateVisual_3D");
+            visualRoot.transform.SetParent(root.transform, false);
+            CreatePrimitiveVisual(
+                "LeftTrunk_3D",
+                PrimitiveType.Cylinder,
+                visualRoot.transform,
+                new Vector3(-0.78f, 1.35f, 0f),
+                new Vector3(0.2f, 2.2f, 0.2f),
+                bark,
+                8);
+            CreatePrimitiveVisual(
+                "RightTrunk_3D",
+                PrimitiveType.Cylinder,
+                visualRoot.transform,
+                new Vector3(0.78f, 1.35f, 0f),
+                new Vector3(0.2f, 2.2f, 0.2f),
+                bark,
+                8);
+            GameObject topBranch = CreatePrimitiveVisual(
+                "TopBranch_3D",
+                PrimitiveType.Cylinder,
+                visualRoot.transform,
+                new Vector3(0f, 3.52f, 0f),
+                new Vector3(0.2f, 0.98f, 0.2f),
+                bark,
+                8);
+            topBranch.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            CreatePrimitiveVisual(
+                "FinishBanner_3D",
+                PrimitiveType.Cube,
+                visualRoot.transform,
+                new Vector3(0f, 3.02f, -0.08f),
+                new Vector3(0.92f, 0.3f, 0.06f),
+                gold,
+                10);
+
+            for (int i = 0; i < 7; i++)
+            {
+                float t = i / 6f;
+                float x = Mathf.Lerp(-0.94f, 0.94f, t);
+                float y = 3.48f + Mathf.Sin(t * Mathf.PI) * 0.38f;
+                GameObject leafObject = CreatePrimitiveVisual(
+                    "ArchLeaf_" + (i + 1),
+                    PrimitiveType.Sphere,
+                    visualRoot.transform,
+                    new Vector3(x, y, -0.12f),
+                    new Vector3(0.34f, 0.18f, 0.1f),
+                    leaf,
+                    11);
+                leafObject.transform.localRotation = Quaternion.Euler(0f, 0f, -34f + t * 68f);
+            }
+
+            GameObject pulseRoot = new GameObject("FinishGlowPulse_3D");
+            pulseRoot.transform.SetParent(root.transform, false);
+            Renderer[] glowRenderers = new Renderer[5];
+            for (int i = 0; i < glowRenderers.Length; i++)
+            {
+                float t = i / (float)(glowRenderers.Length - 1);
+                GameObject glowLeaf = CreatePrimitiveVisual(
+                    "GlowLeaf_" + (i + 1),
+                    PrimitiveType.Sphere,
+                    pulseRoot.transform,
+                    new Vector3(Mathf.Lerp(-0.72f, 0.72f, t), 3.58f + Mathf.Sin(t * Mathf.PI) * 0.24f, -0.22f),
+                    new Vector3(0.25f, 0.12f, 0.06f),
+                    glow,
+                    12);
+                glowRenderers[i] = glowLeaf.GetComponent<Renderer>();
+            }
+
+            ExpeditionFinishLine finishLine = root.AddComponent<ExpeditionFinishLine>();
+            SetObject(finishLine, "finishTrigger", trigger);
+            SetObject(finishLine, "pulseRoot", pulseRoot.transform);
+            SetObjectArray(finishLine, "glowRenderers", glowRenderers);
+            SetFloat(finishLine, "pulseSpeed", 2.2f);
+            SetFloat(finishLine, "pulseAmount", 0.055f);
+            root.SetActive(false);
+            return finishLine;
+        }
+
+        private static CanvasGroupPanel CreateGameOverPanel(
+            Transform parent,
+            out Text title,
+            out Text reason,
+            out Text currentDistanceText,
+            out Text bestDistanceText,
+            out Button retryButton,
+            out Button mainMenuButton)
         {
             GameObject panel = new GameObject("UI_GameOverPanel");
             panel.transform.SetParent(parent, false);
             RectTransform rect = panel.AddComponent<RectTransform>();
-            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(460f, 326f));
+            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(480f, 372f));
             Image image = panel.AddComponent<Image>();
             image.sprite = UiPanelSprite();
             image.type = Image.Type.Sliced;
@@ -3447,17 +4241,20 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             CanvasGroupPanel panelController = panel.AddComponent<CanvasGroupPanel>();
             SetObject(panelController, "canvasGroup", group);
 
-            Text title = CreateText("Title", panel.transform, "RUN OVER", 38, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.86f, 0.35f, 1f));
+            title = CreateText("Title", panel.transform, "RUN OVER", 38, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.86f, 0.35f, 1f));
             SetRect(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -46f), new Vector2(380f, 52f));
 
+            reason = CreateText("Reason", panel.transform, "", 17, FontStyle.Normal, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.76f));
+            SetRect(reason.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -86f), new Vector2(400f, 42f));
+
             Text distanceLabel = CreateText("DistanceLabel", panel.transform, "DISTANCE", 16, FontStyle.Normal, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.76f));
-            SetRect(distanceLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(240f, 28f));
+            SetRect(distanceLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -122f), new Vector2(240f, 28f));
 
             currentDistanceText = CreateText("CurrentDistance", panel.transform, "0 m", 32, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
-            SetRect(currentDistanceText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -136f), new Vector2(250f, 44f));
+            SetRect(currentDistanceText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -158f), new Vector2(250f, 44f));
 
             bestDistanceText = CreateText("BestDistance", panel.transform, "BEST  0 m", 18, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.75f, 1f, 0.74f, 1f));
-            SetRect(bestDistanceText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -178f), new Vector2(280f, 34f));
+            SetRect(bestDistanceText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -202f), new Vector2(360f, 36f));
 
             retryButton = CreateButton("RetryButton", panel.transform, "RETRY", new Color(0.36f, 0.78f, 0.28f, 1f));
             SetRect(retryButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 78f), new Vector2(210f, 52f));
@@ -5559,6 +6356,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             public RunChunkDefinition[] All;
             public RunChunkDefinition[] Opening;
+        }
+
+        private sealed class ExpeditionSet
+        {
+            public GassyExpeditionCatalog Catalog;
+            public GassyExpeditionDefinition[] All;
         }
     }
 }

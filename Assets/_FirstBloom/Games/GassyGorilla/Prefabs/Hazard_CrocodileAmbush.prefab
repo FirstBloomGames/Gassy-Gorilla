@@ -5320,7 +5320,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef1e3fdb12793fa4da3dddffaee6f6bd, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.CrocodileAmbushHitbox
   controller: {fileID: 1210833537774496976}
 --- !u!1 &3969544253556559219
@@ -5368,7 +5368,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a3b47d0acea93774eac05b87a9e6ed11, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.CrocodileAmbushController
   motionRoot: {fileID: 4026351550959587837}
   visualRoot: {fileID: 799509415965164271}
@@ -10454,11 +10454,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2557264375413880391, guid: 2ec4beecaac9cbf49ab7f52c65c61969, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: 9c3620120236da34aacd7945f18732ab, type: 2}
     - target: {fileID: 5866666021909216657, guid: 2ec4beecaac9cbf49ab7f52c65c61969, type: 3}
       propertyPath: m_Controller
-      value:
+      value: 
       objectReference: {fileID: 9100000, guid: addc5978ef9b9684592329d4730fd323, type: 2}
     - target: {fileID: 5866666021909216657, guid: 2ec4beecaac9cbf49ab7f52c65c61969, type: 3}
       propertyPath: m_CullingMode

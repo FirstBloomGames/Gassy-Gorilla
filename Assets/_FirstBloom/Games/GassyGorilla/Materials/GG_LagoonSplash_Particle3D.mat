@@ -22,7 +22,7 @@ Material:
     RenderType: Transparent
   disabledShaderPasses:
   - GRABPASS
-  m_LockedProperties:
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:

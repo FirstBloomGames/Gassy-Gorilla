@@ -334,6 +334,11 @@ namespace FirstBloom.Games.GassyGorilla
                 yield return null;
             }
 
+            if (!successfulBite)
+            {
+                GassyRunEvents.RaiseCrocodileDodged();
+            }
+
             CompleteEncounter(successfulBite);
         }
 

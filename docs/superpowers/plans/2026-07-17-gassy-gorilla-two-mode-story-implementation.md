@@ -1,6 +1,6 @@
 # Gassy Gorilla Two-Mode Story Implementation Plan
 
-**Status:** In progress
+**Status:** Release candidate verified locally; public deployment pending
 
 **Date:** 2026-07-17
 
@@ -56,3 +56,17 @@ Each route reuses validated optimized chunks and intentionally alternates pressu
 - Public immutable-payload deployment and warning/error-free browser verification.
 - Game Bible and release evidence updated only after the public build passes.
 
+## 7. Local Release Evidence
+
+- Unity project regeneration passed: `Logs/expeditions-buildall-07.log`.
+- Expanded scene/content validation passed: `Logs/expeditions-validation-final.log`.
+- WebGL build and runtime geometry audit passed: `Logs/expeditions-webgl-build-03.log`.
+- Compressed WebGL output is 14,623,018 bytes.
+- Browser QA completed every Expedition objective:
+  - `dinner-bell`: reach finish.
+  - `bean-trail`: 10 / 10 food.
+  - `canopy-shortcut`: 3 / 3 vine releases.
+  - `crocodile-crossing`: 2 / 2 crocodile dodges.
+  - `home-before-dessert`: fuel 100 / 45 and chapter completion.
+- Browser QA confirmed ordered unlock persistence, Expedition failure/retry, separate Endless failure/best-distance behavior, settings interaction, 844 x 390 landscape presentation, and 390 x 844 portrait rotation protection.
+- The final browser run reported no warnings or errors.

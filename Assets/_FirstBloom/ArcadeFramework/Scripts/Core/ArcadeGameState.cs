@@ -6,6 +6,7 @@ namespace FirstBloom.ArcadeFramework.Core
         Ready,
         Running,
         Paused,
+        Completed,
         GameOver
     }
 }

@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9868dc9a516eae45932b63c1c76328d, type: 3}
+  m_Name: GG_Expedition_02_BeanTrail
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
+  expeditionId: bean-trail
+  orderIndex: 1
+  displayTitle: The Bean Trail
+  openingStory: A suspiciously perfect trail of beans leads deeper into the jungle.
+    Heroism says hurry home. Hunger has filed an appeal.
+  successStory: Every bean accounted for. Mostly. Gassy Gorilla feels magnificently
+    overqualified for the road ahead.
+  objectiveType: 1
+  objectiveText: Collect 10 foods, then reach the finish.
+  targetCount: 10
+  targetFuel: 0
+  route:
+  - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
+  - {fileID: 11400000, guid: ab175b48be1537d4a84c3d19c2bf5c68, type: 2}
+  - {fileID: 11400000, guid: 31a70f162b2f0c94dbf402f4050bb569, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: b7274133cef3b3449a06226dc85841ad, type: 2}
+  - {fileID: 11400000, guid: ab175b48be1537d4a84c3d19c2bf5c68, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  finishInset: 1.2
+  twoStarFuel: 45
+  threeStarFuel: 72

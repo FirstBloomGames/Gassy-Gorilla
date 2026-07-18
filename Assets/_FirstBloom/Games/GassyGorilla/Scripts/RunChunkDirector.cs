@@ -45,6 +45,9 @@ namespace FirstBloom.Games.GassyGorilla
         private readonly FairnessState fairnessState = new FairnessState();
         private float lastReportedIntensity = -1f;
         private int lastReportedStage = -1;
+        private bool finiteRoute;
+        private bool finiteRouteExhausted;
+        private float configuredFiniteRouteEndX;
 
         public event Action<float, int> DifficultyChanged;
 
@@ -59,6 +62,9 @@ namespace FirstBloom.Games.GassyGorilla
         public int CurrentDifficultyStage { get; private set; }
         public int CurrentPressure { get { return fairnessState.Pressure; } }
         public int PredatorCooldownRemaining { get { return fairnessState.PredatorCooldownRemaining; } }
+        public bool IsFiniteRoute { get { return finiteRoute; } }
+        public bool IsFiniteRouteExhausted { get { return finiteRouteExhausted; } }
+        public float ConfiguredFiniteRouteEndX { get { return configuredFiniteRouteEndX; } }
 
         private void Start()
         {
@@ -115,6 +121,7 @@ namespace FirstBloom.Games.GassyGorilla
             openingIndex = 0;
             chunkIndex = 0;
             nextChunkStartX = firstChunkStartX;
+            finiteRouteExhausted = false;
             lastReportedIntensity = -1f;
             lastReportedStage = -1;
             random = null;
@@ -190,6 +197,26 @@ namespace FirstBloom.Games.GassyGorilla
             distanceSource = source;
             chunkDefinitions = definitions ?? Array.Empty<RunChunkDefinition>();
             openingSequence = authoredOpening ?? Array.Empty<RunChunkDefinition>();
+            finiteRoute = false;
+            finiteRouteExhausted = false;
+            configuredFiniteRouteEndX = 0f;
+        }
+
+        public void ConfigureFiniteRoute(RunChunkDefinition[] authoredRoute)
+        {
+            finiteRoute = true;
+            finiteRouteExhausted = false;
+            openingSequence = authoredRoute ?? Array.Empty<RunChunkDefinition>();
+            configuredFiniteRouteEndX = firstChunkStartX;
+            for (int i = 0; i < openingSequence.Length; i++)
+            {
+                if (openingSequence[i] != null)
+                {
+                    configuredFiniteRouteEndX += openingSequence[i].Length;
+                }
+            }
+
+            ResetDirector();
         }
 
         public void ConfigureDifficulty(GorillaController controller, RunDifficultyProfile profile)
@@ -285,6 +312,12 @@ namespace FirstBloom.Games.GassyGorilla
                 RunChunkDefinition definition = GetNextDefinition();
                 if (definition == null)
                 {
+                    if (finiteRoute && finiteRouteExhausted)
+                    {
+                        spawning = false;
+                        return;
+                    }
+
                     Debug.LogError("Run chunk generation stopped because no compatible definition was available.", this);
                     spawning = false;
                     return;
@@ -305,6 +338,12 @@ namespace FirstBloom.Games.GassyGorilla
                     Remember(openingDefinition, fairnessState, GetFuelNormalized());
                     return openingDefinition;
                 }
+            }
+
+            if (finiteRoute)
+            {
+                finiteRouteExhausted = true;
+                return null;
             }
 
             float runDistance = GetRunDistance();

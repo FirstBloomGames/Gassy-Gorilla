@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9868dc9a516eae45932b63c1c76328d, type: 3}
+  m_Name: GG_Expedition_05_HomeBeforeDessert
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
+  expeditionId: home-before-dessert
+  orderIndex: 4
+  displayTitle: Home Before Dessert
+  openingStory: The home clearing is close, dessert is closer, and the whole jungle
+    has arranged one final objection. Save enough fuel for the last heroic push.
+  successStory: Home before dessert. Barely. The family agrees this was a completely
+    normal way to arrive.
+  objectiveType: 4
+  objectiveText: Reach home with at least 45 fuel.
+  targetCount: 0
+  targetFuel: 45
+  route:
+  - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
+  - {fileID: 11400000, guid: e1769fe815c237648a5f242a652287ba, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: 399abd8c39e65824580166e1dbeb375f, type: 2}
+  - {fileID: 11400000, guid: 31a70f162b2f0c94dbf402f4050bb569, type: 2}
+  - {fileID: 11400000, guid: 407911be56f755b449bfc07f5cb4a1a9, type: 2}
+  - {fileID: 11400000, guid: aa3ea5ee74d683941bf9165dbcbbe664, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: 74d664f623f097b4283952ca739ce0e5, type: 2}
+  - {fileID: 11400000, guid: ab175b48be1537d4a84c3d19c2bf5c68, type: 2}
+  - {fileID: 11400000, guid: 809dec23084db734e92c4ae9d586a6a9, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  finishInset: 1.2
+  twoStarFuel: 58
+  threeStarFuel: 78

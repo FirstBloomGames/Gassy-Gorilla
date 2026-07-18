@@ -13,6 +13,7 @@ using UnityEngine.UI;
 
 namespace FirstBloom.Games.GassyGorilla
 {
+    [DefaultExecutionOrder(-100)]
     public class GassyGorillaGameManager : ArcadeGameStateController
     {
         public const string BestDistanceKey = "GassyGorilla_BestDistance";
@@ -53,21 +54,62 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private Text currentDistanceText;
         [SerializeField] private Text bestDistanceText;
         [SerializeField] private Text hudBestDistanceText;
+        [SerializeField] private Text gameOverTitleText;
+        [SerializeField] private Text gameOverReasonText;
+
+        [Header("Expedition Run")]
+        [SerializeField] private GassyExpeditionCatalog expeditionCatalog;
+        [SerializeField] private GassyExpeditionRunController expeditionRunController;
+        [SerializeField] private CanvasGroupPanel expeditionStoryPanel;
+        [SerializeField] private Text expeditionStoryTitleText;
+        [SerializeField] private Text expeditionStoryBodyText;
+        [SerializeField] private Text expeditionStoryObjectiveText;
+        [SerializeField] private CanvasGroupPanel expeditionSuccessPanel;
+        [SerializeField] private Text expeditionSuccessTitleText;
+        [SerializeField] private Text expeditionSuccessObjectiveText;
+        [SerializeField] private Text expeditionSuccessStarsText;
+        [SerializeField] private Text expeditionSuccessStoryText;
+        [SerializeField] private Button expeditionNextButton;
+        [SerializeField] private float expeditionSuccessRevealDelay = 0.72f;
 
         public static GassyGorillaGameManager Instance { get; private set; }
 
         public bool IsRunActive { get { return CurrentState == ArcadeGameState.Running; } }
         public bool IsVineQaMode { get; private set; }
+        public bool IsExpedition { get { return currentExpedition != null; } }
+        public GassyExpeditionDefinition CurrentExpedition { get { return currentExpedition; } }
+        public bool IsExpeditionConfigured
+        {
+            get
+            {
+                return expeditionCatalog != null && expeditionCatalog.Count == 5 &&
+                    expeditionRunController != null && expeditionRunController.IsConfigured &&
+                    expeditionStoryPanel != null &&
+                    expeditionStoryTitleText != null &&
+                    expeditionStoryBodyText != null &&
+                    expeditionStoryObjectiveText != null &&
+                    expeditionSuccessPanel != null &&
+                    expeditionSuccessTitleText != null &&
+                    expeditionSuccessObjectiveText != null &&
+                    expeditionSuccessStarsText != null &&
+                    expeditionSuccessStoryText != null &&
+                    expeditionNextButton != null;
+            }
+        }
 
         private Coroutine introRoutine;
         private Coroutine outroRoutine;
+        private Coroutine expeditionSuccessRoutine;
         private bool crocodileQaMode;
         private float nextCrocodileQaSafetyRefresh;
+        private GassyExpeditionDefinition currentExpedition;
 
         protected override void Awake()
         {
             base.Awake();
             Instance = this;
+            ApplyWebQaRunSelection();
+            ResolveRunSelection();
         }
 
         private void Start()
@@ -84,6 +126,16 @@ namespace FirstBloom.Games.GassyGorilla
             if (gameOverPanel != null)
             {
                 gameOverPanel.Hide();
+            }
+
+            if (expeditionStoryPanel != null)
+            {
+                expeditionStoryPanel.Hide();
+            }
+
+            if (expeditionSuccessPanel != null)
+            {
+                expeditionSuccessPanel.Hide();
             }
 
             if (tutorialPrompt == null)
@@ -108,9 +160,36 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             SetSpawnersActive(false);
+            ConfigureSelectedRun();
             UpdateBestDistanceText();
             SetState(ArcadeGameState.Ready);
             ApplyWebQaConfiguration();
+
+            if (IsExpedition)
+            {
+                ConfigureExpeditionStoryUi();
+                if (expeditionRunController != null)
+                {
+                    expeditionRunController.SetHudVisible(false);
+                }
+
+                if (tutorialPrompt != null)
+                {
+                    tutorialPrompt.PauseForStory();
+                }
+
+                if (expeditionStoryPanel != null)
+                {
+                    expeditionStoryPanel.Show();
+                }
+
+                if (ShouldAutoStartQaExpedition())
+                {
+                    StartCoroutine(AutoStartExpeditionQaRoutine());
+                }
+
+                return;
+            }
 
             if (playCameraIntro && GetSceneCamera() != null && player != null)
             {
@@ -146,6 +225,169 @@ namespace FirstBloom.Games.GassyGorilla
                     GameOver("Fell into the jungle.");
                 }
             }
+        }
+
+        public void ReachExpeditionFinish(ExpeditionFinishLine finishLine)
+        {
+            if (!IsExpedition || !IsRunActive || expeditionRunController == null)
+            {
+                return;
+            }
+
+            if (finishLine != null)
+            {
+                finishLine.MarkReached();
+            }
+
+            if (expeditionRunController.IsObjectiveSatisfiedAtFinish())
+            {
+                CompleteExpedition();
+            }
+            else
+            {
+                GameOverInternal(
+                    "Objective incomplete: " + expeditionRunController.GetProgressSummary() + ".",
+                    null);
+            }
+        }
+
+        private void CompleteExpedition()
+        {
+            if (!IsExpedition || CurrentState == ArcadeGameState.Completed)
+            {
+                return;
+            }
+
+            SetState(ArcadeGameState.Completed);
+            SetSpawnersActive(false);
+
+            if (tutorialPrompt != null)
+            {
+                tutorialPrompt.HideForGameOver();
+            }
+
+            if (expeditionRunController != null)
+            {
+                expeditionRunController.SetHudVisible(false);
+            }
+
+            if (player != null)
+            {
+                player.SetInputEnabled(false);
+                player.StopForGameOver();
+            }
+
+            if (scoreManager != null)
+            {
+                scoreManager.SetRunning(false);
+            }
+
+            float finishFuel = player != null ? player.CurrentFuel : 0f;
+            int stars = currentExpedition.CalculateStars(finishFuel);
+            int catalogCount = expeditionCatalog != null ? expeditionCatalog.Count : 0;
+            GassyExpeditionProgressStore.Complete(currentExpedition, stars, catalogCount);
+
+            if (expeditionSuccessTitleText != null)
+            {
+                expeditionSuccessTitleText.text = "EXPEDITION COMPLETE";
+            }
+
+            if (expeditionSuccessObjectiveText != null)
+            {
+                expeditionSuccessObjectiveText.text = currentExpedition.DisplayTitle.ToUpperInvariant() +
+                    "\n" + expeditionRunController.GetProgressSummary();
+            }
+
+            if (expeditionSuccessStarsText != null)
+            {
+                expeditionSuccessStarsText.text = new string('*', stars) + "\n" + stars + " / 3 STARS";
+            }
+
+            if (expeditionSuccessStoryText != null)
+            {
+                expeditionSuccessStoryText.text = currentExpedition.SuccessStory;
+            }
+
+            if (expeditionNextButton != null)
+            {
+                int currentIndex = expeditionCatalog != null
+                    ? expeditionCatalog.IndexOf(currentExpedition)
+                    : -1;
+                bool hasNext = expeditionCatalog != null &&
+                    expeditionCatalog.GetByIndex(currentIndex + 1) != null;
+                Text nextLabel = expeditionNextButton.GetComponentInChildren<Text>();
+                if (nextLabel != null)
+                {
+                    nextLabel.text = hasNext ? "NEXT EXPEDITION" : "CHAPTER COMPLETE";
+                }
+            }
+
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.Milestone, 0.9f);
+            }
+
+            if (cameraFollow != null)
+            {
+                cameraFollow.Shake(0.16f, 0.34f);
+            }
+
+            if (expeditionSuccessRoutine != null)
+            {
+                StopCoroutine(expeditionSuccessRoutine);
+            }
+
+            expeditionSuccessRoutine = StartCoroutine(ExpeditionSuccessRoutine(stars));
+
+            if (ArcadeTimeController.Instance != null)
+            {
+                ArcadeTimeController.Instance.SetHardPaused(true);
+            }
+            else
+            {
+                Time.timeScale = 0f;
+            }
+        }
+
+        private IEnumerator ExpeditionSuccessRoutine(int stars)
+        {
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.1f, expeditionSuccessRevealDelay));
+            if (expeditionSuccessPanel != null)
+            {
+                expeditionSuccessPanel.Show();
+            }
+
+            Debug.Log(
+                "[GG_EXPEDITION] complete id=" + currentExpedition.ExpeditionId +
+                " stars=" + stars +
+                " progress='" + expeditionRunController.GetProgressSummary() + "'.",
+                this);
+            expeditionSuccessRoutine = null;
+        }
+
+        public void PlayNextExpedition()
+        {
+            if (!IsExpedition || expeditionCatalog == null)
+            {
+                ReturnToMainMenu();
+                return;
+            }
+
+            int currentIndex = expeditionCatalog.IndexOf(currentExpedition);
+            GassyExpeditionDefinition next = expeditionCatalog.GetByIndex(currentIndex + 1);
+            if (next == null)
+            {
+                ReturnToMainMenu();
+                return;
+            }
+
+            ArcadeRunSession.SelectFinite(next.ExpeditionId);
+            ResetTimeAndLoad(gameSceneName);
+        }
+
+        public void ReturnToExpeditionSelect()
+        {
+            ResetTimeAndLoad(mainMenuSceneName);
         }
 
         public void GameOver(string reason)
@@ -204,6 +446,218 @@ namespace FirstBloom.Games.GassyGorilla
 #endif
         }
 
+        private void ApplyWebQaRunSelection()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            string requested = GetQueryValue(Application.absoluteURL, "qa-expedition");
+            if (string.IsNullOrWhiteSpace(requested) || expeditionCatalog == null)
+            {
+                return;
+            }
+
+            GassyExpeditionDefinition definition = expeditionCatalog.FindById(requested);
+            int oneBasedIndex;
+            if (definition == null && int.TryParse(requested, out oneBasedIndex))
+            {
+                definition = expeditionCatalog.GetByIndex(oneBasedIndex - 1);
+            }
+
+            if (definition != null)
+            {
+                ArcadeRunSession.SelectFinite(definition.ExpeditionId);
+            }
+#endif
+        }
+
+        private void ResolveRunSelection()
+        {
+            currentExpedition = null;
+            if (ArcadeRunSession.Mode != ArcadeRunMode.Finite || expeditionCatalog == null)
+            {
+                return;
+            }
+
+            currentExpedition = expeditionCatalog.FindById(ArcadeRunSession.ContentId);
+            if (currentExpedition == null)
+            {
+                Debug.LogWarning(
+                    "Unknown Expedition '" + ArcadeRunSession.ContentId + "'. Falling back to Endless Run.",
+                    this);
+                ArcadeRunSession.SelectEndless();
+            }
+        }
+
+        private void ConfigureSelectedRun()
+        {
+            if (IsExpedition)
+            {
+                if (runChunkDirector != null)
+                {
+                    runChunkDirector.ConfigureFiniteRoute(currentExpedition.Route);
+                }
+
+                float finishWorldX = runChunkDirector != null
+                    ? runChunkDirector.ConfiguredFiniteRouteEndX - currentExpedition.FinishInset
+                    : currentExpedition.RouteLength - currentExpedition.FinishInset;
+                if (expeditionRunController != null)
+                {
+                    expeditionRunController.Configure(currentExpedition, finishWorldX);
+                }
+
+                if (hudBestDistanceText != null)
+                {
+                    hudBestDistanceText.gameObject.SetActive(false);
+                }
+            }
+            else
+            {
+                if (expeditionRunController != null)
+                {
+                    expeditionRunController.ConfigureEndless();
+                }
+
+                if (hudBestDistanceText != null)
+                {
+                    hudBestDistanceText.gameObject.SetActive(true);
+                }
+            }
+        }
+
+        private void ConfigureExpeditionStoryUi()
+        {
+            if (currentExpedition == null)
+            {
+                return;
+            }
+
+            if (expeditionStoryTitleText != null)
+            {
+                expeditionStoryTitleText.text = currentExpedition.DisplayTitle.ToUpperInvariant();
+            }
+
+            if (expeditionStoryBodyText != null)
+            {
+                expeditionStoryBodyText.text = currentExpedition.OpeningStory;
+            }
+
+            if (expeditionStoryObjectiveText != null)
+            {
+                expeditionStoryObjectiveText.text = "OBJECTIVE  " + currentExpedition.ObjectiveText;
+            }
+        }
+
+        public void BeginExpeditionFromStory()
+        {
+            if (!IsExpedition || CurrentState != ArcadeGameState.Ready)
+            {
+                return;
+            }
+
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.NotifyUserGesture();
+                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.UiClick);
+            }
+
+            if (expeditionStoryPanel != null)
+            {
+                expeditionStoryPanel.Hide();
+            }
+
+            if (expeditionRunController != null)
+            {
+                expeditionRunController.SetHudVisible(true);
+            }
+
+            if (tutorialPrompt != null)
+            {
+                tutorialPrompt.BeginForRun();
+            }
+
+            if (playCameraIntro && GetSceneCamera() != null && player != null)
+            {
+                introRoutine = StartCoroutine(CameraIntroRoutine());
+            }
+            else
+            {
+                BeginRun();
+            }
+        }
+
+        private bool ShouldAutoStartQaExpedition()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return IsExpedition &&
+                Application.absoluteURL.IndexOf("qa-expedition-auto", StringComparison.OrdinalIgnoreCase) >= 0;
+#else
+            return false;
+#endif
+        }
+
+        private IEnumerator AutoStartExpeditionQaRoutine()
+        {
+            yield return new WaitForSecondsRealtime(0.25f);
+            BeginExpeditionFromStory();
+
+            if (!ShouldAutoCompleteQaExpedition())
+            {
+                yield break;
+            }
+
+            float timeoutAt = Time.realtimeSinceStartup + 5f;
+            while (CurrentState != ArcadeGameState.Running &&
+                Time.realtimeSinceStartup < timeoutAt)
+            {
+                yield return null;
+            }
+
+            if (CurrentState != ArcadeGameState.Running || expeditionRunController == null)
+            {
+                yield break;
+            }
+
+            yield return new WaitForSecondsRealtime(0.25f);
+            expeditionRunController.CompleteObjectiveForQa();
+            ReachExpeditionFinish(expeditionRunController.FinishLine);
+        }
+
+        private bool ShouldAutoCompleteQaExpedition()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return IsExpedition &&
+                Application.absoluteURL.IndexOf("qa-expedition-complete", StringComparison.OrdinalIgnoreCase) >= 0;
+#else
+            return false;
+#endif
+        }
+
+        private static string GetQueryValue(string url, string key)
+        {
+            if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(key))
+            {
+                return string.Empty;
+            }
+
+            int queryStart = url.IndexOf('?');
+            if (queryStart < 0 || queryStart >= url.Length - 1)
+            {
+                return string.Empty;
+            }
+
+            string[] pairs = url.Substring(queryStart + 1).Split('&');
+            for (int i = 0; i < pairs.Length; i++)
+            {
+                string[] parts = pairs[i].Split(new[] { '=' }, 2);
+                if (parts.Length > 0 &&
+                    string.Equals(parts[0], key, StringComparison.OrdinalIgnoreCase))
+                {
+                    return parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : "1";
+                }
+            }
+
+            return string.Empty;
+        }
+
         private static void DisableStandardHazardsForQa()
         {
             ArcadeHazard[] standardHazards = FindObjectsByType<ArcadeHazard>(FindObjectsInactive.Include);
@@ -229,7 +683,8 @@ namespace FirstBloom.Games.GassyGorilla
 
         private bool GameOverInternal(string reason, CrocodileAmbushController crocodileAmbush)
         {
-            if (CurrentState == ArcadeGameState.GameOver)
+            if (CurrentState == ArcadeGameState.GameOver ||
+                CurrentState == ArcadeGameState.Completed)
             {
                 return false;
             }
@@ -245,9 +700,24 @@ namespace FirstBloom.Games.GassyGorilla
             SetState(ArcadeGameState.GameOver);
             SetSpawnersActive(false);
 
+            if (gameOverTitleText != null)
+            {
+                gameOverTitleText.text = IsExpedition ? "EXPEDITION FAILED" : "RUN OVER";
+            }
+
+            if (gameOverReasonText != null)
+            {
+                gameOverReasonText.text = reason;
+            }
+
             if (tutorialPrompt != null)
             {
                 tutorialPrompt.HideForGameOver();
+            }
+
+            if (expeditionRunController != null)
+            {
+                expeditionRunController.SetHudVisible(false);
             }
 
             bool isCrocodileAmbush = crocodileAmbush != null;
@@ -274,7 +744,10 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             float distance = scoreManager != null ? scoreManager.Distance : 0f;
-            HighScoreStore.TrySaveBestDistance(BestDistanceKey, distance);
+            if (!IsExpedition)
+            {
+                HighScoreStore.TrySaveBestDistance(BestDistanceKey, distance);
+            }
 
             if (currentDistanceText != null)
             {
@@ -537,6 +1010,23 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void UpdateBestDistanceText()
         {
+            if (IsExpedition)
+            {
+                if (bestDistanceText != null)
+                {
+                    bestDistanceText.text = expeditionRunController != null
+                        ? expeditionRunController.GetProgressSummary()
+                        : currentExpedition.ObjectiveText;
+                }
+
+                if (hudBestDistanceText != null)
+                {
+                    hudBestDistanceText.gameObject.SetActive(false);
+                }
+
+                return;
+            }
+
             float best = HighScoreStore.GetBestDistance(BestDistanceKey);
             string value = Mathf.FloorToInt(best) + " m";
 
