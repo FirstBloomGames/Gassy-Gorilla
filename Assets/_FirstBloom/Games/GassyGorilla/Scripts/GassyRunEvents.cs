@@ -6,6 +6,8 @@ namespace FirstBloom.Games.GassyGorilla
     {
         public static event Action<FoodPickupType> FoodCollected;
         public static event Action CrocodileDodged;
+        public static event Action<GassyInteractionType> InteractionStarted;
+        public static event Action<GassyInteractionType> InteractionCompleted;
 
         public static void RaiseFoodCollected(FoodPickupType pickupType)
         {
@@ -20,6 +22,22 @@ namespace FirstBloom.Games.GassyGorilla
             if (CrocodileDodged != null)
             {
                 CrocodileDodged.Invoke();
+            }
+        }
+
+        public static void RaiseInteractionStarted(GassyInteractionType interactionType)
+        {
+            if (interactionType != GassyInteractionType.None && InteractionStarted != null)
+            {
+                InteractionStarted.Invoke(interactionType);
+            }
+        }
+
+        public static void RaiseInteractionCompleted(GassyInteractionType interactionType)
+        {
+            if (interactionType != GassyInteractionType.None && InteractionCompleted != null)
+            {
+                InteractionCompleted.Invoke(interactionType);
             }
         }
     }

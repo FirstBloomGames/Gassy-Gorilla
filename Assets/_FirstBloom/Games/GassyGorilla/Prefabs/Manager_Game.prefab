@@ -82,6 +82,7 @@ MonoBehaviour:
   expeditionStoryTitleText: {fileID: 0}
   expeditionStoryBodyText: {fileID: 0}
   expeditionStoryObjectiveText: {fileID: 0}
+  expeditionStoryLessonText: {fileID: 0}
   expeditionSuccessPanel: {fileID: 0}
   expeditionSuccessTitleText: {fileID: 0}
   expeditionSuccessObjectiveText: {fileID: 0}

@@ -231,6 +231,11 @@ body.gg-portrait-active #unity-container {
 
             string projectRoot = Directory.GetParent(Application.dataPath).FullName;
             string outputPath = Path.Combine(projectRoot, BuildFolderName);
+            if (Directory.Exists(outputPath))
+            {
+                Directory.Delete(outputPath, true);
+            }
+
             Directory.CreateDirectory(outputPath);
 
             PlayerSettings.companyName = "First Bloom Games";

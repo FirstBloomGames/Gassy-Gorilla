@@ -14,15 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
   expeditionId: canopy-shortcut
   orderIndex: 2
+  chapterIndex: 0
+  chapterTitle: Home for Dinner
   displayTitle: Canopy Shortcut
   openingStory: The ground route is blocked, but the glowing vines form a swinging
     highway. Hold tight, choose the arc, and release like a legend.
   successStory: Three clean releases and only one deeply questionable noise. The
     canopy shortcut officially works.
+  lessonText: Vines catch you magnetically. Hold on, then tap to release.
   objectiveType: 2
   objectiveText: Release from 3 vines, then reach the finish.
   targetCount: 3
   targetFuel: 0
+  targetInteraction: 0
+  requiredInteractions: 0
   route:
   - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
   - {fileID: 11400000, guid: e1769fe815c237648a5f242a652287ba, type: 2}

@@ -10,7 +10,9 @@ namespace FirstBloom.Games.GassyGorilla
         CollectFood,
         VineReleases,
         CrocodileDodges,
-        FinishWithFuel
+        FinishWithFuel,
+        CompleteInteraction,
+        CompleteInteractionSet
     }
 
     [CreateAssetMenu(fileName = "GG_Expedition_", menuName = "First Bloom/Gassy Gorilla/Expedition")]
@@ -19,17 +21,22 @@ namespace FirstBloom.Games.GassyGorilla
         [Header("Identity")]
         [SerializeField] private string expeditionId = "expedition";
         [Min(0)] [SerializeField] private int orderIndex;
+        [Min(0)] [SerializeField] private int chapterIndex;
+        [SerializeField] private string chapterTitle = "Chapter";
         [SerializeField] private string displayTitle = "Expedition";
 
         [Header("Story")]
         [TextArea(2, 4)] [SerializeField] private string openingStory;
         [TextArea(2, 4)] [SerializeField] private string successStory;
+        [TextArea(1, 3)] [SerializeField] private string lessonText;
 
         [Header("Objective")]
         [SerializeField] private GassyExpeditionObjectiveType objectiveType;
         [TextArea(1, 3)] [SerializeField] private string objectiveText;
         [Min(0)] [SerializeField] private int targetCount;
         [Min(0f)] [SerializeField] private float targetFuel;
+        [SerializeField] private GassyInteractionType targetInteraction;
+        [SerializeField] private GassyInteractionType requiredInteractions;
 
         [Header("Route")]
         [SerializeField] private RunChunkDefinition[] route = Array.Empty<RunChunkDefinition>();
@@ -41,13 +48,18 @@ namespace FirstBloom.Games.GassyGorilla
 
         public string ExpeditionId { get { return expeditionId; } }
         public int OrderIndex { get { return orderIndex; } }
+        public int ChapterIndex { get { return chapterIndex; } }
+        public string ChapterTitle { get { return chapterTitle; } }
         public string DisplayTitle { get { return displayTitle; } }
         public string OpeningStory { get { return openingStory; } }
         public string SuccessStory { get { return successStory; } }
+        public string LessonText { get { return lessonText; } }
         public GassyExpeditionObjectiveType ObjectiveType { get { return objectiveType; } }
         public string ObjectiveText { get { return objectiveText; } }
         public int TargetCount { get { return targetCount; } }
         public float TargetFuel { get { return targetFuel; } }
+        public GassyInteractionType TargetInteraction { get { return targetInteraction; } }
+        public GassyInteractionType RequiredInteractions { get { return requiredInteractions; } }
         public RunChunkDefinition[] Route { get { return route; } }
         public float FinishInset { get { return finishInset; } }
 
@@ -76,13 +88,18 @@ namespace FirstBloom.Games.GassyGorilla
         public void Configure(
             string id,
             int index,
+            int chapter,
+            string chapterName,
             string title,
             string opening,
             string success,
+            string lesson,
             GassyExpeditionObjectiveType type,
             string objective,
             int count,
             float fuel,
+            GassyInteractionType interaction,
+            GassyInteractionType interactionSet,
             RunChunkDefinition[] authoredRoute,
             float inset,
             float silverFuel,
@@ -90,13 +107,18 @@ namespace FirstBloom.Games.GassyGorilla
         {
             expeditionId = id;
             orderIndex = Mathf.Max(0, index);
+            chapterIndex = Mathf.Max(0, chapter);
+            chapterTitle = chapterName;
             displayTitle = title;
             openingStory = opening;
             successStory = success;
+            lessonText = lesson;
             objectiveType = type;
             objectiveText = objective;
             targetCount = Mathf.Max(0, count);
             targetFuel = Mathf.Max(0f, fuel);
+            targetInteraction = interaction;
+            requiredInteractions = interactionSet;
             route = authoredRoute ?? Array.Empty<RunChunkDefinition>();
             finishInset = Mathf.Max(0.5f, inset);
             twoStarFuel = Mathf.Clamp(silverFuel, 0f, 100f);
@@ -158,10 +180,56 @@ namespace FirstBloom.Games.GassyGorilla
                     {
                         count++;
                     }
+                    else if (objectiveType == GassyExpeditionObjectiveType.CompleteInteraction)
+                    {
+                        GassyInteractionMarker marker =
+                            spawn.Prefab.GetComponentInChildren<GassyInteractionMarker>(true);
+                        if (marker != null && marker.InteractionType == targetInteraction)
+                        {
+                            count++;
+                        }
+                    }
                 }
             }
 
             return count;
+        }
+
+        public GassyInteractionType CollectAvailableInteractions()
+        {
+            if (route == null)
+            {
+                return GassyInteractionType.None;
+            }
+
+            GassyInteractionType available = GassyInteractionType.None;
+            for (int routeIndex = 0; routeIndex < route.Length; routeIndex++)
+            {
+                RunChunkDefinition chunk = route[routeIndex];
+                if (chunk == null || chunk.Spawns == null)
+                {
+                    continue;
+                }
+
+                RunChunkSpawn[] spawns = chunk.Spawns;
+                for (int spawnIndex = 0; spawnIndex < spawns.Length; spawnIndex++)
+                {
+                    RunChunkSpawn spawn = spawns[spawnIndex];
+                    if (spawn == null || spawn.Prefab == null)
+                    {
+                        continue;
+                    }
+
+                    GassyInteractionMarker marker =
+                        spawn.Prefab.GetComponentInChildren<GassyInteractionMarker>(true);
+                    if (marker != null)
+                    {
+                        available |= marker.InteractionType;
+                    }
+                }
+            }
+
+            return available;
         }
 
         public void AppendValidationErrors(List<string> errors)
@@ -173,11 +241,13 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             if (string.IsNullOrWhiteSpace(displayTitle) ||
+                string.IsNullOrWhiteSpace(chapterTitle) ||
                 string.IsNullOrWhiteSpace(openingStory) ||
                 string.IsNullOrWhiteSpace(successStory) ||
+                string.IsNullOrWhiteSpace(lessonText) ||
                 string.IsNullOrWhiteSpace(objectiveText))
             {
-                errors.Add(label + " is missing player-facing title, story, success, or objective copy.");
+                errors.Add(label + " is missing player-facing chapter, title, story, lesson, success, or objective copy.");
             }
 
             if (route == null || route.Length < 4)
@@ -214,7 +284,8 @@ namespace FirstBloom.Games.GassyGorilla
 
             if ((objectiveType == GassyExpeditionObjectiveType.CollectFood ||
                 objectiveType == GassyExpeditionObjectiveType.VineReleases ||
-                objectiveType == GassyExpeditionObjectiveType.CrocodileDodges) &&
+                objectiveType == GassyExpeditionObjectiveType.CrocodileDodges ||
+                objectiveType == GassyExpeditionObjectiveType.CompleteInteraction) &&
                 targetCount <= 0)
             {
                 errors.Add(label + " has a count objective without a positive target.");
@@ -230,6 +301,33 @@ namespace FirstBloom.Games.GassyGorilla
                 (targetFuel < 1f || targetFuel > 100f))
             {
                 errors.Add(label + " has an invalid finish-fuel requirement.");
+            }
+
+            if (objectiveType == GassyExpeditionObjectiveType.CompleteInteraction)
+            {
+                int interactionValue = (int)targetInteraction;
+                if (targetInteraction == GassyInteractionType.None ||
+                    (interactionValue & (interactionValue - 1)) != 0)
+                {
+                    errors.Add(label + " needs exactly one target interaction.");
+                }
+            }
+
+            if (objectiveType == GassyExpeditionObjectiveType.CompleteInteractionSet)
+            {
+                if (requiredInteractions == GassyInteractionType.None)
+                {
+                    errors.Add(label + " has an empty interaction mastery set.");
+                }
+                else
+                {
+                    GassyInteractionType available = CollectAvailableInteractions();
+                    GassyInteractionType missing = requiredInteractions & ~available;
+                    if (missing != GassyInteractionType.None)
+                    {
+                        errors.Add(label + " is missing mastery interactions: " + missing + ".");
+                    }
+                }
             }
 
             if (twoStarFuel > threeStarFuel)

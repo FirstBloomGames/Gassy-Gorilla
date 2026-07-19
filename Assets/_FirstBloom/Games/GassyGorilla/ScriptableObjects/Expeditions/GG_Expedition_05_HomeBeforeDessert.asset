@@ -14,15 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
   expeditionId: home-before-dessert
   orderIndex: 4
+  chapterIndex: 0
+  chapterTitle: Home for Dinner
   displayTitle: Home Before Dessert
   openingStory: The home clearing is close, dessert is closer, and the whole jungle
     has arranged one final objection. Save enough fuel for the last heroic push.
   successStory: Home before dessert. Barely. The family agrees this was a completely
     normal way to arrive.
+  lessonText: Mix every skill and save at least 45 fuel for the final push.
   objectiveType: 4
   objectiveText: Reach home with at least 45 fuel.
   targetCount: 0
   targetFuel: 45
+  targetInteraction: 0
+  requiredInteractions: 0
   route:
   - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
   - {fileID: 11400000, guid: e1769fe815c237648a5f242a652287ba, type: 2}

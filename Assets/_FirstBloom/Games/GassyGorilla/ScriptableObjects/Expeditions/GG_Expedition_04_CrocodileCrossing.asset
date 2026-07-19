@@ -14,15 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
   expeditionId: crocodile-crossing
   orderIndex: 3
+  chapterIndex: 0
+  chapterTitle: Home for Dinner
   displayTitle: Crocodile Crossing
   openingStory: The lagoon is awake. Watch the warning ripples, keep one boost ready,
     and do not accept dinner invitations from anything with that many teeth.
   successStory: Two crocodiles dodged. Neither is impressed. Gassy Gorilla is extremely
     impressed with himself.
+  lessonText: Warning ripples mean crocodile. Keep one boost ready and dodge high.
   objectiveType: 3
   objectiveText: Dodge 2 crocodile ambushes, then finish.
   targetCount: 2
   targetFuel: 0
+  targetInteraction: 0
+  requiredInteractions: 0
   route:
   - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
   - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}

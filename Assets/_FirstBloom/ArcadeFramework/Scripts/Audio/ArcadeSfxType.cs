@@ -16,6 +16,11 @@ namespace FirstBloom.ArcadeFramework.Audio
         Chomp,
         CrocodileWarning,
         Milestone,
-        GameOver
+        GameOver,
+        GeyserWarning,
+        GeyserBurst,
+        SapCatch,
+        SapPop,
+        Updraft
     }
 }

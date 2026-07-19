@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9868dc9a516eae45932b63c1c76328d, type: 3}
+  m_Name: GG_Expedition_08_SapHappens
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
+  expeditionId: sap-happens
+  orderIndex: 7
+  chapterIndex: 1
+  chapterTitle: Dessert Rescue
+  displayTitle: Sap Happens
+  openingStory: A syrupy trail leads through two enormous blobs of jungle sap. It
+    smells like dessert and behaves like glue.
+  successStory: Two magnificent pops later, Gassy Gorilla is free, flying, and only
+    slightly shinier.
+  lessonText: Sap slows you but cannot defeat you. Tap once to pop free without spending
+    fuel.
+  objectiveType: 5
+  objectiveText: Pop free from 2 sap traps, then finish.
+  targetCount: 2
+  targetFuel: 0
+  targetInteraction: 4
+  requiredInteractions: 0
+  route:
+  - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: a413cb2c033b01440946ebadf9fa031d, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: ab175b48be1537d4a84c3d19c2bf5c68, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: a413cb2c033b01440946ebadf9fa031d, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  finishInset: 1.2
+  twoStarFuel: 40
+  threeStarFuel: 66

@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f915c77b168390345ac76493f6849360, type: 3}
+  m_Name: GG_RunChunk_CanopyCurrent
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.RunChunkDefinition
+  chunkId: CanopyCurrent
+  tags: 102
+  allowInMainPool: 1
+  length: 10
+  selectionWeight: 0.84
+  minimumDifficulty: 1
+  maximumDifficulty: 4
+  blockedPreviousTags: 0
+  blockedNextTags: 0
+  entryHeightRange: {x: -0.4, y: 3.2}
+  exitHeightRange: {x: 1.2, y: 4.2}
+  entryFuelRange: {x: 0, y: 100}
+  exitFuelRange: {x: 45, y: 100}
+  minimumReactionDistance: 4.2
+  spawns:
+  - prefab: {fileID: 6224503674251131827, guid: 9e1b26558741d87469832ed2d4038da5, type: 3}
+    kind: 0
+    localPosition: {x: 1.25, y: 0.8, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: -6}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 3658001780340266704, guid: 226587ac9baaa364ca44cc3a41fa5b7a, type: 3}
+    kind: 3
+    localPosition: {x: 4.8, y: 1.1, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 2559269168645090756, guid: 6776722b02806be47a2f4d7b68377ad7, type: 3}
+    kind: 0
+    localPosition: {x: 8.2, y: 3.05, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 7}
+    localScale: {x: 1, y: 1, z: 1}

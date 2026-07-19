@@ -203,3 +203,64 @@ MonoBehaviour:
     voiceLimitMode: 0
     rareClipIndex: -1
     rareClipCooldownPlays: 0
+  - type: 15
+    clips:
+    - {fileID: 8300000, guid: d35d25b40eb4ec8498ca63cb535e7864, type: 3}
+    - {fileID: 8300000, guid: 40fe992dbccaf484ea5f8f8748e14ed7, type: 3}
+    volume: 0.4
+    pitchRange: {x: 0.98, y: 1.03}
+    loop: 0
+    maximumSimultaneousVoices: 0
+    minimumRetriggerInterval: 0
+    voiceLimitMode: 0
+    rareClipIndex: -1
+    rareClipCooldownPlays: 0
+  - type: 16
+    clips:
+    - {fileID: 8300000, guid: 88c93a9a4310466468694fcbdd5612ba, type: 3}
+    - {fileID: 8300000, guid: 0f76b19da58390449991acf1909d1593, type: 3}
+    volume: 0.56
+    pitchRange: {x: 0.96, y: 1.02}
+    loop: 0
+    maximumSimultaneousVoices: 0
+    minimumRetriggerInterval: 0
+    voiceLimitMode: 0
+    rareClipIndex: -1
+    rareClipCooldownPlays: 0
+  - type: 17
+    clips:
+    - {fileID: 8300000, guid: 158bd6e6848a53545a300bfcd597f219, type: 3}
+    - {fileID: 8300000, guid: 0ab29ca9ec900f2438dba0063f9521a0, type: 3}
+    volume: 0.4
+    pitchRange: {x: 0.97, y: 1.03}
+    loop: 0
+    maximumSimultaneousVoices: 0
+    minimumRetriggerInterval: 0
+    voiceLimitMode: 0
+    rareClipIndex: -1
+    rareClipCooldownPlays: 0
+  - type: 18
+    clips:
+    - {fileID: 8300000, guid: 9ac7d214ebe47004997c8ac952bf5a7c, type: 3}
+    - {fileID: 8300000, guid: 2cc3c979736300640bfe0641c14ecb7b, type: 3}
+    - {fileID: 8300000, guid: c54f80bad71b1ab4788f2018cfff3642, type: 3}
+    volume: 0.48
+    pitchRange: {x: 0.97, y: 1.05}
+    loop: 0
+    maximumSimultaneousVoices: 0
+    minimumRetriggerInterval: 0
+    voiceLimitMode: 0
+    rareClipIndex: -1
+    rareClipCooldownPlays: 0
+  - type: 19
+    clips:
+    - {fileID: 8300000, guid: c6f12a3992c79ee43b248f93ee9f8199, type: 3}
+    - {fileID: 8300000, guid: a5b95bd10311bc54585d6e6ca2dbcf71, type: 3}
+    volume: 0.44
+    pitchRange: {x: 0.97, y: 1.04}
+    loop: 0
+    maximumSimultaneousVoices: 0
+    minimumRetriggerInterval: 0
+    voiceLimitMode: 0
+    rareClipIndex: -1
+    rareClipCooldownPlays: 0

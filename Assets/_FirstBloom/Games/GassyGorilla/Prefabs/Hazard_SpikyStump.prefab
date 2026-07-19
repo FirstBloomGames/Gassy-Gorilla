@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 2534124988966996516}
   - component: {fileID: 7195365329353626624}
   - component: {fileID: 1023107579539748260}
+  - component: {fileID: 6710841505805933934}
+  - component: {fileID: 7246580665799792610}
   - component: {fileID: 9118805858134237848}
   m_Layer: 0
   m_Name: Hazard_SpikyStump
@@ -94,6 +96,32 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.ArcadeFramework.Core.ArcadeHazard
   targetTag: Player
+--- !u!114 &6710841505805933934
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6978502189349949200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22279250e17f57646a9c0f807c1d73f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyInteractionMarker
+  interactionType: 1
+--- !u!114 &7246580665799792610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6978502189349949200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d2ca5a3ccae71547b9dae08dda34ea5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyHazardPassReporter
+  passOffset: 0.8
 --- !u!114 &9118805858134237848
 MonoBehaviour:
   m_ObjectHideFlags: 0

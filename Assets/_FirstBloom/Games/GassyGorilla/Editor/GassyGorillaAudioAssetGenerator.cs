@@ -49,6 +49,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GenerateSfxFamily("UIBack", 1, SfxKind.UiBack);
             GenerateSfxFamily("UIError", 1, SfxKind.UiError);
             GenerateSfxFamily("GameOver", 1, SfxKind.GameOver);
+            GenerateSfxFamily("GeyserWarning", 2, SfxKind.GeyserWarning);
+            GenerateSfxFamily("GeyserBurst", 2, SfxKind.GeyserBurst);
+            GenerateSfxFamily("SapCatch", 2, SfxKind.SapCatch);
+            GenerateSfxFamily("SapPop", 3, SfxKind.SapPop);
+            GenerateSfxFamily("Updraft", 2, SfxKind.Updraft);
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             ConfigureMusicImporter(MusicRoot + "/GG_Music_JungleStride_Base.wav");
@@ -130,7 +135,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 Entry(ArcadeSfxType.Chomp, "Chomp", 2, 0.68f, 0.96f, 1.03f),
                 Entry(ArcadeSfxType.CrocodileWarning, "CrocodileWarning", 2, 0.68f, 0.97f, 1.02f),
                 Entry(ArcadeSfxType.Milestone, "Milestone", 2, 0.42f, 0.99f, 1.02f),
-                Entry(ArcadeSfxType.GameOver, "GameOver", 1, 0.56f, 1f, 1f)
+                Entry(ArcadeSfxType.GameOver, "GameOver", 1, 0.56f, 1f, 1f),
+                Entry(ArcadeSfxType.GeyserWarning, "GeyserWarning", 2, 0.4f, 0.98f, 1.03f),
+                Entry(ArcadeSfxType.GeyserBurst, "GeyserBurst", 2, 0.56f, 0.96f, 1.02f),
+                Entry(ArcadeSfxType.SapCatch, "SapCatch", 2, 0.4f, 0.97f, 1.03f),
+                Entry(ArcadeSfxType.SapPop, "SapPop", 3, 0.48f, 0.97f, 1.05f),
+                Entry(ArcadeSfxType.Updraft, "Updraft", 2, 0.44f, 0.97f, 1.04f)
             };
         }
 
@@ -317,6 +327,16 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     return GenerateUiBack();
                 case SfxKind.UiError:
                     return GenerateUiError();
+                case SfxKind.GeyserWarning:
+                    return GenerateGeyserWarning(variant, random);
+                case SfxKind.GeyserBurst:
+                    return GenerateGeyserBurst(variant, random);
+                case SfxKind.SapCatch:
+                    return GenerateSapCatch(variant, random);
+                case SfxKind.SapPop:
+                    return GenerateSapPop(variant, random);
+                case SfxKind.Updraft:
+                    return GenerateUpdraft(variant, random);
                 default:
                     return GenerateGameOver();
             }
@@ -478,6 +498,96 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             }
 
             AddBass(data, 1, 0.7f, 0.42f, MidiToFrequency(43), 0.11f, 0f);
+            return data;
+        }
+
+        private static float[] GenerateGeyserWarning(int variant, System.Random random)
+        {
+            float[] data = NewBuffer(0.72f, 1);
+            for (int i = 0; i < 4; i++)
+            {
+                float start = 0.04f + i * 0.15f;
+                AddBubble(
+                    data,
+                    1,
+                    start,
+                    0.16f,
+                    240f + variant * 22f + i * 54f,
+                    0.12f,
+                    0f);
+            }
+
+            AddPitchSweep(data, 1, 0.08f, 0.58f, 118f, 184f + variant * 12f, 0.09f, 0f);
+            AddNoiseBurst(data, 1, 0.02f, 0.62f, 0.045f, random, 0.5f, 0f);
+            return data;
+        }
+
+        private static float[] GenerateGeyserBurst(int variant, System.Random random)
+        {
+            float[] data = NewBuffer(0.64f + variant * 0.04f, 1);
+            AddNoiseBurst(data, 1, 0f, 0.56f, 0.3f, random, 0.18f, 0f);
+            AddPitchSweep(data, 1, 0f, 0.48f, 128f + variant * 12f, 54f, 0.22f, 0f);
+            AddHandDrum(data, 1, 0.015f, 0.3f, 82f + variant * 7f, 0.18f, random, 0f);
+            AddBubble(data, 1, 0.22f, 0.25f, 170f + variant * 20f, 0.12f, 0f);
+            return data;
+        }
+
+        private static float[] GenerateSapCatch(int variant, System.Random random)
+        {
+            float[] data = NewBuffer(0.42f, 1);
+            AddPitchSweep(data, 1, 0f, 0.36f, 280f + variant * 24f, 84f, 0.2f, 0f);
+            AddNoiseBurst(data, 1, 0f, 0.31f, 0.13f, random, 0.72f, 0f);
+            AddBubble(data, 1, 0.09f, 0.24f, 128f + variant * 18f, 0.16f, 0f);
+            AddBubble(data, 1, 0.21f, 0.17f, 188f + variant * 26f, 0.1f, 0f);
+            return data;
+        }
+
+        private static float[] GenerateSapPop(int variant, System.Random random)
+        {
+            float[] data = NewBuffer(0.36f + variant * 0.025f, 1);
+            AddWoodClick(
+                data,
+                1,
+                0.015f,
+                0.095f,
+                310f + variant * 52f,
+                0.24f,
+                random,
+                0f);
+            AddBubble(
+                data,
+                1,
+                0.025f,
+                0.18f,
+                180f + variant * 35f,
+                0.16f,
+                0f);
+            AddPitchSweep(
+                data,
+                1,
+                0.055f,
+                0.25f,
+                230f + variant * 28f,
+                520f + variant * 68f,
+                0.13f,
+                0f);
+            return data;
+        }
+
+        private static float[] GenerateUpdraft(int variant, System.Random random)
+        {
+            float[] data = NewBuffer(0.72f, 1);
+            AddNoiseBurst(data, 1, 0f, 0.62f, 0.14f, random, 0.04f, 0f);
+            AddPitchSweep(
+                data,
+                1,
+                0.02f,
+                0.58f,
+                260f + variant * 34f,
+                760f + variant * 76f,
+                0.12f,
+                0f);
+            AddBell(data, 1, 0.22f, 0.36f, 690f + variant * 90f, 0.07f, 0f);
             return data;
         }
 
@@ -979,7 +1089,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             UiConfirm,
             UiBack,
             UiError,
-            GameOver
+            GameOver,
+            GeyserWarning,
+            GeyserBurst,
+            SapCatch,
+            SapPop,
+            Updraft
         }
     }
 }

@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f915c77b168390345ac76493f6849360, type: 3}
+  m_Name: GG_RunChunk_StumpJumpLesson
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.RunChunkDefinition
+  chunkId: StumpJumpLesson
+  tags: 18
+  allowInMainPool: 1
+  length: 10
+  selectionWeight: 0.76
+  minimumDifficulty: 1
+  maximumDifficulty: 4
+  blockedPreviousTags: 144
+  blockedNextTags: 144
+  entryHeightRange: {x: 0.1, y: 3.4}
+  exitHeightRange: {x: 0.7, y: 3.7}
+  entryFuelRange: {x: 16, y: 100}
+  exitFuelRange: {x: 0, y: 100}
+  minimumReactionDistance: 4.8
+  spawns:
+  - prefab: {fileID: 6224503674251131827, guid: 9e1b26558741d87469832ed2d4038da5, type: 3}
+    kind: 0
+    localPosition: {x: 1.35, y: 1.15, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: -6}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 6978502189349949200, guid: aed27fba51e9fda49b453febc976e728, type: 3}
+    kind: 1
+    localPosition: {x: 5.1, y: -0.92, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 2487999869850025639, guid: 17c15824d3657f045af979c96fc73a22, type: 3}
+    kind: 0
+    localPosition: {x: 8.1, y: 2.55, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 7}
+    localScale: {x: 1, y: 1, z: 1}

@@ -70,6 +70,7 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private Text expeditionStoryTitleText;
         [SerializeField] private Text expeditionStoryBodyText;
         [SerializeField] private Text expeditionStoryObjectiveText;
+        [SerializeField] private Text expeditionStoryLessonText;
         [SerializeField] private CanvasGroupPanel expeditionSuccessPanel;
         [SerializeField] private Text expeditionSuccessTitleText;
         [SerializeField] private Text expeditionSuccessObjectiveText;
@@ -99,12 +100,14 @@ namespace FirstBloom.Games.GassyGorilla
         {
             get
             {
-                return expeditionCatalog != null && expeditionCatalog.Count == 5 &&
+                return expeditionCatalog != null &&
+                    expeditionCatalog.Count == GassyExpeditionCatalog.VersionOneExpeditionCount &&
                     expeditionRunController != null && expeditionRunController.IsConfigured &&
                     expeditionStoryPanel != null &&
                     expeditionStoryTitleText != null &&
                     expeditionStoryBodyText != null &&
                     expeditionStoryObjectiveText != null &&
+                    expeditionStoryLessonText != null &&
                     expeditionSuccessPanel != null &&
                     expeditionSuccessTitleText != null &&
                     expeditionSuccessObjectiveText != null &&
@@ -489,12 +492,17 @@ namespace FirstBloom.Games.GassyGorilla
                 int currentIndex = expeditionCatalog != null
                     ? expeditionCatalog.IndexOf(currentExpedition)
                     : -1;
-                bool hasNext = expeditionCatalog != null &&
-                    expeditionCatalog.GetByIndex(currentIndex + 1) != null;
+                GassyExpeditionDefinition next = expeditionCatalog != null
+                    ? expeditionCatalog.GetByIndex(currentIndex + 1)
+                    : null;
                 Text nextLabel = expeditionNextButton.GetComponentInChildren<Text>();
                 if (nextLabel != null)
                 {
-                    nextLabel.text = hasNext ? "NEXT EXPEDITION" : "CHAPTER COMPLETE";
+                    nextLabel.text = next == null
+                        ? "STORY COMPLETE"
+                        : (next.ChapterIndex != currentExpedition.ChapterIndex
+                            ? "NEXT CHAPTER"
+                            : "NEXT EXPEDITION");
                 }
             }
 
@@ -721,6 +729,11 @@ namespace FirstBloom.Games.GassyGorilla
             if (expeditionStoryObjectiveText != null)
             {
                 expeditionStoryObjectiveText.text = "OBJECTIVE  " + currentExpedition.ObjectiveText;
+            }
+
+            if (expeditionStoryLessonText != null)
+            {
+                expeditionStoryLessonText.text = "LESSON  " + currentExpedition.LessonText;
             }
         }
 
@@ -1156,6 +1169,11 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             SetSpawnersActive(true);
+
+            if (IsExpedition && expeditionRunController != null)
+            {
+                expeditionRunController.BeginRunLesson();
+            }
         }
 
         private UnityEngine.Camera GetSceneCamera()

@@ -133,6 +133,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 BananaBunch = LoadRequiredPrefab("Pickup_BananaBunch"),
                 SwingableVine = LoadRequiredPrefab("Vine_Swingable"),
                 SpikyStumpObstacle = LoadRequiredPrefab("Hazard_SpikyStump"),
+                MudGeyserObstacle = LoadRequiredPrefab("Hazard_MudGeyser"),
+                StickySapObstacle = LoadRequiredPrefab("Hazard_StickySapBlob"),
+                CanopyUpdraft = LoadRequiredPrefab("Interaction_CanopyUpdraft"),
                 CrocodileAmbush = LoadRequiredPrefab("Hazard_CrocodileAmbush")
             };
         }
@@ -1508,9 +1511,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             prefabs.SwingableVine = BuildSwingableVinePrefab(meshyAssets.Vine);
             prefabs.VineObstacle = BuildHazardPrefab("Vine_Obstacle", new Vector2(0.55f, 2.6f), meshyAssets.StickySapBlob, 2.25f, "SapBlob");
             prefabs.TreeTrunkObstacle = BuildHazardPrefab("Obstacle_TreeTrunk", new Vector2(0.75f, 2.4f), meshyAssets.FirstAvailable(meshyAssets.ThornLog, meshyAssets.SpikyStump), 1.85f, "ThornLog");
-            prefabs.SpikyStumpObstacle = BuildHazardPrefab("Hazard_SpikyStump", new Vector2(0.9f, 1.55f), meshyAssets.SpikyStump, 1.55f, "ThornLog");
-            prefabs.MudGeyserObstacle = BuildHazardPrefab("Hazard_MudGeyser", new Vector2(0.9f, 1.8f), meshyAssets.MudGeyser, 1.8f, "SapBlob");
-            prefabs.StickySapObstacle = BuildHazardPrefab("Hazard_StickySapBlob", new Vector2(0.85f, 1.6f), meshyAssets.StickySapBlob, 1.6f, "SapBlob");
+            prefabs.SpikyStumpObstacle = BuildLessonThornStumpPrefab(meshyAssets.SpikyStump);
+            prefabs.MudGeyserObstacle = BuildMudGeyserPrefab(meshyAssets.MudGeyser);
+            prefabs.StickySapObstacle = BuildStickySapPrefab(meshyAssets.StickySapBlob);
+            prefabs.CanopyUpdraft = BuildCanopyUpdraftPrefab(meshyAssets);
             prefabs.CrocodileAmbush = BuildCrocodileAmbushPrefab(crocodileModel);
             prefabs.AudioManager = BuildAudioManagerPrefab();
             prefabs.PickupSpawner = BuildSpawnerPrefab<PickupSpawner>("Spawner_Pickups");
@@ -1871,6 +1875,94 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 7.65f, 2.85f, 7f)
                 });
 
+            RunChunkDefinition stumpJumpLesson = CreateOrUpdateRunChunk(
+                "StumpJumpLesson",
+                RunChunkTag.Hazard | RunChunkTag.Boost,
+                true,
+                10f,
+                0.76f,
+                1,
+                4,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                new Vector2(0.1f, 3.4f),
+                new Vector2(0.7f, 3.7f),
+                new Vector2(16f, 100f),
+                new Vector2(0f, 100f),
+                4.8f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.35f, 1.15f, -6f),
+                    ChunkSpawn(prefabs.SpikyStumpObstacle, RunChunkSpawnKind.Hazard, 5.1f, -0.92f),
+                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 8.1f, 2.55f, 7f)
+                });
+
+            RunChunkDefinition geyserWarning = CreateOrUpdateRunChunk(
+                "GeyserWarning",
+                RunChunkTag.Hazard | RunChunkTag.Boost,
+                true,
+                11.5f,
+                0.62f,
+                2,
+                4,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                new Vector2(0.1f, 3.4f),
+                new Vector2(0.8f, 3.8f),
+                new Vector2(20f, 100f),
+                new Vector2(0f, 100f),
+                5.4f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.2f, 1.2f, -7f),
+                    ChunkSpawn(prefabs.MudGeyserObstacle, RunChunkSpawnKind.Hazard, 6.25f, -0.88f),
+                    ChunkSpawn(prefabs.Soda, RunChunkSpawnKind.Pickup, 9.7f, 2.9f, 8f)
+                });
+
+            RunChunkDefinition sapEscape = CreateOrUpdateRunChunk(
+                "SapEscape",
+                RunChunkTag.Hazard | RunChunkTag.Recovery | RunChunkTag.Fuel,
+                true,
+                10.5f,
+                0.66f,
+                2,
+                4,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                new Vector2(-0.3f, 2.8f),
+                new Vector2(0.5f, 3.5f),
+                new Vector2(0f, 100f),
+                new Vector2(38f, 100f),
+                4.6f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.45f, 0.75f, -6f),
+                    ChunkSpawn(prefabs.StickySapObstacle, RunChunkSpawnKind.Hazard, 5.25f, -0.92f),
+                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 8.4f, 1.7f, 7f)
+                });
+
+            RunChunkDefinition canopyCurrent = CreateOrUpdateRunChunk(
+                "CanopyCurrent",
+                RunChunkTag.Recovery | RunChunkTag.Fuel | RunChunkTag.Boost | RunChunkTag.NoVine,
+                true,
+                10f,
+                0.84f,
+                1,
+                4,
+                RunChunkTag.None,
+                RunChunkTag.None,
+                new Vector2(-0.4f, 3.2f),
+                new Vector2(1.2f, 4.2f),
+                new Vector2(0f, 100f),
+                new Vector2(45f, 100f),
+                4.2f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.25f, 0.8f, -6f),
+                    ChunkSpawn(prefabs.CanopyUpdraft, RunChunkSpawnKind.Decoration, 4.8f, 1.1f),
+                    ChunkSpawn(prefabs.Burrito, RunChunkSpawnKind.Pickup, 8.2f, 3.05f, 7f)
+                });
+
             RunChunkDefinition postPredatorFeast = CreateOrUpdateRunChunk(
                 "PostPredatorFeast",
                 RunChunkTag.Recovery | RunChunkTag.Fuel | RunChunkTag.Vine,
@@ -1932,6 +2024,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             fuelChoiceFork = LoadRunChunk("FuelChoiceFork");
             longBoostGap = LoadRunChunk("LongBoostGap");
             thornTimingLane = LoadRunChunk("ThornTimingLane");
+            stumpJumpLesson = LoadRunChunk("StumpJumpLesson");
+            geyserWarning = LoadRunChunk("GeyserWarning");
+            sapEscape = LoadRunChunk("SapEscape");
+            canopyCurrent = LoadRunChunk("CanopyCurrent");
             postPredatorFeast = LoadRunChunk("PostPredatorFeast");
             crocodileBaitLift = LoadRunChunk("CrocodileBaitLift");
 
@@ -1952,6 +2048,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     fuelChoiceFork,
                     longBoostGap,
                     thornTimingLane,
+                    stumpJumpLesson,
+                    geyserWarning,
+                    sapEscape,
+                    canopyCurrent,
                     postPredatorFeast,
                     crocodileBaitLift
                 },
@@ -1965,13 +2065,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 "01_DinnerBell",
                 "dinner-bell",
                 0,
+                0,
+                "Home for Dinner",
                 "The Dinner Bell",
                 "The dinner bell is echoing through the canopy. Gassy Gorilla has one heroic shortcut and absolutely no time for dignity.",
                 "The banyan gate! Dinner is still warm, and the jungle now knows exactly who is coming through.",
+                "Tap anywhere to boost. Reach the glowing finish gate.",
                 GassyExpeditionObjectiveType.ReachFinish,
                 "Reach the old banyan gate.",
                 0,
                 0f,
+                GassyInteractionType.None,
+                GassyInteractionType.None,
                 new[]
                 {
                     FindChunk(runChunks, "OpeningBoost"),
@@ -1989,13 +2094,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 "02_BeanTrail",
                 "bean-trail",
                 1,
+                0,
+                "Home for Dinner",
                 "The Bean Trail",
                 "A suspiciously perfect trail of beans leads deeper into the jungle. Heroism says hurry home. Hunger has filed an appeal.",
                 "Every bean accounted for. Mostly. Gassy Gorilla feels magnificently overqualified for the road ahead.",
+                "Food refills fart fuel. Follow the snack trail.",
                 GassyExpeditionObjectiveType.CollectFood,
                 "Collect 10 foods, then reach the finish.",
                 10,
                 0f,
+                GassyInteractionType.None,
+                GassyInteractionType.None,
                 new[]
                 {
                     FindChunk(runChunks, "OpeningBoost"),
@@ -2014,13 +2124,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 "03_CanopyShortcut",
                 "canopy-shortcut",
                 2,
+                0,
+                "Home for Dinner",
                 "Canopy Shortcut",
                 "The ground route is blocked, but the glowing vines form a swinging highway. Hold tight, choose the arc, and release like a legend.",
                 "Three clean releases and only one deeply questionable noise. The canopy shortcut officially works.",
+                "Vines catch you magnetically. Hold on, then tap to release.",
                 GassyExpeditionObjectiveType.VineReleases,
                 "Release from 3 vines, then reach the finish.",
                 3,
                 0f,
+                GassyInteractionType.None,
+                GassyInteractionType.None,
                 new[]
                 {
                     FindChunk(runChunks, "OpeningBoost"),
@@ -2041,13 +2156,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 "04_CrocodileCrossing",
                 "crocodile-crossing",
                 3,
+                0,
+                "Home for Dinner",
                 "Crocodile Crossing",
                 "The lagoon is awake. Watch the warning ripples, keep one boost ready, and do not accept dinner invitations from anything with that many teeth.",
                 "Two crocodiles dodged. Neither is impressed. Gassy Gorilla is extremely impressed with himself.",
+                "Warning ripples mean crocodile. Keep one boost ready and dodge high.",
                 GassyExpeditionObjectiveType.CrocodileDodges,
                 "Dodge 2 crocodile ambushes, then finish.",
                 2,
                 0f,
+                GassyInteractionType.None,
+                GassyInteractionType.None,
                 new[]
                 {
                     FindChunk(runChunks, "OpeningBoost"),
@@ -2066,13 +2186,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 "05_HomeBeforeDessert",
                 "home-before-dessert",
                 4,
+                0,
+                "Home for Dinner",
                 "Home Before Dessert",
                 "The home clearing is close, dessert is closer, and the whole jungle has arranged one final objection. Save enough fuel for the last heroic push.",
                 "Home before dessert. Barely. The family agrees this was a completely normal way to arrive.",
+                "Mix every skill and save at least 45 fuel for the final push.",
                 GassyExpeditionObjectiveType.FinishWithFuel,
                 "Reach home with at least 45 fuel.",
                 0,
                 45f,
+                GassyInteractionType.None,
+                GassyInteractionType.None,
                 new[]
                 {
                     FindChunk(runChunks, "OpeningBoost"),
@@ -2092,6 +2217,168 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 58f,
                 78f);
 
+            GassyExpeditionDefinition stumpJump = CreateOrUpdateExpedition(
+                "06_StumpJump",
+                "stump-jump",
+                5,
+                1,
+                "Dessert Rescue",
+                "Stump Jump",
+                "The dessert cart has rolled straight through a thorn-stump patch. The tracks continue, but so do several extremely pointy opinions.",
+                "Three stumps cleared and no heroic bottom punctures. The dessert trail is fresh.",
+                "Read the low thorn silhouette and tap shortly before contact.",
+                GassyExpeditionObjectiveType.CompleteInteraction,
+                "Clear 3 thorn stumps, then reach the finish.",
+                3,
+                0f,
+                GassyInteractionType.ThornDodge,
+                GassyInteractionType.None,
+                new[]
+                {
+                    FindChunk(runChunks, "OpeningBoost"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "StumpJumpLesson"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "ThornTimingLane"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "StumpJumpLesson"),
+                    FindChunk(runChunks, "Recovery")
+                },
+                1.2f,
+                44f,
+                70f);
+
+            GassyExpeditionDefinition geyserGulch = CreateOrUpdateExpedition(
+                "07_GeyserGulch",
+                "geyser-gulch",
+                6,
+                1,
+                "Dessert Rescue",
+                "Geyser Gulch",
+                "The cart tracks wobble into a bubbling mud field. Yellow bubbles are the jungle's polite way of saying move.",
+                "Three eruptions dodged. Gassy Gorilla is muddy only in several unimportant places.",
+                "Yellow bubbles warn before a geyser erupts. Boost before the pulse ends.",
+                GassyExpeditionObjectiveType.CompleteInteraction,
+                "Dodge 3 mud geysers, then reach the finish.",
+                3,
+                0f,
+                GassyInteractionType.GeyserDodge,
+                GassyInteractionType.None,
+                new[]
+                {
+                    FindChunk(runChunks, "OpeningBoost"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "GeyserWarning"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "GeyserWarning"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "GeyserWarning"),
+                    FindChunk(runChunks, "Recovery")
+                },
+                1.2f,
+                42f,
+                68f);
+
+            GassyExpeditionDefinition sapHappens = CreateOrUpdateExpedition(
+                "08_SapHappens",
+                "sap-happens",
+                7,
+                1,
+                "Dessert Rescue",
+                "Sap Happens",
+                "A syrupy trail leads through two enormous blobs of jungle sap. It smells like dessert and behaves like glue.",
+                "Two magnificent pops later, Gassy Gorilla is free, flying, and only slightly shinier.",
+                "Sap slows you but cannot defeat you. Tap once to pop free without spending fuel.",
+                GassyExpeditionObjectiveType.CompleteInteraction,
+                "Pop free from 2 sap traps, then finish.",
+                2,
+                0f,
+                GassyInteractionType.SapEscape,
+                GassyInteractionType.None,
+                new[]
+                {
+                    FindChunk(runChunks, "OpeningBoost"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "SapEscape"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "FuelArc"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "SapEscape"),
+                    FindChunk(runChunks, "Recovery")
+                },
+                1.2f,
+                40f,
+                66f);
+
+            GassyExpeditionDefinition rideTheBreeze = CreateOrUpdateExpedition(
+                "09_RideTheBreeze",
+                "ride-the-breeze",
+                8,
+                1,
+                "Dessert Rescue",
+                "Ride The Breeze",
+                "Spiraling leaves reveal a canopy shortcut. The breeze smells like mango, victory, and a questionable amount of gorilla.",
+                "Three currents caught. Free lift is officially Gassy Gorilla's second-favorite kind of propulsion.",
+                "Drift into a green leaf spiral for free lift and conserve your fart fuel.",
+                GassyExpeditionObjectiveType.CompleteInteraction,
+                "Ride 3 canopy updrafts, then reach the finish.",
+                3,
+                0f,
+                GassyInteractionType.UpdraftRide,
+                GassyInteractionType.None,
+                new[]
+                {
+                    FindChunk(runChunks, "OpeningBoost"),
+                    FindChunk(runChunks, "CanopyCurrent"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "CanopyCurrent"),
+                    FindChunk(runChunks, "FuelArc"),
+                    FindChunk(runChunks, "CanopyCurrent"),
+                    FindChunk(runChunks, "Recovery")
+                },
+                1.2f,
+                48f,
+                74f);
+
+            GassyInteractionType dessertRescueSkills =
+                GassyInteractionType.ThornDodge |
+                GassyInteractionType.GeyserDodge |
+                GassyInteractionType.SapEscape |
+                GassyInteractionType.UpdraftRide;
+            GassyExpeditionDefinition dessertRescue = CreateOrUpdateExpedition(
+                "10_DessertRescue",
+                "dessert-rescue",
+                9,
+                1,
+                "Dessert Rescue",
+                "Dessert Rescue",
+                "The runaway dessert is in sight. One compact stretch of jungle stands between Gassy Gorilla and the most important rescue of his career.",
+                "Dessert rescued. Family impressed. Jungle confused. Gassy Gorilla requests the largest slice for entirely aerodynamic reasons.",
+                "Clear one stump, dodge one geyser, escape one sap trap, and ride one updraft.",
+                GassyExpeditionObjectiveType.CompleteInteractionSet,
+                "Complete all 4 jungle skills, then rescue dessert.",
+                0,
+                0f,
+                GassyInteractionType.None,
+                dessertRescueSkills,
+                new[]
+                {
+                    FindChunk(runChunks, "OpeningBoost"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "StumpJumpLesson"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "GeyserWarning"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "SapEscape"),
+                    FindChunk(runChunks, "Recovery"),
+                    FindChunk(runChunks, "CanopyCurrent"),
+                    FindChunk(runChunks, "PostPredatorFeast"),
+                    FindChunk(runChunks, "Recovery")
+                },
+                1.2f,
+                54f,
+                78f);
+
             GassyExpeditionCatalog catalog = AssetDatabase.LoadAssetAtPath<GassyExpeditionCatalog>(ExpeditionCatalogPath);
             if (catalog == null)
             {
@@ -2105,7 +2392,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 beanTrail,
                 canopyShortcut,
                 crocodileCrossing,
-                homeBeforeDessert
+                homeBeforeDessert,
+                stumpJump,
+                geyserGulch,
+                sapHappens,
+                rideTheBreeze,
+                dessertRescue
             };
             catalog.Configure(definitions);
             EditorUtility.SetDirty(catalog);
@@ -2122,13 +2414,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             string assetKey,
             string id,
             int orderIndex,
+            int chapterIndex,
+            string chapterTitle,
             string title,
             string openingStory,
             string successStory,
+            string lessonText,
             GassyExpeditionObjectiveType objectiveType,
             string objectiveText,
             int targetCount,
             float targetFuel,
+            GassyInteractionType targetInteraction,
+            GassyInteractionType requiredInteractions,
             RunChunkDefinition[] route,
             float finishInset,
             float twoStarFuel,
@@ -2146,13 +2443,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             definition.Configure(
                 id,
                 orderIndex,
+                chapterIndex,
+                chapterTitle,
                 title,
                 openingStory,
                 successStory,
+                lessonText,
                 objectiveType,
                 objectiveText,
                 targetCount,
                 targetFuel,
+                targetInteraction,
+                requiredInteractions,
                 route,
                 finishInset,
                 twoStarFuel,
@@ -2722,6 +3024,268 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return SavePrefab(root, PrefabRoot + "/Hazard_CrocodileAmbush.prefab");
         }
 
+        private static GameObject BuildLessonThornStumpPrefab(ModelVisualAsset modelAsset)
+        {
+            Vector2 colliderSize = new Vector2(0.9f, 1.55f);
+            GameObject root = new GameObject("Hazard_SpikyStump");
+            root.tag = "Obstacle";
+            if (HasModel(modelAsset))
+            {
+                CreateModelVisualInstance(
+                    modelAsset,
+                    "Visual_3D",
+                    root.transform,
+                    Vector3.zero,
+                    1.55f,
+                    -colliderSize.y * 0.5f,
+                    2,
+                    Quaternion.Euler(0f, 34f, 0f),
+                    true);
+            }
+            else
+            {
+                CreateHazardPrimitiveVisual("ThornLog", root.transform, colliderSize);
+            }
+
+            BoxCollider2D collider = root.AddComponent<BoxCollider2D>();
+            collider.size = colliderSize;
+            root.AddComponent<ArcadeHazard>();
+            GassyInteractionMarker marker = root.AddComponent<GassyInteractionMarker>();
+            marker.Configure(GassyInteractionType.ThornDodge);
+            root.AddComponent<GassyHazardPassReporter>();
+            root.AddComponent<DestroyBehindTarget>();
+            return SavePrefab(root, PrefabRoot + "/Hazard_SpikyStump.prefab");
+        }
+
+        private static GameObject BuildMudGeyserPrefab(ModelVisualAsset modelAsset)
+        {
+            GameObject root = new GameObject("Hazard_MudGeyser");
+            root.tag = "Obstacle";
+
+            Material mud = CreateColorMaterial(
+                "GG_MudGeyser_Base_3D",
+                new Color(0.29f, 0.16f, 0.075f, 1f),
+                false);
+            Material warning = CreateColorMaterial(
+                "GG_MudGeyser_Warning_3D",
+                new Color(1f, 0.77f, 0.15f, 0.82f),
+                true);
+            CreatePrimitiveVisual(
+                "MudVent_3D",
+                PrimitiveType.Sphere,
+                root.transform,
+                new Vector3(0f, 0f, 0.06f),
+                new Vector3(0.7f, 0.1f, 0.36f),
+                mud,
+                2);
+
+            GameObject warningRoot = new GameObject("WarningRoot");
+            warningRoot.transform.SetParent(root.transform, false);
+            GameObject warningPulse = CreatePrimitiveVisual(
+                "WarningPulse_3D",
+                PrimitiveType.Sphere,
+                warningRoot.transform,
+                new Vector3(0f, 0.08f, -0.04f),
+                new Vector3(0.86f, 0.12f, 0.46f),
+                warning,
+                5);
+            for (int i = 0; i < 3; i++)
+            {
+                CreatePrimitiveVisual(
+                    "WarningBubble_" + (i + 1),
+                    PrimitiveType.Sphere,
+                    warningRoot.transform,
+                    new Vector3(-0.3f + i * 0.3f, 0.22f + (i % 2) * 0.16f, -0.06f),
+                    Vector3.one * (0.13f + i * 0.018f),
+                    warning,
+                    6);
+            }
+
+            GameObject eruptionRoot = new GameObject("EruptionRoot");
+            eruptionRoot.transform.SetParent(root.transform, false);
+            GameObject eruptionColumn = new GameObject("EruptionColumn");
+            eruptionColumn.transform.SetParent(eruptionRoot.transform, false);
+            if (HasModel(modelAsset))
+            {
+                CreateModelVisualInstance(
+                    modelAsset,
+                    "MudGeyser_3D",
+                    eruptionColumn.transform,
+                    Vector3.zero,
+                    2.55f,
+                    0f,
+                    5,
+                    Quaternion.Euler(0f, 28f, 0f),
+                    true);
+            }
+            else
+            {
+                CreatePrimitiveVisual(
+                    "MudColumn_3D",
+                    PrimitiveType.Capsule,
+                    eruptionColumn.transform,
+                    new Vector3(0f, 1.15f, 0f),
+                    new Vector3(0.58f, 1.25f, 0.42f),
+                    mud,
+                    5);
+            }
+
+            BoxCollider2D eruptionHitbox = eruptionRoot.AddComponent<BoxCollider2D>();
+            eruptionHitbox.isTrigger = true;
+            eruptionHitbox.offset = new Vector2(0f, 1.2f);
+            eruptionHitbox.size = new Vector2(0.9f, 2.4f);
+            eruptionRoot.AddComponent<ArcadeHazard>();
+
+            GassyInteractionMarker marker = root.AddComponent<GassyInteractionMarker>();
+            marker.Configure(GassyInteractionType.GeyserDodge);
+            GassyMudGeyserController controller =
+                root.AddComponent<GassyMudGeyserController>();
+            SetObject(controller, "warningRoot", warningRoot);
+            SetObject(controller, "warningPulse", warningPulse.transform);
+            SetObject(controller, "eruptionRoot", eruptionRoot);
+            SetObject(controller, "eruptionColumn", eruptionColumn.transform);
+            SetObject(controller, "eruptionHitbox", eruptionHitbox);
+            SetFloat(controller, "activationDistance", 5.8f);
+            SetFloat(controller, "warningDuration", 0.88f);
+            SetFloat(controller, "eruptionDuration", 0.62f);
+            SetFloat(controller, "passOffset", 0.9f);
+            root.AddComponent<DestroyBehindTarget>();
+
+            warningRoot.SetActive(false);
+            eruptionRoot.SetActive(false);
+            return SavePrefab(root, PrefabRoot + "/Hazard_MudGeyser.prefab");
+        }
+
+        private static GameObject BuildStickySapPrefab(ModelVisualAsset modelAsset)
+        {
+            GameObject root = new GameObject("Hazard_StickySapBlob");
+            GameObject visualRoot = new GameObject("VisualRoot");
+            visualRoot.transform.SetParent(root.transform, false);
+
+            if (HasModel(modelAsset))
+            {
+                CreateModelVisualInstance(
+                    modelAsset,
+                    "StickySap_3D",
+                    visualRoot.transform,
+                    Vector3.zero,
+                    1.15f,
+                    -0.55f,
+                    4,
+                    Quaternion.Euler(0f, 34f, 0f),
+                    true);
+            }
+            else
+            {
+                CreateHazardPrimitiveVisual(
+                    "SapBlob",
+                    visualRoot.transform,
+                    new Vector2(1.05f, 1.1f));
+            }
+
+            BoxCollider2D trigger = root.AddComponent<BoxCollider2D>();
+            trigger.isTrigger = true;
+            trigger.size = new Vector2(1.05f, 1.05f);
+            trigger.offset = new Vector2(0f, -0.02f);
+
+            GassyInteractionMarker marker = root.AddComponent<GassyInteractionMarker>();
+            marker.Configure(GassyInteractionType.SapEscape);
+            GassyStickySapTrap trap = root.AddComponent<GassyStickySapTrap>();
+            SetObject(trap, "trigger", trigger);
+            SetObject(trap, "visualRoot", visualRoot.transform);
+            SetFloat(trap, "forwardSpeedScale", 0.52f);
+            root.AddComponent<DestroyBehindTarget>();
+            return SavePrefab(root, PrefabRoot + "/Hazard_StickySapBlob.prefab");
+        }
+
+        private static GameObject BuildCanopyUpdraftPrefab(MeshyGameAssets meshyAssets)
+        {
+            GameObject root = new GameObject("Interaction_CanopyUpdraft");
+            Material currentMaterial = CreateColorMaterial(
+                "GG_CanopyUpdraft_Current_3D",
+                new Color(0.38f, 0.94f, 0.55f, 0.2f),
+                true);
+            Material leafMaterial = CreateColorMaterial(
+                "GG_CanopyUpdraft_Leaf_3D",
+                new Color(0.42f, 0.82f, 0.24f, 1f),
+                false);
+
+            GameObject glowColumn = CreatePrimitiveVisual(
+                "CurrentGlow_3D",
+                PrimitiveType.Capsule,
+                root.transform,
+                Vector3.zero,
+                new Vector3(0.72f, 2.2f, 0.34f),
+                currentMaterial,
+                2);
+
+            const int leafCount = 6;
+            Transform[] leafVisuals = new Transform[leafCount];
+            ModelVisualAsset[] authoredLeafAssets =
+            {
+                meshyAssets.BroadLeafA,
+                meshyAssets.ForegroundFernA,
+                meshyAssets.ForegroundFernB,
+                meshyAssets.HangingLeavesA
+            };
+            for (int i = 0; i < leafCount; i++)
+            {
+                GameObject leaf = new GameObject("SwirlLeaf_" + (i + 1));
+                leaf.transform.SetParent(root.transform, false);
+                leaf.transform.localPosition = new Vector3(
+                    (i % 2 == 0 ? -0.3f : 0.3f),
+                    -1.85f + i * 0.74f,
+                    -0.08f + (i % 3) * 0.06f);
+                leaf.transform.localRotation =
+                    Quaternion.Euler(10f + i * 7f, i * 47f, -20f + i * 9f);
+                ModelVisualAsset leafAsset =
+                    i == 0 ? FirstAvailableModel(authoredLeafAssets, i) : null;
+                if (HasModel(leafAsset))
+                {
+                    CreateModelVisualInstance(
+                        leafAsset,
+                        "LeafMesh_3D",
+                        leaf.transform,
+                        Vector3.zero,
+                        0.42f,
+                        -0.21f,
+                        5,
+                        Quaternion.Euler(0f, i * 33f, 0f),
+                        true);
+                }
+                else
+                {
+                    CreatePrimitiveVisual(
+                        "LeafMesh_3D",
+                        PrimitiveType.Sphere,
+                        leaf.transform,
+                        Vector3.zero,
+                        new Vector3(0.28f, 0.07f, 0.13f),
+                        leafMaterial,
+                        5);
+                }
+
+                leafVisuals[i] = leaf.transform;
+            }
+
+            BoxCollider2D trigger = root.AddComponent<BoxCollider2D>();
+            trigger.isTrigger = true;
+            trigger.size = new Vector2(1.4f, 4.4f);
+
+            GassyInteractionMarker marker = root.AddComponent<GassyInteractionMarker>();
+            marker.Configure(GassyInteractionType.UpdraftRide);
+            GassyCanopyUpdraft updraft = root.AddComponent<GassyCanopyUpdraft>();
+            SetObject(updraft, "trigger", trigger);
+            SetObject(updraft, "glowColumn", glowColumn.transform);
+            SetObjectArray(updraft, "leafVisuals", leafVisuals);
+            SetFloat(updraft, "liftVelocity", 5.2f);
+            SetFloat(updraft, "riseSpeed", 0.78f);
+            SetFloat(updraft, "swirlSpeed", 1.35f);
+            SetFloat(updraft, "visualHeight", 4.4f);
+            root.AddComponent<DestroyBehindTarget>();
+            return SavePrefab(root, PrefabRoot + "/Interaction_CanopyUpdraft.prefab");
+        }
+
         private static GameObject BuildHazardPrefab(string name, Vector2 colliderSize, ModelVisualAsset modelAsset, float modelHeight, string primitiveKind)
         {
             GameObject root = new GameObject(name);
@@ -2812,8 +3376,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 canvas.transform,
                 out Button[] expeditionButtons,
                 out Text[] expeditionButtonLabels,
+                out Text expeditionChapter,
+                out Button expeditionPreviousChapterButton,
+                out Button expeditionNextChapterButton,
                 out Text expeditionTitle,
                 out Text expeditionObjective,
+                out Text expeditionLesson,
                 out Text expeditionStory,
                 out Text expeditionStatus,
                 out Button expeditionPlayButton,
@@ -2833,8 +3401,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(menu, "expeditionPanel", expeditionPanel);
             SetObjectArray(menu, "expeditionButtons", expeditionButtons);
             SetObjectArray(menu, "expeditionButtonLabels", expeditionButtonLabels);
+            SetObject(menu, "expeditionChapterText", expeditionChapter);
+            SetObject(menu, "expeditionPreviousChapterButton", expeditionPreviousChapterButton);
+            SetObject(menu, "expeditionNextChapterButton", expeditionNextChapterButton);
             SetObject(menu, "expeditionTitleText", expeditionTitle);
             SetObject(menu, "expeditionObjectiveText", expeditionObjective);
+            SetObject(menu, "expeditionLessonText", expeditionLesson);
             SetObject(menu, "expeditionStoryText", expeditionStory);
             SetObject(menu, "expeditionStatusText", expeditionStatus);
             SetObject(menu, "expeditionPlayButton", expeditionPlayButton);
@@ -2848,6 +3420,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             UnityEventTools.AddPersistentListener(expeditionButtons[2].onClick, menu.SelectExpedition3);
             UnityEventTools.AddPersistentListener(expeditionButtons[3].onClick, menu.SelectExpedition4);
             UnityEventTools.AddPersistentListener(expeditionButtons[4].onClick, menu.SelectExpedition5);
+            UnityEventTools.AddPersistentListener(
+                expeditionPreviousChapterButton.onClick,
+                menu.PreviousExpeditionChapter);
+            UnityEventTools.AddPersistentListener(
+                expeditionNextChapterButton.onClick,
+                menu.NextExpeditionChapter);
             UnityEventTools.AddPersistentListener(expeditionPlayButton.onClick, menu.PlaySelectedExpedition);
             SetEnum(expeditionCloseButton.GetComponent<ArcadeButtonFeedback>(), "clickSfx", (int)ArcadeSfxType.UiBack);
             UnityEventTools.AddPersistentListener(expeditionCloseButton.onClick, menu.CloseExpeditions);
@@ -2913,7 +3491,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 canvas.transform,
                 out GameObject expeditionHudRoot,
                 out Text expeditionObjectiveHudText,
-                out Text expeditionRemainingHudText);
+                out Text expeditionRemainingHudText,
+                out GameObject expeditionCoachRoot,
+                out CanvasGroup expeditionCoachGroup,
+                out Text expeditionCoachText);
 
             FartBarUI fartBar = CreateFartBar(canvas.transform, gorilla, sprites);
             TextOverlay milestoneOverlay = CreateMilestoneOverlay(canvas.transform);
@@ -2974,6 +3555,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 out Text expeditionStoryTitle,
                 out Text expeditionStoryBody,
                 out Text expeditionStoryObjective,
+                out Text expeditionStoryLesson,
                 out Button expeditionStoryStartButton);
             CanvasGroupPanel expeditionSuccessPanel = CreateExpeditionSuccessPanel(
                 canvas.transform,
@@ -3001,6 +3583,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(expeditionController, "hudRoot", expeditionHudRoot);
             SetObject(expeditionController, "objectiveText", expeditionObjectiveHudText);
             SetObject(expeditionController, "remainingText", expeditionRemainingHudText);
+            SetObject(expeditionController, "coachRoot", expeditionCoachRoot);
+            SetObject(expeditionController, "coachGroup", expeditionCoachGroup);
+            SetObject(expeditionController, "coachText", expeditionCoachText);
 
             GameObject gameManagerObject = new GameObject("Manager_Game");
             GassyGorillaGameManager gameManager = gameManagerObject.AddComponent<GassyGorillaGameManager>();
@@ -3039,6 +3624,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetObject(gameManager, "expeditionStoryTitleText", expeditionStoryTitle);
             SetObject(gameManager, "expeditionStoryBodyText", expeditionStoryBody);
             SetObject(gameManager, "expeditionStoryObjectiveText", expeditionStoryObjective);
+            SetObject(gameManager, "expeditionStoryLessonText", expeditionStoryLesson);
             SetObject(gameManager, "expeditionSuccessPanel", expeditionSuccessPanel);
             SetObject(gameManager, "expeditionSuccessTitleText", expeditionSuccessTitle);
             SetObject(gameManager, "expeditionSuccessObjectiveText", expeditionSuccessObjective);
@@ -3941,8 +4527,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             Transform parent,
             out Button[] expeditionButtons,
             out Text[] expeditionButtonLabels,
+            out Text expeditionChapter,
+            out Button previousChapterButton,
+            out Button nextChapterButton,
             out Text expeditionTitle,
             out Text expeditionObjective,
+            out Text expeditionLesson,
             out Text expeditionStory,
             out Text expeditionStatus,
             out Button playButton,
@@ -3981,6 +4571,47 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             divider.color = new Color(0.55f, 0.82f, 0.48f, 0.28f);
             SetRect(divider.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-44f, -4f), new Vector2(2f, 390f));
 
+            expeditionChapter = CreateText(
+                "ExpeditionChapter",
+                panel.transform,
+                "CHAPTER 1  HOME FOR DINNER",
+                17,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(0.72f, 1f, 0.68f, 1f));
+            SetRect(
+                expeditionChapter.rectTransform,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(-270f, 190f),
+                new Vector2(330f, 34f));
+
+            previousChapterButton = CreateButton(
+                "PreviousChapterButton",
+                panel.transform,
+                "<",
+                new Color(0.18f, 0.48f, 0.36f, 1f));
+            SetRect(
+                previousChapterButton.GetComponent<RectTransform>(),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(-470f, 190f),
+                new Vector2(42f, 38f));
+            previousChapterButton.GetComponentInChildren<Text>().fontSize = 25;
+
+            nextChapterButton = CreateButton(
+                "NextChapterButton",
+                panel.transform,
+                ">",
+                new Color(0.18f, 0.48f, 0.36f, 1f));
+            SetRect(
+                nextChapterButton.GetComponent<RectTransform>(),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(-70f, 190f),
+                new Vector2(42f, 38f));
+            nextChapterButton.GetComponentInChildren<Text>().fontSize = 25;
+
             expeditionButtons = new Button[5];
             expeditionButtonLabels = new Text[5];
             for (int i = 0; i < expeditionButtons.Length; i++)
@@ -3996,10 +4627,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     levelButton.GetComponent<RectTransform>(),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f),
-                    new Vector2(-270f, 150f - i * 68f),
-                    new Vector2(390f, 56f));
+                    new Vector2(-270f, 132f - i * 65f),
+                    new Vector2(390f, 53f));
                 Text label = levelButton.GetComponentInChildren<Text>();
-                label.fontSize = 19;
+                label.fontSize = 18;
                 label.resizeTextMinSize = 13;
                 label.alignment = TextAnchor.MiddleLeft;
                 label.rectTransform.offsetMin = new Vector2(18f, 0f);
@@ -4016,7 +4647,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 FontStyle.Bold,
                 TextAnchor.MiddleLeft,
                 new Color(1f, 0.93f, 0.5f, 1f));
-            SetRect(expeditionTitle.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, 150f), new Vector2(430f, 48f));
+            SetRect(expeditionTitle.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, 156f), new Vector2(430f, 48f));
 
             expeditionObjective = CreateText(
                 "ExpeditionObjective",
@@ -4026,7 +4657,22 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 FontStyle.Bold,
                 TextAnchor.UpperLeft,
                 new Color(0.66f, 1f, 0.68f, 1f));
-            SetRect(expeditionObjective.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, 89f), new Vector2(430f, 70f));
+            SetRect(expeditionObjective.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, 100f), new Vector2(430f, 58f));
+
+            expeditionLesson = CreateText(
+                "ExpeditionLesson",
+                panel.transform,
+                "LESSON",
+                16,
+                FontStyle.Bold,
+                TextAnchor.UpperLeft,
+                new Color(0.82f, 0.94f, 1f, 1f));
+            SetRect(
+                expeditionLesson.rectTransform,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(235f, 49f),
+                new Vector2(430f, 54f));
 
             expeditionStory = CreateText(
                 "ExpeditionStory",
@@ -4036,7 +4682,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 FontStyle.Normal,
                 TextAnchor.UpperLeft,
                 new Color(0.94f, 0.98f, 0.91f, 1f));
-            SetRect(expeditionStory.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, -5f), new Vector2(430f, 126f));
+            SetRect(expeditionStory.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, -37f), new Vector2(430f, 104f));
 
             expeditionStatus = CreateText(
                 "ExpeditionStatus",
@@ -4046,14 +4692,16 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 FontStyle.Bold,
                 TextAnchor.MiddleLeft,
                 new Color(0.72f, 0.9f, 1f, 1f));
-            SetRect(expeditionStatus.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, -102f), new Vector2(430f, 34f));
+            expeditionStatus.resizeTextForBestFit = true;
+            expeditionStatus.resizeTextMinSize = 13;
+            SetRect(expeditionStatus.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, -113f), new Vector2(430f, 34f));
 
             playButton = CreateButton(
                 "StartExpeditionButton",
                 panel.transform,
                 "START EXPEDITION",
                 new Color(0.9f, 0.55f, 0.13f, 1f));
-            SetRect(playButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, -160f), new Vector2(300f, 56f));
+            SetRect(playButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(235f, -166f), new Vector2(300f, 54f));
             playButton.GetComponentInChildren<Text>().fontSize = 21;
 
             closeButton = CreateButton(
@@ -4071,7 +4719,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             Transform parent,
             out GameObject root,
             out Text objectiveText,
-            out Text remainingText)
+            out Text remainingText,
+            out GameObject coachRoot,
+            out CanvasGroup coachGroup,
+            out Text coachText)
         {
             root = new GameObject("UI_ExpeditionHUD");
             root.transform.SetParent(parent, false);
@@ -4105,6 +4756,43 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 new Color(1f, 0.86f, 0.35f, 1f));
             SetRect(remainingText.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-88f, 0f), new Vector2(164f, -8f));
             root.SetActive(false);
+
+            coachRoot = new GameObject("UI_ExpeditionCoach");
+            coachRoot.transform.SetParent(parent, false);
+            RectTransform coachRect = coachRoot.AddComponent<RectTransform>();
+            SetRect(
+                coachRect,
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -159f),
+                new Vector2(580f, 46f));
+            Image coachImage = coachRoot.AddComponent<Image>();
+            coachImage.sprite = UiPanelSprite();
+            coachImage.type = Image.Type.Sliced;
+            coachImage.color = new Color(0.08f, 0.2f, 0.13f, 0.94f);
+            Outline coachOutline = coachRoot.AddComponent<Outline>();
+            coachOutline.effectColor = new Color(0.9f, 0.68f, 0.2f, 0.5f);
+            coachOutline.effectDistance = new Vector2(1f, -1f);
+            coachGroup = coachRoot.AddComponent<CanvasGroup>();
+            coachGroup.alpha = 0f;
+
+            coachText = CreateText(
+                "CoachText",
+                coachRoot.transform,
+                "LESSON",
+                17,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(0.94f, 1f, 0.79f, 1f));
+            SetRect(
+                coachText.rectTransform,
+                Vector2.zero,
+                Vector2.one,
+                Vector2.zero,
+                new Vector2(-24f, -8f));
+            coachText.resizeTextForBestFit = true;
+            coachText.resizeTextMinSize = 13;
+            coachRoot.SetActive(false);
         }
 
         private static CanvasGroupPanel CreateExpeditionStoryPanel(
@@ -4112,12 +4800,13 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             out Text title,
             out Text story,
             out Text objective,
+            out Text lesson,
             out Button startButton)
         {
             GameObject panel = new GameObject("UI_ExpeditionStoryPanel");
             panel.transform.SetParent(parent, false);
             RectTransform rect = panel.AddComponent<RectTransform>();
-            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(780f, 430f));
+            SetRect(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(780f, 470f));
             Image image = panel.AddComponent<Image>();
             image.sprite = UiPanelSprite();
             image.type = Image.Type.Sliced;
@@ -4160,7 +4849,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 FontStyle.Normal,
                 TextAnchor.MiddleCenter,
                 new Color(0.95f, 0.99f, 0.92f, 1f));
-            SetRect(story.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 34f), new Vector2(650f, 126f));
+            SetRect(story.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 48f), new Vector2(650f, 112f));
 
             objective = CreateText(
                 "Objective",
@@ -4170,14 +4859,31 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 FontStyle.Bold,
                 TextAnchor.MiddleCenter,
                 new Color(0.7f, 1f, 0.65f, 1f));
-            SetRect(objective.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -64f), new Vector2(650f, 60f));
+            SetRect(objective.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -46f), new Vector2(650f, 54f));
+
+            lesson = CreateText(
+                "Lesson",
+                panel.transform,
+                "LESSON",
+                17,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                new Color(0.76f, 0.9f, 1f, 1f));
+            SetRect(
+                lesson.rectTransform,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0f, -104f),
+                new Vector2(650f, 48f));
+            lesson.resizeTextForBestFit = true;
+            lesson.resizeTextMinSize = 14;
 
             startButton = CreateButton(
                 "StartButton",
                 panel.transform,
                 "START",
                 new Color(0.9f, 0.55f, 0.13f, 1f));
-            SetRect(startButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 44f), new Vector2(240f, 58f));
+            SetRect(startButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 42f), new Vector2(240f, 58f));
             return panelController;
         }
 
@@ -6697,6 +7403,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             public GameObject SpikyStumpObstacle;
             public GameObject MudGeyserObstacle;
             public GameObject StickySapObstacle;
+            public GameObject CanopyUpdraft;
             public GameObject CrocodileAmbush;
             public GameObject AudioManager;
             public GameObject PickupSpawner;

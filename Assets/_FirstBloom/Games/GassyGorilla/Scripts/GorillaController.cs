@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using FirstBloom.ArcadeFramework.Accessibility;
 using FirstBloom.ArcadeFramework.Audio;
 using FirstBloom.ArcadeFramework.Camera;
 using FirstBloom.ArcadeFramework.Core;
@@ -94,6 +95,8 @@ namespace FirstBloom.Games.GassyGorilla
         private bool crocodileQaAutoHit;
         private float targetDifficultySpeedMultiplier = 1f;
         private float currentDifficultySpeedMultiplier = 1f;
+        private bool isStickySap;
+        private float stickyForwardSpeedScale = 1f;
 
         public event Action<float, float> FuelChanged;
         public event Action Boosted;
@@ -115,6 +118,7 @@ namespace FirstBloom.Games.GassyGorilla
         public float VineReleaseSafetyDuration { get { return vineReleaseSafetyDuration; } }
         public float VineReleaseDangerY { get { return vineReleaseDangerY; } }
         public float VineReleaseSafetyClearance { get { return vineReleaseSafetyClearance; } }
+        public bool IsStickySap { get { return isStickySap; } }
         public bool ShouldAutoDodgeCrocodileForQa { get { return crocodileQaMode && crocodileQaAutoDodge; } }
         public bool ShouldAutoHitCrocodileForQa { get { return crocodileQaMode && crocodileQaAutoHit; } }
         public Vector3 CurrentVineGripPosition
@@ -184,6 +188,11 @@ namespace FirstBloom.Games.GassyGorilla
                     bufferedBoostUntil = 0f;
                     ReleaseFromVine();
                 }
+                else if (isStickySap)
+                {
+                    bufferedBoostUntil = 0f;
+                    TryEscapeStickySap();
+                }
                 else
                 {
                     bool boosted = TryFartBoost();
@@ -221,7 +230,8 @@ namespace FirstBloom.Games.GassyGorilla
                 difficultySpeedResponse * Time.fixedDeltaTime);
 
             Vector2 velocity = GetVelocity();
-            float targetForwardSpeed = EffectiveForwardSpeed;
+            float targetForwardSpeed = EffectiveForwardSpeed *
+                (isStickySap ? stickyForwardSpeedScale : 1f);
             if (forwardKickTimer > 0f)
             {
                 forwardKickTimer -= Time.fixedDeltaTime;
@@ -247,6 +257,11 @@ namespace FirstBloom.Games.GassyGorilla
 
         public bool TryFartBoost()
         {
+            if (isStickySap)
+            {
+                return TryEscapeStickySap();
+            }
+
             if (Time.time < nextBoostTime)
             {
                 return false;
@@ -312,6 +327,110 @@ namespace FirstBloom.Games.GassyGorilla
             return true;
         }
 
+        public bool TryEnterStickySap(float forwardSpeedScale)
+        {
+            if (isStickySap || IsSwinging || !inputEnabled ||
+                gameManager == null || !gameManager.IsRunActive)
+            {
+                return false;
+            }
+
+            isStickySap = true;
+            stickyForwardSpeedScale = Mathf.Clamp(forwardSpeedScale, 0.4f, 0.65f);
+            bufferedBoostUntil = 0f;
+
+            Vector2 velocity = GetVelocity();
+            velocity.x = Mathf.Min(
+                velocity.x,
+                EffectiveForwardSpeed * stickyForwardSpeedScale);
+            SetVelocity(velocity);
+
+            PlaySquash(new Vector3(0.88f, 1.1f, 1f), 0.16f);
+            if (cameraFollow != null)
+            {
+                cameraFollow.Shake(0.06f, 0.12f);
+            }
+
+            GassyRunEvents.RaiseInteractionStarted(GassyInteractionType.SapEscape);
+            return true;
+        }
+
+        public bool TryEscapeStickySap()
+        {
+            if (!isStickySap || gameManager == null || !gameManager.IsRunActive)
+            {
+                return false;
+            }
+
+            isStickySap = false;
+            stickyForwardSpeedScale = 1f;
+            nextBoostTime = Time.time + boostCooldown;
+            forwardKickTimer = boostForwardKickDuration;
+
+            Vector2 velocity = GetVelocity();
+            velocity.x = Mathf.Max(velocity.x, EffectiveForwardSpeed + boostForwardKick);
+            velocity.y = Mathf.Clamp(
+                Mathf.Max(velocity.y, fartBoostVelocity * 0.9f),
+                -maxVerticalSpeed,
+                maxVerticalSpeed);
+            SetVelocity(velocity);
+
+            if (ArcadeAudioManager.Instance != null)
+            {
+                ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.SapPop);
+            }
+
+            if (fartPuff != null)
+            {
+                fartPuff.Play();
+            }
+
+            if (fartShockwaveBurst != null)
+            {
+                fartShockwaveBurst.Play();
+            }
+
+            ShowFartCloudBurst();
+            PlaySpeedLines();
+            PlaySquash(new Vector3(1.16f, 0.88f, 1f), 0.14f);
+
+            if (cameraFollow != null)
+            {
+                cameraFollow.Shake(0.1f, 0.16f);
+                cameraFollow.AddActionLookahead(new Vector2(0.4f, 0.18f), 0.14f);
+            }
+
+            ArcadeHaptics.Play(ArcadeHapticType.Light);
+            GassyRunEvents.RaiseInteractionCompleted(GassyInteractionType.SapEscape);
+            return true;
+        }
+
+        public bool ApplyUpdraft(float liftVelocity)
+        {
+            if (IsSwinging || isStickySap || gameManager == null || !gameManager.IsRunActive)
+            {
+                return false;
+            }
+
+            Vector2 velocity = GetVelocity();
+            velocity.x = Mathf.Max(velocity.x, EffectiveForwardSpeed);
+            velocity.y = Mathf.Clamp(
+                Mathf.Max(velocity.y, liftVelocity),
+                -maxVerticalSpeed,
+                maxVerticalSpeed);
+            SetVelocity(velocity);
+
+            GassyRunEvents.RaiseInteractionStarted(GassyInteractionType.UpdraftRide);
+            PlaySpeedLines();
+            PlaySquash(new Vector3(1.04f, 1.1f, 1f), 0.16f);
+            if (cameraFollow != null)
+            {
+                cameraFollow.AddActionLookahead(new Vector2(0.16f, 0.3f), 0.18f);
+            }
+
+            return true;
+        }
+
         private void HandleBoostFailed()
         {
             if (Time.time < nextFailedBoostFeedbackTime)
@@ -357,7 +476,8 @@ namespace FirstBloom.Games.GassyGorilla
 
         public bool TryAttachToVine(VineSwingTrigger vine)
         {
-            if (vine == null || IsSwinging || gameManager == null || !gameManager.IsRunActive)
+            if (vine == null || IsSwinging || isStickySap ||
+                gameManager == null || !gameManager.IsRunActive)
             {
                 return false;
             }
@@ -488,6 +608,7 @@ namespace FirstBloom.Games.GassyGorilla
 
         public void PrepareForIntro()
         {
+            ClearTransientInteractions();
             ResetSwingState();
             IsSwinging = false;
             inputEnabled = false;
@@ -505,6 +626,7 @@ namespace FirstBloom.Games.GassyGorilla
 
         public void BeginRun()
         {
+            ClearTransientInteractions();
             ResetSwingState();
             IsSwinging = false;
             inputEnabled = true;
@@ -529,6 +651,7 @@ namespace FirstBloom.Games.GassyGorilla
                 return;
             }
 
+            ClearTransientInteractions();
             ResetSwingState();
             IsSwinging = false;
             inputEnabled = false;
@@ -545,6 +668,7 @@ namespace FirstBloom.Games.GassyGorilla
                 return;
             }
 
+            ClearTransientInteractions();
             ResetSwingState();
             IsSwinging = false;
             inputEnabled = true;
@@ -563,6 +687,7 @@ namespace FirstBloom.Games.GassyGorilla
 
         public void StopForGameOver(float minimumRestY)
         {
+            ClearTransientInteractions();
             ResetSwingState();
             IsSwinging = false;
             inputEnabled = false;
@@ -695,6 +820,12 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 cameraFollow.SetFollowSmoothingMultiplier(1f);
             }
+        }
+
+        private void ClearTransientInteractions()
+        {
+            isStickySap = false;
+            stickyForwardSpeedScale = 1f;
         }
 
         private static float EaseOutBack(float t, float overshoot)

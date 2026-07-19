@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using FirstBloom.ArcadeFramework.Audio;
 using FirstBloom.ArcadeFramework.Camera;
+using FirstBloom.ArcadeFramework.Core;
 using FirstBloom.ArcadeFramework.Scoring;
 using FirstBloom.ArcadeFramework.Spawning;
 using FirstBloom.ArcadeFramework.UI;
@@ -31,6 +32,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string CrocodileAmbushPrefabPath = GameRoot + "/Prefabs/Hazard_CrocodileAmbush.prefab";
         private const string CrocodileAmbushChunkPath = GameRoot + "/ScriptableObjects/RunChunks/GG_RunChunk_CrocodileAmbush.asset";
         private const string SwingableVinePrefabPath = GameRoot + "/Prefabs/Vine_Swingable.prefab";
+        private const string MudGeyserPrefabPath = GameRoot + "/Prefabs/Hazard_MudGeyser.prefab";
+        private const string StickySapPrefabPath = GameRoot + "/Prefabs/Hazard_StickySapBlob.prefab";
+        private const string CanopyUpdraftPrefabPath = GameRoot + "/Prefabs/Interaction_CanopyUpdraft.prefab";
         private const string RunChunkFolder = GameRoot + "/ScriptableObjects/RunChunks";
         private const string DifficultyProfilePath = GameRoot + "/ScriptableObjects/GG_RunDifficulty.asset";
         private const string AudioLibraryPath = GameRoot + "/ScriptableObjects/GG_AudioLibrary.asset";
@@ -54,7 +58,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 throw new InvalidOperationException("Gassy Gorilla scene validation failed:\n - " + string.Join("\n - ", errors));
             }
 
-            Debug.Log("Gassy Gorilla scene validation passed. Endless Run, five finite story Expeditions, pause, accessibility, Jungle Badges, authored routes, textured 3D world art, audio, camera, and game loop are wired.");
+            Debug.Log("Gassy Gorilla scene validation passed. Endless Run, ten finite story Expeditions across two chapters, lesson interactions, pause, accessibility, Jungle Badges, authored routes, textured 3D world art, audio, camera, and game loop are wired.");
         }
 
         private static void ValidateRequiredAssets(List<string> errors)
@@ -145,6 +149,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ValidateSfxFamilyCount(library, ArcadeSfxType.Boost, 6, errors);
             ValidateSfxFamilyCount(library, ArcadeSfxType.BoostFailed, 3, errors);
             ValidateSfxFamilyCount(library, ArcadeSfxType.Pickup, 4, errors);
+            ValidateSfxFamilyCount(library, ArcadeSfxType.GeyserWarning, 2, errors);
+            ValidateSfxFamilyCount(library, ArcadeSfxType.GeyserBurst, 2, errors);
+            ValidateSfxFamilyCount(library, ArcadeSfxType.SapCatch, 2, errors);
+            ValidateSfxFamilyCount(library, ArcadeSfxType.SapPop, 3, errors);
+            ValidateSfxFamilyCount(library, ArcadeSfxType.Updraft, 2, errors);
 
             if (library.TryGetEntry(ArcadeSfxType.Boost, out ArcadeSfxEntry boost))
             {
@@ -182,6 +191,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ValidateSfxFamilyGain(library, ArcadeSfxType.UiClick, 0.35f, errors);
             ValidateSfxFamilyGain(library, ArcadeSfxType.UiBack, 0.33f, errors);
             ValidateSfxFamilyGain(library, ArcadeSfxType.UiError, 0.37f, errors);
+            ValidateSfxFamilyGain(library, ArcadeSfxType.GeyserWarning, 0.41f, errors);
+            ValidateSfxFamilyGain(library, ArcadeSfxType.GeyserBurst, 0.57f, errors);
+            ValidateSfxFamilyGain(library, ArcadeSfxType.SapCatch, 0.41f, errors);
+            ValidateSfxFamilyGain(library, ArcadeSfxType.SapPop, 0.49f, errors);
+            ValidateSfxFamilyGain(library, ArcadeSfxType.Updraft, 0.45f, errors);
 
             ArcadeSfxEntry[] entries = library.SoundEffects;
             if (entries != null)
@@ -503,6 +517,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireSceneObject("ExpeditionsButton", errors);
             RequireSceneObject("UI_ExpeditionSelectPanel", errors);
             RequireSceneObject("StartExpeditionButton", errors);
+            RequireSceneObject("ExpeditionChapter", errors);
+            RequireSceneObject("PreviousChapterButton", errors);
+            RequireSceneObject("NextChapterButton", errors);
+            RequireSceneObject("ExpeditionLesson", errors);
             RequireSceneObject("BadgesButton", errors);
             RequireSceneObject("UI_JungleBadgesPanel", errors);
             for (int i = 1; i <= 5; i++)
@@ -512,7 +530,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             if (menuController != null && !menuController.IsExpeditionUiConfigured)
             {
-                errors.Add("Main menu Expedition selector is not fully wired to its five-level catalog.");
+                errors.Add("Main menu Expedition selector is not fully wired to its ten-level, two-chapter catalog.");
             }
 
             if (menuController != null && !menuController.IsBadgeUiConfigured)
@@ -637,7 +655,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireSceneObject("World_KeyLight_Game", errors);
             RequireSceneObject("Manager_ExpeditionRun", errors);
             RequireSceneObject("UI_ExpeditionHUD", errors);
+            RequireSceneObject("UI_ExpeditionCoach", errors);
             RequireSceneObject("UI_ExpeditionStoryPanel", errors);
+            RequireSceneObject("Lesson", errors);
             RequireSceneObject("UI_ExpeditionSuccessPanel", errors);
             RequireSceneObject("ExpeditionFinishLine_3D", errors);
             RequireSceneObject("PauseButton", errors);
@@ -1071,8 +1091,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 GameRoot + "/Prefabs/Vine_Obstacle.prefab",
                 GameRoot + "/Prefabs/Obstacle_TreeTrunk.prefab",
                 GameRoot + "/Prefabs/Hazard_SpikyStump.prefab",
-                GameRoot + "/Prefabs/Hazard_MudGeyser.prefab",
-                GameRoot + "/Prefabs/Hazard_StickySapBlob.prefab",
+                MudGeyserPrefabPath,
+                StickySapPrefabPath,
+                CanopyUpdraftPrefabPath,
                 CrocodileAmbushPrefabPath
             };
 
@@ -1102,6 +1123,77 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             ValidateTopAnchoredVinePrefab(errors);
             ValidateCrocodileAmbushPrefab(errors);
+            ValidateLessonInteractionPrefabs(errors);
+        }
+
+        private static void ValidateLessonInteractionPrefabs(List<string> errors)
+        {
+            GameObject stump = AssetDatabase.LoadAssetAtPath<GameObject>(
+                GameRoot + "/Prefabs/Hazard_SpikyStump.prefab");
+            if (stump != null)
+            {
+                GassyInteractionMarker marker = stump.GetComponent<GassyInteractionMarker>();
+                GassyHazardPassReporter reporter = stump.GetComponent<GassyHazardPassReporter>();
+                if (marker == null ||
+                    marker.InteractionType != GassyInteractionType.ThornDodge ||
+                    reporter == null ||
+                    !reporter.IsConfigured)
+                {
+                    errors.Add("Thorn stump must report a successful pass as the Thorn Dodge lesson.");
+                }
+            }
+
+            GameObject geyser = AssetDatabase.LoadAssetAtPath<GameObject>(MudGeyserPrefabPath);
+            if (geyser != null)
+            {
+                GassyMudGeyserController controller =
+                    geyser.GetComponent<GassyMudGeyserController>();
+                if (controller == null || !controller.IsConfigured)
+                {
+                    errors.Add("Mud geyser is missing its warning, eruption, hitbox, or lesson wiring.");
+                }
+                else
+                {
+                    if (controller.WarningDuration < 0.8f ||
+                        controller.ActivationDistance < 4.5f ||
+                        controller.EruptionDuration < 0.45f)
+                    {
+                        errors.Add("Mud geyser no longer guarantees its readable reaction window.");
+                    }
+
+                    if (controller.EruptionHitbox == null ||
+                        !controller.EruptionHitbox.isTrigger)
+                    {
+                        errors.Add("Mud geyser eruption must use a trigger hitbox.");
+                    }
+                }
+            }
+
+            GameObject sap = AssetDatabase.LoadAssetAtPath<GameObject>(StickySapPrefabPath);
+            if (sap != null)
+            {
+                GassyStickySapTrap trap = sap.GetComponent<GassyStickySapTrap>();
+                if (trap == null || !trap.IsConfigured ||
+                    sap.GetComponentInChildren<ArcadeHazard>(true) != null)
+                {
+                    errors.Add("Sticky sap must be a configured, recoverable trigger with no fatal hazard component.");
+                }
+            }
+
+            GameObject updraft = AssetDatabase.LoadAssetAtPath<GameObject>(
+                CanopyUpdraftPrefabPath);
+            if (updraft != null)
+            {
+                GassyCanopyUpdraft current = updraft.GetComponent<GassyCanopyUpdraft>();
+                if (current == null || !current.IsConfigured ||
+                    current.LeafCount < 5 ||
+                    current.LeafCount > 8 ||
+                    current.LiftVelocity < 4f ||
+                    current.LiftVelocity > 6.2f)
+                {
+                    errors.Add("Canopy updraft is missing its bounded lift, trigger, glow, or mobile leaf budget.");
+                }
+            }
         }
 
         private static void ValidateCrocodileAmbushChunk(RunChunkDirector runDirector, List<string> errors)

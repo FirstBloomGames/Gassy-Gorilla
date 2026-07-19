@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9868dc9a516eae45932b63c1c76328d, type: 3}
+  m_Name: GG_Expedition_06_StumpJump
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
+  expeditionId: stump-jump
+  orderIndex: 5
+  chapterIndex: 1
+  chapterTitle: Dessert Rescue
+  displayTitle: Stump Jump
+  openingStory: The dessert cart has rolled straight through a thorn-stump patch.
+    The tracks continue, but so do several extremely pointy opinions.
+  successStory: Three stumps cleared and no heroic bottom punctures. The dessert
+    trail is fresh.
+  lessonText: Read the low thorn silhouette and tap shortly before contact.
+  objectiveType: 5
+  objectiveText: Clear 3 thorn stumps, then reach the finish.
+  targetCount: 3
+  targetFuel: 0
+  targetInteraction: 1
+  requiredInteractions: 0
+  route:
+  - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: c4e16c1a69c9b8d48945a3461fbe1db5, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: 809dec23084db734e92c4ae9d586a6a9, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: c4e16c1a69c9b8d48945a3461fbe1db5, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  finishInset: 1.2
+  twoStarFuel: 44
+  threeStarFuel: 70

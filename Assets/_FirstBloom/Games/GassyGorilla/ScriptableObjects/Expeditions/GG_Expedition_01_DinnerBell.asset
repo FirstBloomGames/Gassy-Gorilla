@@ -14,15 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
   expeditionId: dinner-bell
   orderIndex: 0
+  chapterIndex: 0
+  chapterTitle: Home for Dinner
   displayTitle: The Dinner Bell
   openingStory: The dinner bell is echoing through the canopy. Gassy Gorilla has
     one heroic shortcut and absolutely no time for dignity.
   successStory: The banyan gate! Dinner is still warm, and the jungle now knows exactly
     who is coming through.
+  lessonText: Tap anywhere to boost. Reach the glowing finish gate.
   objectiveType: 0
   objectiveText: Reach the old banyan gate.
   targetCount: 0
   targetFuel: 0
+  targetInteraction: 0
+  requiredInteractions: 0
   route:
   - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
   - {fileID: 11400000, guid: e1769fe815c237648a5f242a652287ba, type: 2}

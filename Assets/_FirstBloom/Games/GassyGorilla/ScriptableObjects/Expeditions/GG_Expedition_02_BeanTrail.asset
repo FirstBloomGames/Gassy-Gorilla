@@ -14,15 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
   expeditionId: bean-trail
   orderIndex: 1
+  chapterIndex: 0
+  chapterTitle: Home for Dinner
   displayTitle: The Bean Trail
   openingStory: A suspiciously perfect trail of beans leads deeper into the jungle.
     Heroism says hurry home. Hunger has filed an appeal.
   successStory: Every bean accounted for. Mostly. Gassy Gorilla feels magnificently
     overqualified for the road ahead.
+  lessonText: Food refills fart fuel. Follow the snack trail.
   objectiveType: 1
   objectiveText: Collect 10 foods, then reach the finish.
   targetCount: 10
   targetFuel: 0
+  targetInteraction: 0
+  requiredInteractions: 0
   route:
   - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
   - {fileID: 11400000, guid: ab175b48be1537d4a84c3d19c2bf5c68, type: 2}

@@ -1,6 +1,6 @@
 # Gassy Gorilla Dessert Rescue Implementation Plan
 
-**Status:** In progress
+**Status:** Complete
 
 **Design:** `docs/superpowers/specs/2026-07-18-gassy-gorilla-dessert-rescue-expeditions-design.md`
 
@@ -67,3 +67,12 @@
 3. Confirm warning/error-level browser log count is zero.
 4. Update the Game Bible with the approved chapter contract and verified release evidence.
 5. Commit source, fast-forward production `main`, publish an immutable `gh-pages` payload, activate its exact hash, and verify the public URL.
+
+## Verification Record
+
+- The authoritative Unity builder and ten-level scene validator passed.
+- Runtime geometry validation passed 18 gameplay prefabs and 19 authored run chunks.
+- The focused Play Mode campaign verifier completed all ten Expeditions, all four new interaction events, ordered unlocks, stars, and existing-save restoration.
+- The commercial foundation regression verifier passed pause, settings, accessibility, audio pause mix, badges, and persistence.
+- The optimized WebGL build completed at 15.47 MiB for the served `Build` payload.
+- Browser QA passed desktop, 844x390 phone landscape, and the 390x844 portrait rotation gate with zero warning- or error-level logs.

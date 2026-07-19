@@ -22,8 +22,12 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private CanvasGroupPanel expeditionPanel;
         [SerializeField] private Button[] expeditionButtons;
         [SerializeField] private Text[] expeditionButtonLabels;
+        [SerializeField] private Text expeditionChapterText;
+        [SerializeField] private Button expeditionPreviousChapterButton;
+        [SerializeField] private Button expeditionNextChapterButton;
         [SerializeField] private Text expeditionTitleText;
         [SerializeField] private Text expeditionObjectiveText;
+        [SerializeField] private Text expeditionLessonText;
         [SerializeField] private Text expeditionStoryText;
         [SerializeField] private Text expeditionStatusText;
         [SerializeField] private Button expeditionPlayButton;
@@ -35,6 +39,7 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private Text badgeButtonText;
 
         private int selectedExpeditionIndex;
+        private int selectedChapterIndex;
 
         public GassyExpeditionCatalog ExpeditionCatalog { get { return expeditionCatalog; } }
         public bool IsExpeditionUiConfigured
@@ -42,13 +47,19 @@ namespace FirstBloom.Games.GassyGorilla
             get
             {
                 int count = expeditionCatalog != null ? expeditionCatalog.Count : 0;
-                return count == 5 &&
+                return count == GassyExpeditionCatalog.VersionOneExpeditionCount &&
                     mainActionsRoot != null &&
                     expeditionPanel != null &&
-                    expeditionButtons != null && expeditionButtons.Length == count &&
-                    expeditionButtonLabels != null && expeditionButtonLabels.Length == count &&
+                    expeditionButtons != null &&
+                    expeditionButtons.Length == GassyExpeditionCatalog.LevelsPerChapter &&
+                    expeditionButtonLabels != null &&
+                    expeditionButtonLabels.Length == GassyExpeditionCatalog.LevelsPerChapter &&
+                    expeditionChapterText != null &&
+                    expeditionPreviousChapterButton != null &&
+                    expeditionNextChapterButton != null &&
                     expeditionTitleText != null &&
                     expeditionObjectiveText != null &&
+                    expeditionLessonText != null &&
                     expeditionStoryText != null &&
                     expeditionStatusText != null &&
                     expeditionPlayButton != null;
@@ -89,6 +100,12 @@ namespace FirstBloom.Games.GassyGorilla
             SetMainActionsVisible(true);
             SelectInitialExpedition();
             RefreshExpeditionPanel();
+
+            if (ArcadeRunSession.Mode == ArcadeRunMode.Finite && expeditionPanel != null)
+            {
+                expeditionPanel.Show();
+                SetMainActionsVisible(false);
+            }
         }
 
         public void Play()
@@ -136,6 +153,16 @@ namespace FirstBloom.Games.GassyGorilla
         public void SelectExpedition3() { SelectExpedition(2); }
         public void SelectExpedition4() { SelectExpedition(3); }
         public void SelectExpedition5() { SelectExpedition(4); }
+
+        public void PreviousExpeditionChapter()
+        {
+            ChangeExpeditionChapter(-1);
+        }
+
+        public void NextExpeditionChapter()
+        {
+            ChangeExpeditionChapter(1);
+        }
 
         public void PlaySelectedExpedition()
         {
@@ -224,6 +251,7 @@ namespace FirstBloom.Games.GassyGorilla
             if (expeditionCatalog == null || expeditionCatalog.Count == 0)
             {
                 selectedExpeditionIndex = 0;
+                selectedChapterIndex = 0;
                 return;
             }
 
@@ -234,6 +262,8 @@ namespace FirstBloom.Games.GassyGorilla
                 if (selectedIndex >= 0)
                 {
                     selectedExpeditionIndex = selectedIndex;
+                    selectedChapterIndex =
+                        selectedIndex / GassyExpeditionCatalog.LevelsPerChapter;
                     return;
                 }
             }
@@ -242,18 +272,44 @@ namespace FirstBloom.Games.GassyGorilla
                 GassyExpeditionProgressStore.GetHighestUnlockedIndex(),
                 0,
                 expeditionCatalog.Count - 1);
+            selectedChapterIndex =
+                selectedExpeditionIndex / GassyExpeditionCatalog.LevelsPerChapter;
         }
 
-        private void SelectExpedition(int index)
+        private void SelectExpedition(int slotIndex)
         {
             NotifyUserGesture();
-            if (expeditionCatalog == null || expeditionCatalog.GetByIndex(index) == null ||
-                !GassyExpeditionProgressStore.IsUnlocked(index))
+            int index = selectedChapterIndex * GassyExpeditionCatalog.LevelsPerChapter +
+                slotIndex;
+            if (expeditionCatalog == null || expeditionCatalog.GetByIndex(index) == null)
             {
                 return;
             }
 
             selectedExpeditionIndex = index;
+            RefreshExpeditionPanel();
+        }
+
+        private void ChangeExpeditionChapter(int direction)
+        {
+            NotifyUserGesture();
+            if (expeditionCatalog == null || expeditionCatalog.ChapterCount <= 0)
+            {
+                return;
+            }
+
+            int chapter = Mathf.Clamp(
+                selectedChapterIndex + direction,
+                0,
+                expeditionCatalog.ChapterCount - 1);
+            if (chapter == selectedChapterIndex)
+            {
+                return;
+            }
+
+            selectedChapterIndex = chapter;
+            selectedExpeditionIndex =
+                selectedChapterIndex * GassyExpeditionCatalog.LevelsPerChapter;
             RefreshExpeditionPanel();
         }
 
@@ -264,28 +320,82 @@ namespace FirstBloom.Games.GassyGorilla
                 return;
             }
 
-            for (int i = 0; i < expeditionCatalog.Count; i++)
+            selectedChapterIndex = Mathf.Clamp(
+                selectedChapterIndex,
+                0,
+                Mathf.Max(0, expeditionCatalog.ChapterCount - 1));
+            int chapterStart =
+                selectedChapterIndex * GassyExpeditionCatalog.LevelsPerChapter;
+            int chapterEnd = Mathf.Min(
+                chapterStart + GassyExpeditionCatalog.LevelsPerChapter,
+                expeditionCatalog.Count);
+            if (selectedExpeditionIndex < chapterStart ||
+                selectedExpeditionIndex >= chapterEnd)
             {
-                GassyExpeditionDefinition definition = expeditionCatalog.GetByIndex(i);
-                bool unlocked = GassyExpeditionProgressStore.IsUnlocked(i);
+                selectedExpeditionIndex = chapterStart;
+            }
+
+            for (int slotIndex = 0;
+                slotIndex < GassyExpeditionCatalog.LevelsPerChapter;
+                slotIndex++)
+            {
+                int expeditionIndex = chapterStart + slotIndex;
+                GassyExpeditionDefinition definition =
+                    expeditionCatalog.GetByIndex(expeditionIndex);
+                bool unlocked = definition != null &&
+                    GassyExpeditionProgressStore.IsUnlocked(expeditionIndex);
                 int stars = definition != null
                     ? GassyExpeditionProgressStore.GetBestStars(definition.ExpeditionId)
                     : 0;
 
-                if (expeditionButtons != null && i < expeditionButtons.Length && expeditionButtons[i] != null)
+                if (expeditionButtons != null &&
+                    slotIndex < expeditionButtons.Length &&
+                    expeditionButtons[slotIndex] != null)
                 {
-                    expeditionButtons[i].interactable = unlocked;
+                    Button button = expeditionButtons[slotIndex];
+                    button.gameObject.SetActive(definition != null);
+                    button.interactable = definition != null;
+                    Image buttonImage = button.GetComponent<Image>();
+                    if (buttonImage != null)
+                    {
+                        buttonImage.color = expeditionIndex == selectedExpeditionIndex
+                            ? new Color(0.88f, 0.56f, 0.14f, 1f)
+                            : (unlocked
+                                ? new Color(0.22f, 0.52f, 0.27f, 1f)
+                                : new Color(0.12f, 0.23f, 0.2f, 1f));
+                    }
                 }
 
-                if (expeditionButtonLabels != null && i < expeditionButtonLabels.Length &&
-                    expeditionButtonLabels[i] != null && definition != null)
+                if (expeditionButtonLabels != null &&
+                    slotIndex < expeditionButtonLabels.Length &&
+                    expeditionButtonLabels[slotIndex] != null &&
+                    definition != null)
                 {
                     string result = !unlocked
                         ? "LOCKED"
                         : (stars > 0 ? new string('*', stars) : "NEW");
-                    expeditionButtonLabels[i].text = (i + 1) + "  " +
+                    expeditionButtonLabels[slotIndex].text =
+                        (expeditionIndex + 1) + "  " +
                         definition.DisplayTitle.ToUpperInvariant() + "   " + result;
                 }
+            }
+
+            if (expeditionChapterText != null)
+            {
+                expeditionChapterText.text =
+                    "CHAPTER " + (selectedChapterIndex + 1) + "  " +
+                    expeditionCatalog.GetChapterTitle(selectedChapterIndex).ToUpperInvariant();
+            }
+
+            if (expeditionPreviousChapterButton != null)
+            {
+                expeditionPreviousChapterButton.interactable = selectedChapterIndex > 0;
+            }
+
+            if (expeditionNextChapterButton != null)
+            {
+                expeditionNextChapterButton.interactable =
+                    selectedChapterIndex < expeditionCatalog.ChapterCount - 1;
             }
 
             GassyExpeditionDefinition selected = expeditionCatalog.GetByIndex(selectedExpeditionIndex);
@@ -305,6 +415,13 @@ namespace FirstBloom.Games.GassyGorilla
                 expeditionObjectiveText.text = selected != null ? "OBJECTIVE  " + selected.ObjectiveText : string.Empty;
             }
 
+            if (expeditionLessonText != null)
+            {
+                expeditionLessonText.text = selected != null
+                    ? "LESSON  " + selected.LessonText
+                    : string.Empty;
+            }
+
             if (expeditionStoryText != null)
             {
                 expeditionStoryText.text = selected != null ? selected.OpeningStory : string.Empty;
@@ -313,7 +430,7 @@ namespace FirstBloom.Games.GassyGorilla
             if (expeditionStatusText != null)
             {
                 expeditionStatusText.text = !selectedUnlocked
-                    ? "LOCKED"
+                    ? "COMPLETE THE PREVIOUS EXPEDITION TO UNLOCK"
                     : (selectedStars > 0 ? "BEST  " + selectedStars + " / 3 STARS" : "NOT YET COMPLETED");
             }
 

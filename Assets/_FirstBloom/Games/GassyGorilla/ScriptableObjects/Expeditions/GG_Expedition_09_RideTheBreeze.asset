@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9868dc9a516eae45932b63c1c76328d, type: 3}
+  m_Name: GG_Expedition_09_RideTheBreeze
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
+  expeditionId: ride-the-breeze
+  orderIndex: 8
+  chapterIndex: 1
+  chapterTitle: Dessert Rescue
+  displayTitle: Ride The Breeze
+  openingStory: Spiraling leaves reveal a canopy shortcut. The breeze smells like
+    mango, victory, and a questionable amount of gorilla.
+  successStory: Three currents caught. Free lift is officially Gassy Gorilla's second-favorite
+    kind of propulsion.
+  lessonText: Drift into a green leaf spiral for free lift and conserve your fart
+    fuel.
+  objectiveType: 5
+  objectiveText: Ride 3 canopy updrafts, then reach the finish.
+  targetCount: 3
+  targetFuel: 0
+  targetInteraction: 8
+  requiredInteractions: 0
+  route:
+  - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
+  - {fileID: 11400000, guid: 7903a5ef0a7ef014e811d5f30a1cdb0f, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: 7903a5ef0a7ef014e811d5f30a1cdb0f, type: 2}
+  - {fileID: 11400000, guid: ab175b48be1537d4a84c3d19c2bf5c68, type: 2}
+  - {fileID: 11400000, guid: 7903a5ef0a7ef014e811d5f30a1cdb0f, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  finishInset: 1.2
+  twoStarFuel: 48
+  threeStarFuel: 74
