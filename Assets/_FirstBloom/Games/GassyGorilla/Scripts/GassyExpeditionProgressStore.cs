@@ -17,6 +17,34 @@ namespace FirstBloom.Games.GassyGorilla
             return index >= 0 && index <= GetHighestUnlockedIndex();
         }
 
+        public static int ReconcileUnlocks(GassyExpeditionCatalog catalog)
+        {
+            if (catalog == null || catalog.Count <= 0)
+            {
+                return 0;
+            }
+
+            int storedIndex = GetHighestUnlockedIndex();
+            int unlockedIndex = UnityEngine.Mathf.Clamp(storedIndex, 0, catalog.Count - 1);
+            while (unlockedIndex < catalog.Count - 1)
+            {
+                GassyExpeditionDefinition current = catalog.GetByIndex(unlockedIndex);
+                if (current == null || GetBestStars(current.ExpeditionId) <= 0)
+                {
+                    break;
+                }
+
+                unlockedIndex++;
+            }
+
+            if (unlockedIndex > storedIndex)
+            {
+                ArcadeProgressStore.SetInt(UnlockKey, unlockedIndex);
+            }
+
+            return unlockedIndex;
+        }
+
         public static int GetBestStars(string expeditionId)
         {
             return string.IsNullOrWhiteSpace(expeditionId)

@@ -50,6 +50,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             BackupProgress(catalog);
             GassyExpeditionProgressStore.ResetAll(catalog);
+            VerifyLegacyChapterUnlockMigration(catalog);
+            GassyExpeditionProgressStore.ResetAll(catalog);
             SessionState.SetBool(ActiveKey, true);
             SessionState.SetInt(IndexKey, 0);
             SessionState.SetInt(PhaseKey, 0);
@@ -60,6 +62,25 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             EditorSceneManager.OpenScene(GameScenePath, OpenSceneMode.Single);
             Debug.Log("Gassy Gorilla ten-Expedition Play Mode verification started.");
             EditorApplication.isPlaying = true;
+        }
+
+        private static void VerifyLegacyChapterUnlockMigration(GassyExpeditionCatalog catalog)
+        {
+            int legacyFinalIndex = GassyExpeditionCatalog.LevelsPerChapter - 1;
+            GassyExpeditionDefinition legacyFinal = catalog.GetByIndex(legacyFinalIndex);
+            Require(legacyFinal != null, "Legacy campaign finale is missing.");
+
+            PlayerPrefs.SetInt(UnlockKey, legacyFinalIndex);
+            PlayerPrefs.SetInt(StarsPrefix + legacyFinal.ExpeditionId, 3);
+            PlayerPrefs.Save();
+
+            int migratedIndex = GassyExpeditionProgressStore.ReconcileUnlocks(catalog);
+            Require(
+                migratedIndex == GassyExpeditionCatalog.LevelsPerChapter,
+                "A completed five-Expedition save did not unlock Dessert Rescue.");
+            Require(
+                GassyExpeditionProgressStore.IsUnlocked(GassyExpeditionCatalog.LevelsPerChapter),
+                "Dessert Rescue remained locked after legacy save migration.");
         }
 
         private static void Tick()

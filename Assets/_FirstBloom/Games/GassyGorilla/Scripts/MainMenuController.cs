@@ -89,6 +89,7 @@ namespace FirstBloom.Games.GassyGorilla
                 Time.timeScale = 1f;
             }
 
+            GassyExpeditionProgressStore.ReconcileUnlocks(expeditionCatalog);
             if (TryLaunchWebQaExpedition())
             {
                 return;
