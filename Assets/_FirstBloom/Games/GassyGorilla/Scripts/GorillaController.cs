@@ -97,12 +97,28 @@ namespace FirstBloom.Games.GassyGorilla
         private float currentDifficultySpeedMultiplier = 1f;
         private bool isStickySap;
         private float stickyForwardSpeedScale = 1f;
+        private GassyStickySapTrap currentStickySap;
+        private Transform stickySapAnchor;
+        private Vector3 stickySapEntryPosition;
+        private float stickySapCapturedAt;
+        private bool isBounceBloomCompressing;
+        private GassyBounceBloom currentBounceBloom;
+        private Transform bounceBloomAnchor;
+        private Vector3 bounceBloomEntryPosition;
+        private float bounceBloomStartedAt;
+        private float bounceBloomCompressionDuration;
+        private float bounceBloomLiftVelocity;
+        private float bounceBloomForwardKick;
 
         public event Action<float, float> FuelChanged;
         public event Action Boosted;
         public event Action BoostFailed;
         public event Action VineGrabbed;
         public event Action VineReleased;
+        public event Action StickySapCaught;
+        public event Action StickySapEscaped;
+        public event Action BounceBloomCompressed;
+        public event Action BounceBloomLaunched;
 
         public float CurrentFuel { get; private set; }
         public float MaxFuel { get { return maxFuel; } }
@@ -119,6 +135,14 @@ namespace FirstBloom.Games.GassyGorilla
         public float VineReleaseDangerY { get { return vineReleaseDangerY; } }
         public float VineReleaseSafetyClearance { get { return vineReleaseSafetyClearance; } }
         public bool IsStickySap { get { return isStickySap; } }
+        public bool IsBounceBloomCompressing
+        {
+            get { return isBounceBloomCompressing; }
+        }
+        public bool IsAnchoredLessonInteraction
+        {
+            get { return isStickySap || isBounceBloomCompressing; }
+        }
         public bool ShouldAutoDodgeCrocodileForQa { get { return crocodileQaMode && crocodileQaAutoDodge; } }
         public bool ShouldAutoHitCrocodileForQa { get { return crocodileQaMode && crocodileQaAutoHit; } }
         public Vector3 CurrentVineGripPosition
@@ -166,12 +190,20 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 UpdateSwingPose();
             }
+            else if (isStickySap)
+            {
+                UpdateStickySapPose();
+            }
+            else if (isBounceBloomCompressing)
+            {
+                UpdateBounceBloomPose();
+            }
             else if (passiveRefillPerSecond > 0f)
             {
                 RefillFuel(passiveRefillPerSecond * Time.deltaTime, false);
             }
 
-            if (!IsSwinging)
+            if (!IsSwinging && !isStickySap && !isBounceBloomCompressing)
             {
                 UpdateAirTilt();
             }
@@ -193,6 +225,10 @@ namespace FirstBloom.Games.GassyGorilla
                     bufferedBoostUntil = 0f;
                     TryEscapeStickySap();
                 }
+                else if (isBounceBloomCompressing)
+                {
+                    bufferedBoostUntil = 0f;
+                }
                 else
                 {
                     bool boosted = TryFartBoost();
@@ -203,7 +239,10 @@ namespace FirstBloom.Games.GassyGorilla
                 }
             }
 
-            if (!IsSwinging && bufferedBoostUntil > 0f)
+            if (!IsSwinging &&
+                !isStickySap &&
+                !isBounceBloomCompressing &&
+                bufferedBoostUntil > 0f)
             {
                 if (Time.time > bufferedBoostUntil)
                 {
@@ -219,7 +258,11 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void FixedUpdate()
         {
-            if (gameManager == null || !gameManager.IsRunActive || IsSwinging)
+            if (gameManager == null ||
+                !gameManager.IsRunActive ||
+                IsSwinging ||
+                isStickySap ||
+                isBounceBloomCompressing)
             {
                 return;
             }
@@ -260,6 +303,11 @@ namespace FirstBloom.Games.GassyGorilla
             if (isStickySap)
             {
                 return TryEscapeStickySap();
+            }
+
+            if (isBounceBloomCompressing)
+            {
+                return false;
             }
 
             if (Time.time < nextBoostTime)
@@ -329,29 +377,54 @@ namespace FirstBloom.Games.GassyGorilla
 
         public bool TryEnterStickySap(float forwardSpeedScale)
         {
-            if (isStickySap || IsSwinging || !inputEnabled ||
-                gameManager == null || !gameManager.IsRunActive)
+            return TryEnterStickySap(null, null, forwardSpeedScale);
+        }
+
+        public bool TryEnterStickySap(
+            GassyStickySapTrap trap,
+            Transform anchor,
+            float forwardSpeedScale)
+        {
+            if (isStickySap ||
+                isBounceBloomCompressing ||
+                IsSwinging ||
+                !inputEnabled ||
+                gameManager == null ||
+                !gameManager.IsRunActive)
             {
                 return false;
             }
 
             isStickySap = true;
-            stickyForwardSpeedScale = Mathf.Clamp(forwardSpeedScale, 0.4f, 0.65f);
+            currentStickySap = trap;
+            stickySapAnchor = anchor;
+            stickySapEntryPosition = transform.position;
+            stickySapCapturedAt = Time.time;
+            stickyForwardSpeedScale =
+                Mathf.Clamp(forwardSpeedScale, 0.4f, 0.65f);
             bufferedBoostUntil = 0f;
 
-            Vector2 velocity = GetVelocity();
-            velocity.x = Mathf.Min(
-                velocity.x,
-                EffectiveForwardSpeed * stickyForwardSpeedScale);
-            SetVelocity(velocity);
+            body.bodyType = RigidbodyType2D.Kinematic;
+            body.gravityScale = 0f;
+            SetVelocity(Vector2.zero);
+            transform.rotation = Quaternion.identity;
 
-            PlaySquash(new Vector3(0.88f, 1.1f, 1f), 0.16f);
+            PlaySquash(new Vector3(1.08f, 0.84f, 1.04f), 0.18f);
             if (cameraFollow != null)
             {
-                cameraFollow.Shake(0.06f, 0.12f);
+                cameraFollow.Shake(0.08f, 0.14f);
+                cameraFollow.AddActionLookahead(
+                    new Vector2(0.08f, -0.08f),
+                    0.1f);
             }
 
-            GassyRunEvents.RaiseInteractionStarted(GassyInteractionType.SapEscape);
+            GassyRunEvents.RaiseInteractionStarted(
+                GassyInteractionType.SapEscape);
+            if (StickySapCaught != null)
+            {
+                StickySapCaught.Invoke();
+            }
+
             return true;
         }
 
@@ -362,19 +435,28 @@ namespace FirstBloom.Games.GassyGorilla
                 return false;
             }
 
+            GassyStickySapTrap releasedTrap = currentStickySap;
+            Vector2 releasePosition = transform.position;
             isStickySap = false;
+            currentStickySap = null;
+            stickySapAnchor = null;
             stickyForwardSpeedScale = 1f;
             nextBoostTime = Time.time + boostCooldown;
             forwardKickTimer = boostForwardKickDuration;
 
-            Vector2 velocity = GetVelocity();
-            velocity.x = Mathf.Max(velocity.x, EffectiveForwardSpeed + boostForwardKick);
-            velocity.y = Mathf.Clamp(
-                Mathf.Max(velocity.y, fartBoostVelocity * 0.9f),
-                -maxVerticalSpeed,
-                maxVerticalSpeed);
+            body.position = releasePosition;
+            body.bodyType = RigidbodyType2D.Dynamic;
+            body.gravityScale = originalGravityScale;
+            body.position = releasePosition;
+            Vector2 velocity = new Vector2(
+                EffectiveForwardSpeed + boostForwardKick,
+                Mathf.Clamp(
+                    fartBoostVelocity * 0.94f,
+                    -maxVerticalSpeed,
+                    maxVerticalSpeed));
             SetVelocity(velocity);
 
+            releasedTrap?.NotifyEscaped(this);
             if (ArcadeAudioManager.Instance != null)
             {
                 ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.SapPop);
@@ -392,22 +474,54 @@ namespace FirstBloom.Games.GassyGorilla
 
             ShowFartCloudBurst();
             PlaySpeedLines();
-            PlaySquash(new Vector3(1.16f, 0.88f, 1f), 0.14f);
+            PlaySquash(new Vector3(1.2f, 0.84f, 1.05f), 0.16f);
 
             if (cameraFollow != null)
             {
-                cameraFollow.Shake(0.1f, 0.16f);
-                cameraFollow.AddActionLookahead(new Vector2(0.4f, 0.18f), 0.14f);
+                cameraFollow.Shake(0.13f, 0.18f);
+                cameraFollow.AddActionLookahead(
+                    new Vector2(0.56f, 0.26f),
+                    0.18f);
             }
 
-            ArcadeHaptics.Play(ArcadeHapticType.Light);
-            GassyRunEvents.RaiseInteractionCompleted(GassyInteractionType.SapEscape);
+            ArcadeHaptics.Play(ArcadeHapticType.Medium);
+            GassyRunEvents.RaiseInteractionCompleted(
+                GassyInteractionType.SapEscape);
+            if (StickySapEscaped != null)
+            {
+                StickySapEscaped.Invoke();
+            }
+
             return true;
+        }
+
+        public void CancelStickySap(GassyStickySapTrap trap)
+        {
+            if (!isStickySap ||
+                (currentStickySap != null && currentStickySap != trap))
+            {
+                return;
+            }
+
+            isStickySap = false;
+            currentStickySap = null;
+            stickySapAnchor = null;
+            stickyForwardSpeedScale = 1f;
+            if (body != null && gameManager != null && gameManager.IsRunActive)
+            {
+                body.bodyType = RigidbodyType2D.Dynamic;
+                body.gravityScale = originalGravityScale;
+                SetVelocity(new Vector2(EffectiveForwardSpeed, 0f));
+            }
         }
 
         public bool ApplyUpdraft(float liftVelocity)
         {
-            if (IsSwinging || isStickySap || gameManager == null || !gameManager.IsRunActive)
+            if (IsSwinging ||
+                isStickySap ||
+                isBounceBloomCompressing ||
+                gameManager == null ||
+                !gameManager.IsRunActive)
             {
                 return false;
             }
@@ -431,16 +545,144 @@ namespace FirstBloom.Games.GassyGorilla
             return true;
         }
 
-        public bool ApplyBounceBloom(
+        public bool TryBeginBounceBloom(
+            GassyBounceBloom bloom,
+            Transform anchor,
+            float compressionDuration,
             float liftVelocity,
             float forwardVelocity)
         {
-            if (IsSwinging || isStickySap || !inputEnabled ||
-                gameManager == null || !gameManager.IsRunActive)
+            if (bloom == null ||
+                anchor == null ||
+                IsSwinging ||
+                isStickySap ||
+                isBounceBloomCompressing ||
+                !inputEnabled ||
+                gameManager == null ||
+                !gameManager.IsRunActive)
             {
                 return false;
             }
 
+            isBounceBloomCompressing = true;
+            currentBounceBloom = bloom;
+            bounceBloomAnchor = anchor;
+            bounceBloomEntryPosition = transform.position;
+            bounceBloomStartedAt = Time.time;
+            bounceBloomCompressionDuration =
+                Mathf.Clamp(compressionDuration, 0.1f, 0.3f);
+            bounceBloomLiftVelocity = liftVelocity;
+            bounceBloomForwardKick = forwardVelocity;
+            bufferedBoostUntil = 0f;
+
+            body.bodyType = RigidbodyType2D.Kinematic;
+            body.gravityScale = 0f;
+            SetVelocity(Vector2.zero);
+            transform.rotation = Quaternion.identity;
+
+            GassyRunEvents.RaiseInteractionStarted(
+                GassyInteractionType.BounceBloom);
+            PlaySquash(new Vector3(1.14f, 0.8f, 1.06f), 0.16f);
+            if (cameraFollow != null)
+            {
+                cameraFollow.Shake(0.06f, 0.12f);
+                cameraFollow.AddActionLookahead(
+                    new Vector2(0.12f, -0.06f),
+                    0.1f);
+            }
+
+            if (BounceBloomCompressed != null)
+            {
+                BounceBloomCompressed.Invoke();
+            }
+
+            return true;
+        }
+
+        public bool ApplyBounceBloom(
+            float liftVelocity,
+            float forwardVelocity)
+        {
+            if (IsSwinging ||
+                isStickySap ||
+                isBounceBloomCompressing ||
+                !inputEnabled ||
+                gameManager == null ||
+                !gameManager.IsRunActive)
+            {
+                return false;
+            }
+
+            GassyRunEvents.RaiseInteractionStarted(
+                GassyInteractionType.BounceBloom);
+            ApplyBounceBloomLaunch(liftVelocity, forwardVelocity);
+            return true;
+        }
+
+#if UNITY_EDITOR
+        public bool CompleteBounceBloomForQa()
+        {
+            if (!isBounceBloomCompressing)
+            {
+                return false;
+            }
+
+            CompleteBounceBloomLaunch();
+            return true;
+        }
+#endif
+
+        public void CancelBounceBloom(GassyBounceBloom bloom)
+        {
+            if (!isBounceBloomCompressing ||
+                (currentBounceBloom != null && currentBounceBloom != bloom))
+            {
+                return;
+            }
+
+            isBounceBloomCompressing = false;
+            currentBounceBloom = null;
+            bounceBloomAnchor = null;
+            if (body != null && gameManager != null && gameManager.IsRunActive)
+            {
+                body.bodyType = RigidbodyType2D.Dynamic;
+                body.gravityScale = originalGravityScale;
+                SetVelocity(new Vector2(EffectiveForwardSpeed, 0f));
+            }
+        }
+
+        private void CompleteBounceBloomLaunch()
+        {
+            if (!isBounceBloomCompressing)
+            {
+                return;
+            }
+
+            GassyBounceBloom launchedBloom = currentBounceBloom;
+            Vector2 releasePosition = transform.position;
+            float liftVelocity = bounceBloomLiftVelocity;
+            float forwardVelocity = bounceBloomForwardKick;
+            isBounceBloomCompressing = false;
+            currentBounceBloom = null;
+            bounceBloomAnchor = null;
+            nextBoostTime = Time.time + Mathf.Min(boostCooldown, 0.12f);
+
+            body.position = releasePosition;
+            body.bodyType = RigidbodyType2D.Dynamic;
+            body.gravityScale = originalGravityScale;
+            body.position = releasePosition;
+            ApplyBounceBloomLaunch(liftVelocity, forwardVelocity);
+            launchedBloom?.NotifyLaunched(this);
+            if (BounceBloomLaunched != null)
+            {
+                BounceBloomLaunched.Invoke();
+            }
+        }
+
+        private void ApplyBounceBloomLaunch(
+            float liftVelocity,
+            float forwardVelocity)
+        {
             Vector2 velocity = GetVelocity();
             velocity.x = Mathf.Max(
                 velocity.x,
@@ -450,21 +692,18 @@ namespace FirstBloom.Games.GassyGorilla
                 -maxVerticalSpeed,
                 maxVerticalSpeed);
             SetVelocity(velocity);
-            forwardKickTimer = Mathf.Max(forwardKickTimer, 0.16f);
+            forwardKickTimer = Mathf.Max(forwardKickTimer, 0.2f);
             bufferedBoostUntil = 0f;
 
-            GassyRunEvents.RaiseInteractionStarted(
-                GassyInteractionType.BounceBloom);
             PlaySpeedLines();
-            PlaySquash(new Vector3(1.12f, 0.86f, 1.03f), 0.14f);
+            PlaySquash(new Vector3(1.2f, 0.82f, 1.06f), 0.16f);
             if (cameraFollow != null)
             {
+                cameraFollow.Shake(0.12f, 0.18f);
                 cameraFollow.AddActionLookahead(
-                    new Vector2(0.28f, 0.34f),
-                    0.2f);
+                    new Vector2(0.48f, 0.48f),
+                    0.22f);
             }
-
-            return true;
         }
 
         private void HandleBoostFailed()
@@ -512,7 +751,10 @@ namespace FirstBloom.Games.GassyGorilla
 
         public bool TryAttachToVine(VineSwingTrigger vine)
         {
-            if (vine == null || IsSwinging || isStickySap ||
+            if (vine == null ||
+                IsSwinging ||
+                isStickySap ||
+                isBounceBloomCompressing ||
                 gameManager == null || !gameManager.IsRunActive)
             {
                 return false;
@@ -860,8 +1102,76 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void ClearTransientInteractions()
         {
+            if (currentStickySap != null)
+            {
+                currentStickySap.NotifyCancelled(this);
+            }
+
+            if (currentBounceBloom != null)
+            {
+                currentBounceBloom.NotifyCancelled(this);
+            }
+
             isStickySap = false;
             stickyForwardSpeedScale = 1f;
+            currentStickySap = null;
+            stickySapAnchor = null;
+            isBounceBloomCompressing = false;
+            currentBounceBloom = null;
+            bounceBloomAnchor = null;
+        }
+
+        private void UpdateStickySapPose()
+        {
+            Vector3 anchorPosition = stickySapAnchor != null
+                ? stickySapAnchor.position
+                : stickySapEntryPosition;
+            float normalized = Mathf.Clamp01(
+                (Time.time - stickySapCapturedAt) / 0.14f);
+            float eased = Mathf.SmoothStep(0f, 1f, normalized);
+            Vector3 targetPosition = Vector3.Lerp(
+                stickySapEntryPosition,
+                anchorPosition,
+                eased);
+            float motionScale =
+                ArcadeAccessibilitySettings.ReducedMotion ? 0.25f : 1f;
+            targetPosition.y +=
+                Mathf.Sin(normalized * Mathf.PI) * 0.09f * motionScale;
+            if (normalized >= 1f)
+            {
+                targetPosition.y += Mathf.Sin(
+                    (Time.time - stickySapCapturedAt) * 5.4f) *
+                    0.035f *
+                    motionScale;
+            }
+
+            targetPosition.z = transform.position.z;
+            body.position = targetPosition;
+            transform.position = targetPosition;
+        }
+
+        private void UpdateBounceBloomPose()
+        {
+            Vector3 anchorPosition = bounceBloomAnchor != null
+                ? bounceBloomAnchor.position
+                : bounceBloomEntryPosition;
+            float normalized = Mathf.Clamp01(
+                (Time.time - bounceBloomStartedAt) /
+                Mathf.Max(0.01f, bounceBloomCompressionDuration));
+            float eased = Mathf.SmoothStep(0f, 1f, normalized);
+            Vector3 targetPosition = Vector3.Lerp(
+                bounceBloomEntryPosition,
+                anchorPosition,
+                eased);
+            targetPosition.y += Mathf.Sin(normalized * Mathf.PI) * 0.08f;
+            targetPosition.z = transform.position.z;
+            body.position = targetPosition;
+            transform.position = targetPosition;
+
+            if (normalized >= 1f)
+            {
+                CompleteBounceBloomLaunch();
+            }
         }
 
         private static float EaseOutBack(float t, float overshoot)

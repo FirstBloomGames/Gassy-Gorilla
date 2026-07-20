@@ -18,14 +18,14 @@ MonoBehaviour:
   chapterTitle: Dessert Rescue
   displayTitle: Sap Happens
   theme: 0
-  openingStory: A syrupy trail leads through two enormous blobs of jungle sap. It
-    smells like dessert and behaves like glue.
-  successStory: Two magnificent pops later, Gassy Gorilla is free, flying, and only
-    slightly shinier.
-  lessonText: Sap slows you but cannot defeat you. Tap once to pop free without spending
-    fuel.
-  failureHintText: Sap is recoverable. Tap once after contact to pop free without
-    spending fuel.
+  openingStory: Amber sap has pooled across mossy branches. It smells like dessert,
+    looks suspiciously inviting, and grabs with both hands.
+  successStory: Two heroic rip-frees later, Gassy Gorilla is flying again, wearing
+    a glossy amber souvenir.
+  lessonText: Land on the amber sap snare. Once it grabs you, tap once to rip free
+    without spending fuel.
+  failureHintText: Follow the descending food arc, land in the amber sap, then tap
+    once after it grabs you.
   openingVoice:
     clip: {fileID: 0}
     subtitle: 
@@ -47,7 +47,7 @@ MonoBehaviour:
     volume: 0.9
     textDuration: 2.4
   objectiveType: 5
-  objectiveText: Pop free from 2 sap traps, then finish.
+  objectiveText: Get caught and rip free from 2 sap snares, then finish.
   targetCount: 2
   targetFuel: 0
   targetInteraction: 4

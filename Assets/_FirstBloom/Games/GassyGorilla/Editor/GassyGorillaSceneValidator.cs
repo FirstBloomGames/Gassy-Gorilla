@@ -1187,8 +1187,39 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 {
                     errors.Add("Sticky sap must be a configured, recoverable trigger with no fatal hazard component.");
                 }
-            }
+                else
+                {
+                    BoxCollider2D sapTrigger = trap.Trigger as BoxCollider2D;
+                    if (sapTrigger == null ||
+                        sapTrigger.size.x < 2.5f ||
+                        sapTrigger.size.y < 1.15f ||
+                        trap.SupportRoot == null ||
+                        trap.CatchAnchor == null ||
+                        trap.StrandCount < 5 ||
+                        trap.SupportRoot.Find("RootedBranchShelf_3D") == null)
+                    {
+                        errors.Add("Sticky sap must provide a broad supported catch bed, magnetic anchor, and at least five elastic strands.");
+                    }
 
+                    Transform sapSurface =
+                        sap.transform.Find("StickySapSurface_3D");
+                    Bounds sapBounds;
+                    if (sapSurface == null ||
+                        sapSurface.Find("AmberSapPoolCore_3D") == null ||
+                        sapSurface.Find("AmberPuddleLobe_3") == null ||
+                        sapSurface.Find("SapBubble_2") == null ||
+                        sapSurface.Find("HangingSapDrip_1") == null ||
+                        !TryCalculateVisualBounds(
+                            sapSurface.gameObject,
+                            out sapBounds) ||
+                        sapBounds.size.x < 2.9f ||
+                        sapBounds.size.y < 0.45f ||
+                        sapBounds.size.y > 1.15f)
+                    {
+                        errors.Add("Sticky sap must remain a low, wide, bubbling 3D amber bed with visible drips instead of a floating dot or mushroom stack.");
+                    }
+                }
+            }
             GameObject updraft = AssetDatabase.LoadAssetAtPath<GameObject>(
                 CanopyUpdraftPrefabPath);
             if (updraft != null)
@@ -1210,18 +1241,168 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             {
                 GassyBounceBloom bloom =
                     bounceBloom.GetComponent<GassyBounceBloom>();
-                if (bloom == null ||
-                    !bloom.IsConfigured ||
-                    bloom.LiftVelocity < 5f ||
-                    bloom.LiftVelocity > 6.8f ||
-                    bloom.ForwardKick < 0f ||
-                    bloom.ForwardKick > 1.5f)
+                if (bloom == null || !bloom.IsConfigured)
                 {
-                    errors.Add("Bounce bloom is missing its bounded launch, trigger, leaf animation, or lesson wiring.");
+                    errors.Add("Moonleaf is missing its supported platform, staged compression, contact anchor, burst, or lesson wiring.");
+                }
+                else
+                {
+                    BoxCollider2D bloomTrigger =
+                        bloom.Trigger as BoxCollider2D;
+                    if (bloomTrigger == null ||
+                        bloomTrigger.size.x < 3.4f ||
+                        bloomTrigger.size.y < 1.35f ||
+                        bloom.SupportRoot == null ||
+                        bloom.SpringRoot == null ||
+                        bloom.SpringRoot.localPosition.y < 0.4f ||
+                        bloom.SupportRoot.localPosition.y >=
+                            bloom.SpringRoot.localPosition.y ||
+                        bloom.SpringRoot.Find("GiantMoonleafBlade_3D") == null ||
+                        bloom.SpringRoot.Find("MoonleafCentralVein_3D") == null ||
+                        bloom.SpringRoot.Find(
+                            "LaunchLeaf_1/TexturedSpringLobe_3D") == null ||
+                        bloom.SpringRoot.Find(
+                            "LaunchLeaf_2/TexturedSpringLobe_3D") == null ||
+                        bloom.SpringRoot.Find(
+                            "LaunchLeaf_3/TexturedSpringLobe_3D") == null ||
+                        bloom.ContactAnchor == null ||
+                        bloom.ContactAnchor.parent != bloom.SpringRoot ||
+                        bloom.ContactAnchor.localPosition.y < 0.5f ||
+                        bloom.CompressionDuration < 0.12f ||
+                        bloom.CompressionDuration > 0.22f ||
+                        bloom.LiftVelocity < 6.5f ||
+                        bloom.LiftVelocity > 7.6f ||
+                        bloom.ForwardKick < 0.8f ||
+                        bloom.ForwardKick > 1.8f)
+                    {
+                        errors.Add("Moonleaf must keep its raised hero-scale landing zone, readable squash beat, and bounded premium rebound.");
+                    }
+
+                    Bounds leafBounds;
+                    if (bloom.SpringRoot == null ||
+                        !TryCalculateVisualBounds(
+                            bloom.SpringRoot.gameObject,
+                            out leafBounds) ||
+                        leafBounds.size.x < 3.2f ||
+                        leafBounds.size.y < 0.55f)
+                    {
+                        errors.Add("Moonleaf foliage must remain a giant readable 3D platform rather than a cluster of tiny dots.");
+                    }
+                }
+
+                RunChunkDefinition bloomChunk =
+                    AssetDatabase.LoadAssetAtPath<RunChunkDefinition>(
+                        RunChunkFolder + "/GG_RunChunk_BounceBloom.asset");
+                bool hasRaisedMoonleaf = false;
+                if (bloomChunk != null)
+                {
+                    RunChunkSpawn[] spawns = bloomChunk.Spawns;
+                    for (int i = 0; i < spawns.Length; i++)
+                    {
+                        RunChunkSpawn spawn = spawns[i];
+                        if (spawn != null &&
+                            spawn.Prefab == bounceBloom &&
+                            spawn.LocalPosition.y >= 0.55f)
+                        {
+                            hasRaisedMoonleaf = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!hasRaisedMoonleaf)
+                {
+                    errors.Add(
+                        "Bounce Bloom route must raise the moonleaf clearly above the waterline.");
                 }
             }
         }
 
+        private static bool TryCalculateVisualBounds(
+            GameObject root,
+            out Bounds bounds)
+        {
+            bounds = new Bounds();
+            if (root == null)
+            {
+                return false;
+            }
+
+            bool initialized = false;
+            Matrix4x4 worldToRoot = root.transform.worldToLocalMatrix;
+            MeshFilter[] meshFilters =
+                root.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter filter = meshFilters[i];
+                if (filter == null || filter.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                Matrix4x4 toRoot =
+                    worldToRoot * filter.transform.localToWorldMatrix;
+                EncapsulateTransformedBounds(
+                    filter.sharedMesh.bounds,
+                    toRoot,
+                    ref bounds,
+                    ref initialized);
+            }
+
+            SkinnedMeshRenderer[] skinnedRenderers =
+                root.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                SkinnedMeshRenderer renderer = skinnedRenderers[i];
+                if (renderer == null || renderer.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                Matrix4x4 toRoot =
+                    worldToRoot * renderer.transform.localToWorldMatrix;
+                EncapsulateTransformedBounds(
+                    renderer.localBounds,
+                    toRoot,
+                    ref bounds,
+                    ref initialized);
+            }
+
+            return initialized;
+        }
+
+        private static void EncapsulateTransformedBounds(
+            Bounds source,
+            Matrix4x4 matrix,
+            ref Bounds destination,
+            ref bool initialized)
+        {
+            Vector3 min = source.min;
+            Vector3 max = source.max;
+            for (int x = 0; x <= 1; x++)
+            {
+                for (int y = 0; y <= 1; y++)
+                {
+                    for (int z = 0; z <= 1; z++)
+                    {
+                        Vector3 corner = new Vector3(
+                            x == 0 ? min.x : max.x,
+                            y == 0 ? min.y : max.y,
+                            z == 0 ? min.z : max.z);
+                        Vector3 point = matrix.MultiplyPoint3x4(corner);
+                        if (!initialized)
+                        {
+                            destination = new Bounds(point, Vector3.zero);
+                            initialized = true;
+                        }
+                        else
+                        {
+                            destination.Encapsulate(point);
+                        }
+                    }
+                }
+            }
+        }
         private static void ValidateCrocodileAmbushChunk(RunChunkDirector runDirector, List<string> errors)
         {
             RunChunkDefinition definition = AssetDatabase.LoadAssetAtPath<RunChunkDefinition>(CrocodileAmbushChunkPath);

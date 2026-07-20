@@ -15,6 +15,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             "Assets/_FirstBloom/Games/GassyGorilla/Scenes/Game.unity";
         private const string CatalogPath =
             "Assets/_FirstBloom/Games/GassyGorilla/ScriptableObjects/GG_ExpeditionCatalog.asset";
+        private const string StickySapPrefabPath =
+            "Assets/_FirstBloom/Games/GassyGorilla/Prefabs/Hazard_StickySapBlob.prefab";
+        private const string BounceBloomPrefabPath =
+            "Assets/_FirstBloom/Games/GassyGorilla/Prefabs/Interaction_BounceBloom.prefab";
         private const string UnlockKey = "GassyGorilla_Expedition_UnlockedIndex";
         private const string StarsPrefix = "GassyGorilla_Expedition_Stars_";
         private const string FailurePrefix =
@@ -63,6 +67,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             VerifyLegacyChapterUnlockMigration(catalog);
             GassyExpeditionProgressStore.ResetAll(catalog);
             VerifyAdaptiveFailureHints(catalog);
+            VerifyLessonPredatorIsolation(catalog);
             GassyExpeditionProgressStore.ResetAll(catalog);
             SessionState.SetBool(ActiveKey, true);
             SessionState.SetInt(IndexKey, 0);
@@ -118,6 +123,34 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 "Bounce By Moonlight remained locked after save migration.");
         }
 
+        private static void VerifyLessonPredatorIsolation(
+            GassyExpeditionCatalog catalog)
+        {
+            int crocodileLessonCount = 0;
+            for (int i = 0; i < catalog.Count; i++)
+            {
+                GassyExpeditionDefinition definition = catalog.GetByIndex(i);
+                Require(
+                    definition != null,
+                    "Expedition catalog contains a null lesson definition.");
+                bool teachesCrocodiles =
+                    definition.ObjectiveType ==
+                        GassyExpeditionObjectiveType.CrocodileDodges;
+                Require(
+                    CrocodileAmbushController.IsRelevantToExpedition(
+                        definition) == teachesCrocodiles,
+                    definition.DisplayTitle +
+                    " has an incorrect crocodile lesson-isolation policy.");
+                if (teachesCrocodiles)
+                {
+                    crocodileLessonCount++;
+                }
+            }
+
+            Require(
+                crocodileLessonCount >= 2,
+                "The campaign must retain dedicated crocodile teaching lessons.");
+        }
         private static void VerifyAdaptiveFailureHints(
             GassyExpeditionCatalog catalog)
         {
@@ -305,38 +338,156 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             if (interactionType == GassyInteractionType.SapEscape)
             {
-                float fuelBefore = player.CurrentFuel;
-                Require(player.TryEnterStickySap(0.52f), "Player could not enter the sticky sap state.");
-                Require(player.IsStickySap, "Sticky sap state did not become active.");
-                Require(player.TryEscapeStickySap(), "Player could not perform the sap breakout.");
-                Require(!player.IsStickySap, "Sticky sap state persisted after breakout.");
-                Require(
-                    Mathf.Abs(player.CurrentFuel - fuelBefore) < 0.01f,
-                    "Sticky sap breakout consumed fart fuel.");
+                GameObject sapInstance =
+                    InstantiateLessonPrefab(StickySapPrefabPath);
+                try
+                {
+                    GassyStickySapTrap trap =
+                        sapInstance.GetComponent<GassyStickySapTrap>();
+                    Require(
+                        trap != null && trap.IsConfigured,
+                        "The real sticky sap prefab is not configured.");
+                    AlignAnchorWithPlayer(
+                        sapInstance,
+                        trap.CatchAnchor,
+                        player);
+
+                    Rigidbody2D body = player.GetComponent<Rigidbody2D>();
+                    float fuelBefore = player.CurrentFuel;
+                    Require(
+                        trap.TryCapture(player),
+                        "The real sticky sap prefab could not catch the player.");
+                    Require(
+                        player.IsStickySap &&
+                        player.IsAnchoredLessonInteraction &&
+                        trap.IsOccupied,
+                        "Sticky sap did not hold the player at its authored anchor.");
+                    Require(
+                        body.bodyType == RigidbodyType2D.Kinematic &&
+                        Mathf.Abs(body.gravityScale) < 0.001f &&
+                        body.linearVelocity.sqrMagnitude < 0.01f,
+                        "Sticky sap did not stop gravity and motion while caught.");
+                    Require(
+                        player.TryEscapeStickySap(),
+                        "Player could not perform the sap breakout.");
+                    Require(
+                        !player.IsStickySap &&
+                        !trap.IsOccupied &&
+                        body.bodyType == RigidbodyType2D.Dynamic &&
+                        body.gravityScale > 0f,
+                        "Sticky sap did not release the player back to normal physics.");
+                    Require(
+                        Mathf.Abs(player.CurrentFuel - fuelBefore) < 0.01f,
+                        "Sticky sap breakout consumed fart fuel.");
+                }
+                finally
+                {
+                    DestroyLessonPrefab(sapInstance);
+                }
+
                 return;
             }
 
             if (interactionType == GassyInteractionType.UpdraftRide)
             {
-                Require(player.ApplyUpdraft(5.2f), "Player rejected a valid canopy updraft.");
+                Require(
+                    player.ApplyUpdraft(5.2f),
+                    "Player rejected a valid canopy updraft.");
             }
             else if (interactionType == GassyInteractionType.BounceBloom)
             {
-                float fuelBefore = player.CurrentFuel;
-                Require(
-                    player.ApplyBounceBloom(6.1f, 0.9f),
-                    "Player rejected a valid bounce bloom launch.");
-                Require(
-                    player.GetComponent<Rigidbody2D>().linearVelocity.y >= 6f,
-                    "Bounce bloom did not apply its authored vertical launch.");
-                Require(
-                    Mathf.Abs(player.CurrentFuel - fuelBefore) < 0.01f,
-                    "Bounce bloom consumed fart fuel.");
+                GameObject bloomInstance =
+                    InstantiateLessonPrefab(BounceBloomPrefabPath);
+                try
+                {
+                    GassyBounceBloom bloom =
+                        bloomInstance.GetComponent<GassyBounceBloom>();
+                    Require(
+                        bloom != null && bloom.IsConfigured,
+                        "The real giant moonleaf prefab is not configured.");
+                    AlignAnchorWithPlayer(
+                        bloomInstance,
+                        bloom.ContactAnchor,
+                        player);
+
+                    Rigidbody2D body = player.GetComponent<Rigidbody2D>();
+                    body.linearVelocity = new Vector2(
+                        body.linearVelocity.x,
+                        bloom.MaxEntryUpwardVelocity + 0.5f);
+                    Require(
+                        !bloom.TryBounce(player),
+                        "Moonleaf caught the player while rising through its underside.");
+                    body.linearVelocity = new Vector2(
+                        body.linearVelocity.x,
+                        -2f);
+                    float fuelBefore = player.CurrentFuel;
+                    Require(
+                        bloom.TryBounce(player),
+                        "The real giant moonleaf prefab rejected a valid downward landing.");
+                    Require(
+                        player.IsBounceBloomCompressing &&
+                        player.IsAnchoredLessonInteraction &&
+                        bloom.IsOccupied &&
+                        body.bodyType == RigidbodyType2D.Kinematic &&
+                        Mathf.Abs(body.gravityScale) < 0.001f,
+                        "Moonleaf did not magnetically catch the player for its compression beat.");
+                    Require(
+                        player.CompleteBounceBloomForQa(),
+                        "Moonleaf compression could not advance to its authored rebound.");
+                    Require(
+                        !player.IsBounceBloomCompressing &&
+                        !bloom.IsOccupied &&
+                        body.bodyType == RigidbodyType2D.Dynamic &&
+                        body.linearVelocity.y >= 6.5f,
+                        "Moonleaf did not restore physics and apply its premium rebound.");
+                    Require(
+                        Mathf.Abs(player.CurrentFuel - fuelBefore) < 0.01f,
+                        "Moonleaf rebound consumed fart fuel.");
+                }
+                finally
+                {
+                    DestroyLessonPrefab(bloomInstance);
+                }
+
+                return;
             }
 
             GassyRunEvents.RaiseInteractionCompleted(interactionType);
         }
 
+        private static GameObject InstantiateLessonPrefab(string path)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            Require(prefab != null, "Missing lesson prefab: " + path);
+            GameObject instance = UnityEngine.Object.Instantiate(prefab);
+            Require(instance != null, "Could not instantiate lesson prefab: " + path);
+            instance.name = prefab.name + "_Verification";
+            return instance;
+        }
+
+        private static void AlignAnchorWithPlayer(
+            GameObject instance,
+            Transform anchor,
+            GorillaController player)
+        {
+            Require(
+                instance != null && anchor != null && player != null,
+                "Lesson prefab anchor alignment is missing a required object.");
+            Vector3 offset = player.transform.position - anchor.position;
+            offset.z = 0f;
+            instance.transform.position += offset;
+        }
+
+        private static void DestroyLessonPrefab(GameObject instance)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            instance.SetActive(false);
+            UnityEngine.Object.Destroy(instance);
+        }
         private static void VerifyCompletionAndContinue(
             GassyGorillaGameManager manager,
             GassyExpeditionCatalog catalog,

@@ -18,13 +18,15 @@ MonoBehaviour:
   chapterTitle: Moonlit Ruins
   displayTitle: Bounce By Moonlight
   theme: 1
-  openingStory: Dessert is safe, but a moonbeam has revealed a hidden road of enormous
-    springy leaves. Gassy Gorilla volunteers before anyone can define careful.
-  successStory: Three moon-leaf launches later, the old ruins are awake and Gassy
+  openingStory: Dessert is safe, but moonlight reveals a hidden road of giant living
+    leaves rooted through the ruins. Gassy Gorilla volunteers before anyone can define
+    careful.
+  successStory: Three giant moonleaf launches later, the ruins are awake and Gassy
     Gorilla has discovered a dignified new way to be flung.
-  lessonText: Land on the broad glowing leaves for a free launch. No fart fuel required.
-  failureHintText: Aim for the broad center leaf. The bounce triggers automatically
-    on contact.
+  lessonText: Land from above on a giant glowing moonleaf. It bends, then launches
+    you automatically for free.
+  failureHintText: Approach from above and aim for the broad center leaf. Let it
+    compress before the automatic rebound.
   openingVoice:
     clip: {fileID: 0}
     subtitle: 
@@ -46,7 +48,7 @@ MonoBehaviour:
     volume: 0.9
     textDuration: 2.4
   objectiveType: 5
-  objectiveText: Trigger 3 moon-leaf bounces, then finish.
+  objectiveText: Land on 3 giant moonleaves, then finish.
   targetCount: 3
   targetFuel: 0
   targetInteraction: 16

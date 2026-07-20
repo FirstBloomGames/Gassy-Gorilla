@@ -20246,6 +20246,10 @@ MonoBehaviour:
   releaseScale: {x: 1.16, y: 0.9, z: 1.04}
   swingScale: {x: 0.98, y: 1.08, z: 1.02}
   failedScale: {x: 0.94, y: 1.06, z: 1}
+  sapCaughtScale: {x: 1.1, y: 0.82, z: 1.06}
+  bounceCompressionScale: {x: 1.16, y: 0.78, z: 1.06}
+  sapPoseNormalizedTime: 0.42
+  bouncePoseNormalizedTime: 0.08
 --- !u!1 &3446824384547681595
 GameObject:
   m_ObjectHideFlags: 0

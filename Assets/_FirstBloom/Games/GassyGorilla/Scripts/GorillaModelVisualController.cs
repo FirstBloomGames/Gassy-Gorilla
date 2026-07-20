@@ -9,6 +9,8 @@ namespace FirstBloom.Games.GassyGorilla
             None,
             Boost,
             Release,
+            SapEscape,
+            BounceLaunch,
             Failed
         }
 
@@ -68,6 +70,10 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private Vector3 releaseScale = new Vector3(1.16f, 0.9f, 1.04f);
         [SerializeField] private Vector3 swingScale = new Vector3(0.98f, 1.08f, 1.02f);
         [SerializeField] private Vector3 failedScale = new Vector3(0.94f, 1.06f, 1f);
+        [SerializeField] private Vector3 sapCaughtScale = new Vector3(1.1f, 0.82f, 1.06f);
+        [SerializeField] private Vector3 bounceCompressionScale = new Vector3(1.16f, 0.78f, 1.06f);
+        [SerializeField, Range(0f, 1f)] private float sapPoseNormalizedTime = 0.42f;
+        [SerializeField, Range(0f, 1f)] private float bouncePoseNormalizedTime = 0.08f;
 
         private Renderer[] modelRenderers;
         private Vector3 modelBaseScale = Vector3.one;
@@ -135,6 +141,10 @@ namespace FirstBloom.Games.GassyGorilla
                 gorilla.Boosted += HandleBoosted;
                 gorilla.VineGrabbed += HandleVineGrabbed;
                 gorilla.VineReleased += HandleVineReleased;
+                gorilla.StickySapCaught += HandleStickySapCaught;
+                gorilla.StickySapEscaped += HandleStickySapEscaped;
+                gorilla.BounceBloomCompressed += HandleBounceBloomCompressed;
+                gorilla.BounceBloomLaunched += HandleBounceBloomLaunched;
                 gorilla.BoostFailed += HandleBoostFailed;
             }
         }
@@ -146,6 +156,10 @@ namespace FirstBloom.Games.GassyGorilla
                 gorilla.Boosted -= HandleBoosted;
                 gorilla.VineGrabbed -= HandleVineGrabbed;
                 gorilla.VineReleased -= HandleVineReleased;
+                gorilla.StickySapCaught -= HandleStickySapCaught;
+                gorilla.StickySapEscaped -= HandleStickySapEscaped;
+                gorilla.BounceBloomCompressed -= HandleBounceBloomCompressed;
+                gorilla.BounceBloomLaunched -= HandleBounceBloomLaunched;
                 gorilla.BoostFailed -= HandleBoostFailed;
             }
 
@@ -188,6 +202,39 @@ namespace FirstBloom.Games.GassyGorilla
                     swingScale,
                     swingLeanDegrees + pendulumBank + swingPulse,
                     swingYawDegrees);
+                ApplySmoothedPose();
+                return;
+            }
+
+            if (gorilla != null && gorilla.IsStickySap)
+            {
+                temporaryPose = TemporaryPose.None;
+                temporaryPoseUntil = 0f;
+                PlayLockedPoseWithFallback(
+                    boostState,
+                    idleState,
+                    sapPoseNormalizedTime);
+                float struggle = Mathf.Sin(Time.time * 8.5f);
+                SetPoseTarget(
+                    sapCaughtScale,
+                    5f + struggle * 3.5f,
+                    Mathf.Lerp(travelYawDegrees, -18f, 0.72f));
+                ApplySmoothedPose();
+                return;
+            }
+
+            if (gorilla != null && gorilla.IsBounceBloomCompressing)
+            {
+                temporaryPose = TemporaryPose.None;
+                temporaryPoseUntil = 0f;
+                PlayLockedPoseWithFallback(
+                    releaseState,
+                    boostState,
+                    bouncePoseNormalizedTime);
+                SetPoseTarget(
+                    bounceCompressionScale,
+                    8f,
+                    travelYawDegrees);
                 ApplySmoothedPose();
                 return;
             }
@@ -260,6 +307,47 @@ namespace FirstBloom.Games.GassyGorilla
             SetPoseTarget(releaseScale, releaseLeanDegrees, releaseYawDegrees);
         }
 
+        private void HandleStickySapCaught()
+        {
+            temporaryPose = TemporaryPose.None;
+            temporaryPoseUntil = 0f;
+            PlayLockedPoseWithFallback(
+                boostState,
+                idleState,
+                sapPoseNormalizedTime);
+            SetPoseTarget(sapCaughtScale, 5f, -18f);
+        }
+
+        private void HandleStickySapEscaped()
+        {
+            temporaryPose = TemporaryPose.SapEscape;
+            temporaryPoseUntil = Time.time + releasePoseHold;
+            PlayState(boostState, true, boostAnimationSpeed, boostStartTime);
+            SetPoseTarget(releaseScale, releaseLeanDegrees, boostYawDegrees);
+        }
+
+        private void HandleBounceBloomCompressed()
+        {
+            temporaryPose = TemporaryPose.None;
+            temporaryPoseUntil = 0f;
+            PlayLockedPoseWithFallback(
+                releaseState,
+                boostState,
+                bouncePoseNormalizedTime);
+            SetPoseTarget(
+                bounceCompressionScale,
+                8f,
+                travelYawDegrees);
+        }
+
+        private void HandleBounceBloomLaunched()
+        {
+            temporaryPose = TemporaryPose.BounceLaunch;
+            temporaryPoseUntil = Time.time + boostPoseHold + 0.06f;
+            PlayState(boostState, true, boostAnimationSpeed, boostStartTime);
+            SetPoseTarget(boostScale, boostLeanDegrees, boostYawDegrees);
+        }
+
         private void HandleBoostFailed()
         {
             temporaryPose = TemporaryPose.Failed;
@@ -276,6 +364,14 @@ namespace FirstBloom.Games.GassyGorilla
             else if (temporaryPose == TemporaryPose.Release)
             {
                 SetPoseTarget(releaseScale, releaseLeanDegrees, releaseYawDegrees);
+            }
+            else if (temporaryPose == TemporaryPose.SapEscape)
+            {
+                SetPoseTarget(releaseScale, releaseLeanDegrees, boostYawDegrees);
+            }
+            else if (temporaryPose == TemporaryPose.BounceLaunch)
+            {
+                SetPoseTarget(boostScale, boostLeanDegrees, boostYawDegrees);
             }
             else if (temporaryPose == TemporaryPose.Failed)
             {

@@ -103,6 +103,14 @@ namespace FirstBloom.Games.GassyGorilla
         public int WarningRippleCount { get { return warningRipples != null ? warningRipples.Length : 0; } }
         public bool IsBiteWindowActive { get { return phase == AmbushPhase.Lunging && biteCollider != null && biteCollider.enabled; } }
 
+        public static bool IsRelevantToExpedition(
+            GassyExpeditionDefinition expedition)
+        {
+            return expedition == null ||
+                expedition.ObjectiveType ==
+                    GassyExpeditionObjectiveType.CrocodileDodges;
+        }
+
         private void Awake()
         {
             propertyBlock = new MaterialPropertyBlock();
@@ -166,6 +174,12 @@ namespace FirstBloom.Games.GassyGorilla
                 return;
             }
 
+            if (gameManager.IsExpedition &&
+                !IsRelevantToExpedition(gameManager.CurrentExpedition))
+            {
+                CompleteEncounter(false);
+                return;
+            }
             float leadDistance = transform.position.x - player.transform.position.x;
             if (leadDistance < skipBehindDistance)
             {
@@ -180,7 +194,9 @@ namespace FirstBloom.Games.GassyGorilla
 
             bool hasFairLead = leadDistance >= minimumLeadDistance;
             bool hasBoostFuel = player.CurrentFuel + 0.01f >= minimumFuel;
-            if (!hasFairLead || !hasBoostFuel || player.IsSwinging)
+            if (!hasFairLead || !hasBoostFuel ||
+                player.IsSwinging ||
+                player.IsAnchoredLessonInteraction)
             {
                 CompleteEncounter(false);
                 return;

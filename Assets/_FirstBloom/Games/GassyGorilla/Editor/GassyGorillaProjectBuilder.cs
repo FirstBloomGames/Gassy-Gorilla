@@ -1516,7 +1516,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             prefabs.TreeTrunkObstacle = BuildHazardPrefab("Obstacle_TreeTrunk", new Vector2(0.75f, 2.4f), meshyAssets.FirstAvailable(meshyAssets.ThornLog, meshyAssets.SpikyStump), 1.85f, "ThornLog");
             prefabs.SpikyStumpObstacle = BuildLessonThornStumpPrefab(meshyAssets.SpikyStump);
             prefabs.MudGeyserObstacle = BuildMudGeyserPrefab(meshyAssets.MudGeyser);
-            prefabs.StickySapObstacle = BuildStickySapPrefab(meshyAssets.StickySapBlob);
+            prefabs.StickySapObstacle = BuildStickySapPrefab(meshyAssets);
             prefabs.CanopyUpdraft = BuildCanopyUpdraftPrefab(meshyAssets);
             prefabs.BounceBloom = BuildBounceBloomPrefab(meshyAssets);
             prefabs.CrocodileAmbush = BuildCrocodileAmbushPrefab(crocodileModel);
@@ -1940,9 +1940,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 4.6f,
                 new[]
                 {
-                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.45f, 0.75f, -6f),
-                    ChunkSpawn(prefabs.StickySapObstacle, RunChunkSpawnKind.Hazard, 5.25f, -0.92f),
-                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 8.4f, 1.7f, 7f)
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.55f, 0.9f, -6f),
+                    ChunkSpawn(prefabs.StickySapObstacle, RunChunkSpawnKind.Hazard, 5.35f, -0.42f),
+                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 8.65f, 2.05f, 7f)
                 });
 
             RunChunkDefinition canopyCurrent = CreateOrUpdateRunChunk(
@@ -1991,18 +1991,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                         prefabs.Bean,
                         RunChunkSpawnKind.Pickup,
                         1.45f,
-                        0.55f,
+                        1.25f,
                         -6f),
                     ChunkSpawn(
                         prefabs.BounceBloom,
                         RunChunkSpawnKind.Decoration,
                         5.2f,
-                        -0.92f),
+                        0.72f),
                     ChunkSpawn(
                         prefabs.BananaBunch,
                         RunChunkSpawnKind.Pickup,
-                        8.55f,
-                        3.15f,
+                        8.7f,
+                        3.45f,
                         7f)
                 });
 
@@ -2331,11 +2331,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 1,
                 "Dessert Rescue",
                 "Sap Happens",
-                "A syrupy trail leads through two enormous blobs of jungle sap. It smells like dessert and behaves like glue.",
-                "Two magnificent pops later, Gassy Gorilla is free, flying, and only slightly shinier.",
-                "Sap slows you but cannot defeat you. Tap once to pop free without spending fuel.",
+                "Amber sap has pooled across mossy branches. It smells like dessert, looks suspiciously inviting, and grabs with both hands.",
+                "Two heroic rip-frees later, Gassy Gorilla is flying again, wearing a glossy amber souvenir.",
+                "Land on the amber sap snare. Once it grabs you, tap once to rip free without spending fuel.",
                 GassyExpeditionObjectiveType.CompleteInteraction,
-                "Pop free from 2 sap traps, then finish.",
+                "Get caught and rip free from 2 sap snares, then finish.",
                 2,
                 0f,
                 GassyInteractionType.SapEscape,
@@ -2432,11 +2432,11 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     2,
                     "Moonlit Ruins",
                     "Bounce By Moonlight",
-                    "Dessert is safe, but a moonbeam has revealed a hidden road of enormous springy leaves. Gassy Gorilla volunteers before anyone can define careful.",
-                    "Three moon-leaf launches later, the old ruins are awake and Gassy Gorilla has discovered a dignified new way to be flung.",
-                    "Land on the broad glowing leaves for a free launch. No fart fuel required.",
+                    "Dessert is safe, but moonlight reveals a hidden road of giant living leaves rooted through the ruins. Gassy Gorilla volunteers before anyone can define careful.",
+                    "Three giant moonleaf launches later, the ruins are awake and Gassy Gorilla has discovered a dignified new way to be flung.",
+                    "Land from above on a giant glowing moonleaf. It bends, then launches you automatically for free.",
                     GassyExpeditionObjectiveType.CompleteInteraction,
-                    "Trigger 3 moon-leaf bounces, then finish.",
+                    "Land on 3 giant moonleaves, then finish.",
                     3,
                     0f,
                     GassyInteractionType.BounceBloom,
@@ -2624,7 +2624,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 "The yellow bubble pulse is the countdown. Leave the lane before it ends.");
             ConfigureExpeditionStorySupport(
                 sapHappens,
-                "Sap is recoverable. Tap once after contact to pop free without spending fuel.");
+                "Follow the descending food arc, land in the amber sap, then tap once after it grabs you.");
             ConfigureExpeditionStorySupport(
                 rideTheBreeze,
                 "Enter the green leaf spiral and let it lift you before using another boost.");
@@ -2639,7 +2639,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 "Perfect food!");
             ConfigureExpeditionStorySupport(
                 bounceByMoonlight,
-                "Aim for the broad center leaf. The bounce triggers automatically on contact.");
+                "Approach from above and aim for the broad center leaf. Let it compress before the automatic rebound.");
             ConfigureExpeditionStorySupport(
                 moonbeamBuffet,
                 "Take free lift first, then spend fuel only to correct toward the next food arc.");
@@ -3471,46 +3471,280 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return SavePrefab(root, PrefabRoot + "/Hazard_MudGeyser.prefab");
         }
 
-        private static GameObject BuildStickySapPrefab(ModelVisualAsset modelAsset)
+        private static GameObject BuildStickySapPrefab(
+            MeshyGameAssets meshyAssets)
         {
             GameObject root = new GameObject("Hazard_StickySapBlob");
-            GameObject visualRoot = new GameObject("VisualRoot");
-            visualRoot.transform.SetParent(root.transform, false);
 
-            if (HasModel(modelAsset))
+            GameObject supportRoot = new GameObject("MossySapSupport_3D");
+            supportRoot.transform.SetParent(root.transform, false);
+            Material branchMaterial = CreateColorMaterial(
+                "GG_StickySapBranchBark_3D",
+                new Color(0.25f, 0.12f, 0.055f, 1f),
+                false);
+            GameObject branchShelf = CreatePrimitiveVisual(
+                "RootedBranchShelf_3D",
+                PrimitiveType.Capsule,
+                supportRoot.transform,
+                new Vector3(0f, -0.34f, 0.12f),
+                new Vector3(0.34f, 1.62f, 0.3f),
+                branchMaterial,
+                1);
+            branchShelf.transform.localRotation =
+                Quaternion.Euler(0f, 0f, 90f);
+
+            ModelVisualAsset supportAsset = meshyAssets.FirstAvailable(
+                meshyAssets.RootClusterA,
+                meshyAssets.GroundEdgeGrassA,
+                meshyAssets.GroundEdgeGrassB);
+            if (HasModel(supportAsset))
             {
                 CreateModelVisualInstance(
-                    modelAsset,
-                    "StickySap_3D",
-                    visualRoot.transform,
+                    supportAsset,
+                    "TexturedRootShelf_3D",
+                    supportRoot.transform,
                     Vector3.zero,
-                    1.15f,
-                    -0.55f,
-                    4,
-                    Quaternion.Euler(0f, 34f, 0f),
+                    1.58f,
+                    -1.34f,
+                    2,
+                    Quaternion.Euler(2f, 28f, -2f),
                     true);
             }
-            else
+
+            GameObject sapSurface = new GameObject("StickySapSurface_3D");
+            sapSurface.transform.SetParent(root.transform, false);
+            ModelVisualAsset sapAsset = meshyAssets.StickySapBlob;
+            Material sapPoolMaterial = CreateColorMaterial(
+                "GG_StickySapPoolCore_3D",
+                new Color(0.94f, 0.37f, 0.045f, 0.9f),
+                true);
+            CreatePrimitiveVisual(
+                "AmberSapPoolCore_3D",
+                PrimitiveType.Sphere,
+                sapSurface.transform,
+                new Vector3(0f, 0.17f, 0.1f),
+                new Vector3(3.04f, 0.36f, 0.92f),
+                sapPoolMaterial,
+                4);
+
+            Vector3[] puddlePositions =
             {
-                CreateHazardPrimitiveVisual(
-                    "SapBlob",
-                    visualRoot.transform,
-                    new Vector2(1.05f, 1.1f));
+                new Vector3(-1.04f, 0.18f, 0.02f),
+                new Vector3(-0.46f, 0.23f, 0.08f),
+                new Vector3(0.18f, 0.21f, 0.02f),
+                new Vector3(0.8f, 0.19f, 0.07f),
+                new Vector3(1.18f, 0.15f, 0f)
+            };
+            Vector3[] puddleScales =
+            {
+                new Vector3(1.02f, 0.28f, 0.72f),
+                new Vector3(1.22f, 0.37f, 0.78f),
+                new Vector3(1.28f, 0.34f, 0.82f),
+                new Vector3(1.12f, 0.31f, 0.74f),
+                new Vector3(0.74f, 0.25f, 0.58f)
+            };
+            for (int i = 0; i < puddlePositions.Length; i++)
+            {
+                GameObject puddleLobe = CreatePrimitiveVisual(
+                    "AmberPuddleLobe_" + (i + 1),
+                    PrimitiveType.Sphere,
+                    sapSurface.transform,
+                    puddlePositions[i],
+                    puddleScales[i],
+                    sapPoolMaterial,
+                    5 + i);
+                puddleLobe.transform.localRotation =
+                    Quaternion.Euler(
+                        0f,
+                        12f + i * 23f,
+                        i % 2 == 0 ? 2f : -2f);
             }
+
+            if (HasModel(sapAsset))
+            {
+                GameObject resinKnot =
+                    new GameObject("SuppliedResinKnot_3D");
+                resinKnot.transform.SetParent(sapSurface.transform, false);
+                resinKnot.transform.localPosition =
+                    new Vector3(-1.12f, 0.23f, -0.08f);
+                CreateModelVisualInstance(
+                    sapAsset,
+                    "TexturedResinKnot_3D",
+                    resinKnot.transform,
+                    Vector3.zero,
+                    0.38f,
+                    -0.15f,
+                    9,
+                    Quaternion.Euler(0f, 24f, 5f),
+                    true);
+            }
+
+            Vector3[] bubblePositions =
+            {
+                new Vector3(-0.7f, 0.4f, 0.2f),
+                new Vector3(-0.12f, 0.45f, 0.16f),
+                new Vector3(0.54f, 0.39f, 0.22f),
+                new Vector3(1f, 0.32f, 0.16f)
+            };
+            float[] bubbleSizes = { 0.2f, 0.27f, 0.18f, 0.14f };
+            for (int i = 0; i < bubblePositions.Length; i++)
+            {
+                float bubbleSize = bubbleSizes[i];
+                CreatePrimitiveVisual(
+                    "SapBubble_" + (i + 1),
+                    PrimitiveType.Sphere,
+                    sapSurface.transform,
+                    bubblePositions[i],
+                    new Vector3(
+                        bubbleSize,
+                        bubbleSize * 0.76f,
+                        bubbleSize),
+                    sapPoolMaterial,
+                    9 + i);
+            }
+
+            Material glowMaterial = CreateColorMaterial(
+                "GG_StickySapWarningGlow_3D",
+                new Color(1f, 0.64f, 0.12f, 0.32f),
+                true);
+            CreatePrimitiveVisual(
+                "SapSurfaceGlint_3D",
+                PrimitiveType.Sphere,
+                sapSurface.transform,
+                new Vector3(-0.06f, 0.34f, 0.25f),
+                new Vector3(2.72f, 0.1f, 0.72f),
+                glowMaterial,
+                8);
+
+            Vector3[] dripPositions =
+            {
+                new Vector3(-1.16f, -0.24f, 0.12f),
+                new Vector3(1.08f, -0.2f, 0.1f)
+            };
+            for (int i = 0; i < dripPositions.Length; i++)
+            {
+                CreatePrimitiveVisual(
+                    "HangingSapDrip_" + (i + 1),
+                    PrimitiveType.Capsule,
+                    sapSurface.transform,
+                    dripPositions[i],
+                    new Vector3(
+                        0.11f,
+                        i == 0 ? 0.34f : 0.26f,
+                        0.11f),
+                    sapPoolMaterial,
+                    7 + i);
+            }
+
+            GameObject anchorObject = new GameObject("SapCatchAnchor");
+            anchorObject.transform.SetParent(sapSurface.transform, false);
+            anchorObject.transform.localPosition =
+                new Vector3(0f, 0.62f, 0f);
+
+            Material strandMaterial = CreateColorMaterial(
+                "GG_StickySapStrand_3D",
+                new Color(0.92f, 0.31f, 0.035f, 0.94f),
+                true);
+            Transform[] strands = new Transform[5];
+            for (int i = 0; i < strands.Length; i++)
+            {
+                GameObject strand = CreatePrimitiveVisual(
+                    "ElasticSapStrand_" + (i + 1),
+                    PrimitiveType.Capsule,
+                    root.transform,
+                    new Vector3(-1f + i * 0.5f, 0.36f, 0.09f),
+                    new Vector3(0.14f, 0.25f, 0.14f),
+                    strandMaterial,
+                    10 + i);
+                strand.SetActive(false);
+                strands[i] = strand.transform;
+            }
+
+            ParticleSystem catchBurst = CreateSapBurst(
+                "SapCatchBurst_3D",
+                root.transform,
+                new Vector3(0f, 0.54f, 0.06f),
+                false);
+            ParticleSystem escapeBurst = CreateSapBurst(
+                "SapEscapeBurst_3D",
+                root.transform,
+                new Vector3(0f, 0.58f, 0.04f),
+                true);
 
             BoxCollider2D trigger = root.AddComponent<BoxCollider2D>();
             trigger.isTrigger = true;
-            trigger.size = new Vector2(1.05f, 1.05f);
-            trigger.offset = new Vector2(0f, -0.02f);
+            trigger.size = new Vector2(2.9f, 1.3f);
+            trigger.offset = new Vector2(0f, 0.14f);
 
-            GassyInteractionMarker marker = root.AddComponent<GassyInteractionMarker>();
+            GassyInteractionMarker marker =
+                root.AddComponent<GassyInteractionMarker>();
             marker.Configure(GassyInteractionType.SapEscape);
             GassyStickySapTrap trap = root.AddComponent<GassyStickySapTrap>();
             SetObject(trap, "trigger", trigger);
-            SetObject(trap, "visualRoot", visualRoot.transform);
+            SetObject(trap, "catchAnchor", anchorObject.transform);
+            SetObject(trap, "supportRoot", supportRoot.transform);
+            SetObject(trap, "visualRoot", sapSurface.transform);
+            SetObjectArray(trap, "stickyStrands", strands);
+            SetObject(trap, "catchBurst", catchBurst);
+            SetObject(trap, "escapeBurst", escapeBurst);
             SetFloat(trap, "forwardSpeedScale", 0.52f);
+            SetFloat(trap, "idlePulseAmount", 0.035f);
+            SetFloat(trap, "idlePulseSpeed", 1.35f);
             root.AddComponent<DestroyBehindTarget>();
-            return SavePrefab(root, PrefabRoot + "/Hazard_StickySapBlob.prefab");
+            return SavePrefab(
+                root,
+                PrefabRoot + "/Hazard_StickySapBlob.prefab");
+        }
+        private static ParticleSystem CreateSapBurst(
+            string name,
+            Transform parent,
+            Vector3 localPosition,
+            bool escape)
+        {
+            GameObject burstRoot = new GameObject(name);
+            burstRoot.transform.SetParent(parent, false);
+            burstRoot.transform.localPosition = localPosition;
+            ParticleSystem particles = burstRoot.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.duration = escape ? 0.28f : 0.2f;
+            main.startLifetime = escape
+                ? new ParticleSystem.MinMaxCurve(0.38f, 0.68f)
+                : new ParticleSystem.MinMaxCurve(0.24f, 0.46f);
+            main.startSpeed = escape
+                ? new ParticleSystem.MinMaxCurve(1.8f, 3.5f)
+                : new ParticleSystem.MinMaxCurve(0.65f, 1.9f);
+            main.startSize = escape
+                ? new ParticleSystem.MinMaxCurve(0.1f, 0.24f)
+                : new ParticleSystem.MinMaxCurve(0.075f, 0.17f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(1f, 0.66f, 0.12f, 0.96f),
+                new Color(0.78f, 0.24f, 0.04f, 0.9f));
+            main.maxParticles = escape ? 24 : 18;
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(
+                new[]
+                {
+                    new ParticleSystem.Burst(
+                        0f,
+                        (short)(escape ? 20 : 13))
+                });
+            ParticleSystem.ShapeModule shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = escape ? 0.72f : 0.58f;
+            ParticleSystemRenderer renderer =
+                particles.GetComponent<ParticleSystemRenderer>();
+            ConfigureParticleMeshRenderer(
+                renderer,
+                PrimitiveType.Sphere,
+                escape
+                    ? "GG_StickySapEscapeDroplet"
+                    : "GG_StickySapCatchDroplet",
+                new Color(1f, 0.5f, 0.08f, 0.94f),
+                10);
+            return particles;
         }
 
         private static GameObject BuildCanopyUpdraftPrefab(MeshyGameAssets meshyAssets)
@@ -3605,45 +3839,102 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             MeshyGameAssets meshyAssets)
         {
             GameObject root = new GameObject("Interaction_BounceBloom");
-            GameObject visualRoot = new GameObject("BounceBloomVisual_3D");
-            visualRoot.transform.SetParent(root.transform, false);
-            visualRoot.transform.localPosition = new Vector3(0f, -0.78f, 0f);
+            GameObject supportRoot = new GameObject("MoonleafSupport_3D");
+            supportRoot.transform.SetParent(root.transform, false);
+            supportRoot.transform.localPosition =
+                new Vector3(0f, -0.34f, 0.08f);
 
-            ModelVisualAsset rootAsset = meshyAssets.FirstAvailable(
+            ModelVisualAsset supportAsset = meshyAssets.FirstAvailable(
                 meshyAssets.RootClusterA,
-                meshyAssets.ForegroundFernA);
-            if (HasModel(rootAsset))
+                meshyAssets.GroundEdgeGrassB,
+                meshyAssets.GroundEdgeGrassA);
+            if (HasModel(supportAsset))
             {
                 CreateModelVisualInstance(
-                    rootAsset,
-                    "TexturedRootBase_3D",
-                    visualRoot.transform,
+                    supportAsset,
+                    "TexturedMoonleafRootSupport_3D",
+                    supportRoot.transform,
                     Vector3.zero,
-                    0.92f,
-                    -0.32f,
-                    3,
-                    Quaternion.Euler(0f, 28f, 0f),
+                    1.46f,
+                    -0.94f,
+                    2,
+                    Quaternion.Euler(2f, -22f, 0f),
                     true);
             }
 
-            ModelVisualAsset[] leafAssets =
+            ModelVisualAsset supportMoss = meshyAssets.FirstAvailable(
+                meshyAssets.GroundEdgeGrassB,
+                meshyAssets.GroundEdgeGrassA);
+            if (HasModel(supportMoss))
             {
-                meshyAssets.BroadLeafA,
-                meshyAssets.ForegroundFernA,
-                meshyAssets.ForegroundFernB,
-                meshyAssets.HangingLeavesA
-            };
+                GameObject mossBrace = new GameObject("MoonleafMossBrace_3D");
+                mossBrace.transform.SetParent(supportRoot.transform, false);
+                mossBrace.transform.localPosition =
+                    new Vector3(0.2f, 0.08f, 0.12f);
+                CreateModelVisualInstance(
+                    supportMoss,
+                    "TexturedMoonleafMossBrace_3D",
+                    mossBrace.transform,
+                    Vector3.zero,
+                    0.58f,
+                    -0.42f,
+                    3,
+                    Quaternion.Euler(0f, 24f, 1f),
+                    true);
+            }
+
+            GameObject springRoot = new GameObject("MoonleafSpring_3D");
+            springRoot.transform.SetParent(root.transform, false);
+            springRoot.transform.localPosition =
+                new Vector3(0f, 0.48f, 0f);
+
+            Material leafBladeMaterial = CreateColorMaterial(
+                "GG_MoonleafBlade_3D",
+                new Color(0.18f, 0.82f, 0.3f, 1f),
+                false);
+            GameObject leafBlade = CreatePrimitiveVisual(
+                "GiantMoonleafBlade_3D",
+                PrimitiveType.Sphere,
+                springRoot.transform,
+                new Vector3(0f, 0.18f, 0.08f),
+                new Vector3(3.42f, 0.27f, 1.1f),
+                leafBladeMaterial,
+                4);
+            leafBlade.transform.localRotation =
+                Quaternion.Euler(0f, 0f, -1.5f);
+
+            Material veinMaterial = CreateColorMaterial(
+                "GG_MoonleafVein_3D",
+                new Color(0.92f, 0.9f, 0.3f, 1f),
+                false);
+            GameObject centralVein = CreatePrimitiveVisual(
+                "MoonleafCentralVein_3D",
+                PrimitiveType.Capsule,
+                springRoot.transform,
+                new Vector3(0f, 0.24f, 0.02f),
+                new Vector3(0.095f, 1.5f, 0.08f),
+                veinMaterial,
+                6);
+            centralVein.transform.localRotation =
+                Quaternion.Euler(0f, 0f, 90f);
+
             Vector3[] leafPositions =
             {
-                new Vector3(-0.58f, 0.38f, -0.06f),
-                new Vector3(0f, 0.5f, 0.02f),
-                new Vector3(0.58f, 0.37f, 0.08f)
+                new Vector3(-0.78f, 0.23f, 0.12f),
+                new Vector3(0f, 0.3f, 0f),
+                new Vector3(0.78f, 0.23f, 0.14f)
             };
             Quaternion[] leafRotations =
             {
-                Quaternion.Euler(8f, -18f, 24f),
-                Quaternion.Euler(4f, 8f, 0f),
-                Quaternion.Euler(8f, 24f, -24f)
+                Quaternion.Euler(0f, -12f, 8f),
+                Quaternion.Euler(0f, 2f, 0f),
+                Quaternion.Euler(0f, 14f, -8f)
+            };
+            Vector3[] leafScales =
+            {
+                new Vector3(1.72f, 0.22f, 0.78f),
+                new Vector3(2.02f, 0.25f, 0.88f),
+                new Vector3(1.72f, 0.22f, 0.78f)
             };
             Transform[] launchLeaves =
                 new Transform[leafPositions.Length];
@@ -3651,76 +3942,93 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             {
                 GameObject leafRoot =
                     new GameObject("LaunchLeaf_" + (i + 1));
-                leafRoot.transform.SetParent(visualRoot.transform, false);
+                leafRoot.transform.SetParent(springRoot.transform, false);
                 leafRoot.transform.localPosition = leafPositions[i];
                 leafRoot.transform.localRotation = leafRotations[i];
-                ModelVisualAsset leafAsset =
-                    FirstAvailableModel(leafAssets, i);
-                if (HasModel(leafAsset))
-                {
-                    CreateModelVisualInstance(
-                        leafAsset,
-                        "TexturedLeafMesh_3D",
-                        leafRoot.transform,
-                        Vector3.zero,
-                        0.72f,
-                        -0.25f,
-                        5 + i,
-                        Quaternion.Euler(0f, i * 34f, 0f),
-                        true);
-                }
+                CreatePrimitiveVisual(
+                    "TexturedSpringLobe_3D",
+                    PrimitiveType.Sphere,
+                    leafRoot.transform,
+                    Vector3.zero,
+                    leafScales[i],
+                    leafBladeMaterial,
+                    5 + i);
 
                 launchLeaves[i] = leafRoot.transform;
             }
 
+            if (HasModel(meshyAssets.BroadLeafA))
+            {
+                GameObject suppliedLeaf = new GameObject(
+                    "SuppliedMoonleafCrown_3D");
+                suppliedLeaf.transform.SetParent(springRoot.transform, false);
+                suppliedLeaf.transform.localPosition =
+                    new Vector3(0f, 0.26f, -0.08f);
+                CreateModelVisualInstance(
+                    meshyAssets.BroadLeafA,
+                    "TexturedSuppliedLeaf_3D",
+                    suppliedLeaf.transform,
+                    Vector3.zero,
+                    0.72f,
+                    -0.31f,
+                    8,
+                    Quaternion.Euler(0f, 12f, 0f),
+                    true);
+            }
+
             Material glowMaterial = CreateColorMaterial(
                 "GG_BounceBloom_Glow_3D",
-                new Color(0.55f, 1f, 0.42f, 0.24f),
+                new Color(0.48f, 1f, 0.34f, 0.28f),
                 true);
             GameObject glow = CreatePrimitiveVisual(
                 "MoonLeafGlow_3D",
                 PrimitiveType.Sphere,
-                visualRoot.transform,
-                new Vector3(0f, 0.44f, 0.18f),
-                new Vector3(1.6f, 0.18f, 0.58f),
+                springRoot.transform,
+                new Vector3(0f, 0.15f, 0.3f),
+                new Vector3(3.54f, 0.14f, 1.12f),
                 glowMaterial,
-                2);
+                3);
             AddAmbientSway(
                 glow,
-                0.16f,
-                0.025f,
+                0.13f,
+                0.018f,
                 0f,
-                0.01f,
-                0.06f,
-                0.5f);
+                0.008f,
+                0.045f,
+                0.56f);
+
+            GameObject contactAnchor = new GameObject("MoonleafContactAnchor");
+            contactAnchor.transform.SetParent(springRoot.transform, false);
+            contactAnchor.transform.localPosition =
+                new Vector3(0f, 0.58f, 0f);
 
             GameObject burstRoot = new GameObject("LeafBurst_3D");
             burstRoot.transform.SetParent(root.transform, false);
             burstRoot.transform.localPosition =
-                new Vector3(0f, -0.08f, 0.1f);
+                new Vector3(0f, 0.96f, 0.14f);
             ParticleSystem leafBurst =
                 burstRoot.AddComponent<ParticleSystem>();
             ParticleSystem.MainModule main = leafBurst.main;
             main.loop = false;
             main.playOnAwake = false;
-            main.duration = 0.24f;
+            main.duration = 0.3f;
             main.startLifetime =
-                new ParticleSystem.MinMaxCurve(0.32f, 0.58f);
+                new ParticleSystem.MinMaxCurve(0.4f, 0.72f);
             main.startSpeed =
-                new ParticleSystem.MinMaxCurve(1.2f, 2.6f);
+                new ParticleSystem.MinMaxCurve(1.8f, 3.8f);
             main.startSize =
-                new ParticleSystem.MinMaxCurve(0.045f, 0.1f);
+                new ParticleSystem.MinMaxCurve(0.12f, 0.26f);
             main.startColor = new ParticleSystem.MinMaxGradient(
                 new Color(0.6f, 1f, 0.32f, 0.92f),
                 new Color(1f, 0.86f, 0.3f, 0.88f));
-            main.maxParticles = 16;
+            main.maxParticles = 28;
             ParticleSystem.EmissionModule emission = leafBurst.emission;
             emission.rateOverTime = 0f;
             emission.SetBursts(
-                new[] { new ParticleSystem.Burst(0f, 12) });
+                new[] { new ParticleSystem.Burst(0f, 21) });
             ParticleSystem.ShapeModule shape = leafBurst.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(1.1f, 0.12f, 0.2f);
+            shape.scale = new Vector3(2.45f, 0.18f, 0.34f);
             ParticleSystemRenderer burstRenderer =
                 leafBurst.GetComponent<ParticleSystemRenderer>();
             ConfigureParticleMeshRenderer(
@@ -3732,25 +4040,31 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             BoxCollider2D trigger = root.AddComponent<BoxCollider2D>();
             trigger.isTrigger = true;
-            trigger.offset = new Vector2(0f, -0.02f);
-            trigger.size = new Vector2(1.85f, 0.82f);
+            trigger.offset = new Vector2(0f, 0.93f);
+            trigger.size = new Vector2(3.65f, 1.5f);
 
             GassyInteractionMarker marker =
                 root.AddComponent<GassyInteractionMarker>();
             marker.Configure(GassyInteractionType.BounceBloom);
             GassyBounceBloom bounce = root.AddComponent<GassyBounceBloom>();
             SetObject(bounce, "trigger", trigger);
-            SetObject(bounce, "visualRoot", visualRoot.transform);
+            SetObject(bounce, "contactAnchor", contactAnchor.transform);
+            SetObject(bounce, "supportRoot", supportRoot.transform);
+            SetObject(bounce, "springRoot", springRoot.transform);
+            SetObject(bounce, "glowRoot", glow.transform);
             SetObjectArray(bounce, "launchLeaves", launchLeaves);
             SetObject(bounce, "leafBurst", leafBurst);
-            SetFloat(bounce, "liftVelocity", 6.1f);
-            SetFloat(bounce, "forwardKick", 0.9f);
+            SetFloat(bounce, "compressionDuration", 0.16f);
+            SetFloat(bounce, "maxEntryUpwardVelocity", 1.15f);
+            SetFloat(bounce, "liftVelocity", 7.05f);
+            SetFloat(bounce, "forwardKick", 1.35f);
+            SetFloat(bounce, "idleSway", 0.055f);
+            SetFloat(bounce, "idleSwaySpeed", 1.45f);
             root.AddComponent<DestroyBehindTarget>();
             return SavePrefab(
                 root,
                 PrefabRoot + "/Interaction_BounceBloom.prefab");
         }
-
         private static GameObject BuildHazardPrefab(string name, Vector2 colliderSize, ModelVisualAsset modelAsset, float modelHeight, string primitiveKind)
         {
             GameObject root = new GameObject(name);

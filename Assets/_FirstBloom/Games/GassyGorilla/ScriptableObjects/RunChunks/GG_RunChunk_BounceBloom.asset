@@ -29,16 +29,16 @@ MonoBehaviour:
   spawns:
   - prefab: {fileID: 6224503674251131827, guid: 9e1b26558741d87469832ed2d4038da5, type: 3}
     kind: 0
-    localPosition: {x: 1.45, y: 0.55, z: 0}
+    localPosition: {x: 1.45, y: 1.25, z: 0}
     localEulerAngles: {x: 0, y: 0, z: -6}
     localScale: {x: 1, y: 1, z: 1}
   - prefab: {fileID: 3435326503295153740, guid: 779f11ec6cf488843b0bb27a2aca055e, type: 3}
     kind: 3
-    localPosition: {x: 5.2, y: -0.92, z: 0}
+    localPosition: {x: 5.2, y: 0.72, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     localScale: {x: 1, y: 1, z: 1}
   - prefab: {fileID: 2487999869850025639, guid: 17c15824d3657f045af979c96fc73a22, type: 3}
     kind: 0
-    localPosition: {x: 8.55, y: 3.15, z: 0}
+    localPosition: {x: 8.7, y: 3.45, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 7}
     localScale: {x: 1, y: 1, z: 1}
