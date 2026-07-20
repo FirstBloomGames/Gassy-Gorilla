@@ -9,6 +9,7 @@ namespace FirstBloom.Games.GassyGorilla
         ThornDodge = 1 << 0,
         GeyserDodge = 1 << 1,
         SapEscape = 1 << 2,
-        UpdraftRide = 1 << 3
+        UpdraftRide = 1 << 3,
+        BounceBloom = 1 << 4
     }
 }

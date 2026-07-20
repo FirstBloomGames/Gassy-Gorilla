@@ -447,6 +447,8 @@ namespace FirstBloom.Games.GassyGorilla
                     return "SAP ESCAPES";
                 case GassyInteractionType.UpdraftRide:
                     return "UPDRAFTS";
+                case GassyInteractionType.BounceBloom:
+                    return "BOUNCE BLOOMS";
                 default:
                     return "SKILLS";
             }
@@ -464,6 +466,8 @@ namespace FirstBloom.Games.GassyGorilla
                     return "SAP ESCAPED";
                 case GassyInteractionType.UpdraftRide:
                     return "UPDRAFT CAUGHT";
+                case GassyInteractionType.BounceBloom:
+                    return "BOUNCE BLOOM SPRUNG";
                 default:
                     return "LESSON COMPLETE";
             }

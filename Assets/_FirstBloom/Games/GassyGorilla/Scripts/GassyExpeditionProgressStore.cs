@@ -6,6 +6,8 @@ namespace FirstBloom.Games.GassyGorilla
     {
         private const string UnlockKey = "GassyGorilla_Expedition_UnlockedIndex";
         private const string StarsPrefix = "GassyGorilla_Expedition_Stars_";
+        private const string FailurePrefix = "GassyGorilla_Expedition_Failures_";
+        private const string VoicePrefix = "GassyGorilla_Expedition_Voice_";
 
         public static int GetHighestUnlockedIndex()
         {
@@ -68,6 +70,64 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 ArcadeProgressStore.SetIntIfGreater(UnlockKey, nextIndex);
             }
+
+            ClearFailures(definition);
+        }
+
+        public static int RecordFailure(GassyExpeditionDefinition definition)
+        {
+            if (definition == null)
+            {
+                return 0;
+            }
+
+            string key = FailurePrefix + definition.ExpeditionId;
+            int attempts = ArcadeProgressStore.GetInt(key, 0) + 1;
+            ArcadeProgressStore.SetInt(key, attempts);
+            return attempts;
+        }
+
+        public static int GetFailureCount(
+            GassyExpeditionDefinition definition)
+        {
+            return definition == null
+                ? 0
+                : ArcadeProgressStore.GetInt(
+                    FailurePrefix + definition.ExpeditionId,
+                    0);
+        }
+
+        public static void ClearFailures(
+            GassyExpeditionDefinition definition)
+        {
+            if (definition != null)
+            {
+                ArcadeProgressStore.Delete(
+                    FailurePrefix + definition.ExpeditionId);
+            }
+        }
+
+        public static bool HasHeardVoice(
+            GassyExpeditionDefinition definition,
+            string momentId)
+        {
+            return definition != null &&
+                !string.IsNullOrWhiteSpace(momentId) &&
+                ArcadeProgressStore.GetBool(
+                    VoiceKey(definition, momentId));
+        }
+
+        public static void MarkVoiceHeard(
+            GassyExpeditionDefinition definition,
+            string momentId)
+        {
+            if (definition != null &&
+                !string.IsNullOrWhiteSpace(momentId))
+            {
+                ArcadeProgressStore.SetBool(
+                    VoiceKey(definition, momentId),
+                    true);
+            }
         }
 
         public static void ResetAll(GassyExpeditionCatalog catalog)
@@ -84,8 +144,20 @@ namespace FirstBloom.Games.GassyGorilla
                 if (definition != null)
                 {
                     ArcadeProgressStore.Delete(StarsPrefix + definition.ExpeditionId);
+                    ArcadeProgressStore.Delete(FailurePrefix + definition.ExpeditionId);
+                    ArcadeProgressStore.Delete(VoiceKey(definition, "opening"));
+                    ArcadeProgressStore.Delete(VoiceKey(definition, "lesson"));
+                    ArcadeProgressStore.Delete(VoiceKey(definition, "success"));
+                    ArcadeProgressStore.Delete(VoiceKey(definition, "hint"));
                 }
             }
+        }
+
+        private static string VoiceKey(
+            GassyExpeditionDefinition definition,
+            string momentId)
+        {
+            return VoicePrefix + definition.ExpeditionId + "_" + momentId;
         }
     }
 }

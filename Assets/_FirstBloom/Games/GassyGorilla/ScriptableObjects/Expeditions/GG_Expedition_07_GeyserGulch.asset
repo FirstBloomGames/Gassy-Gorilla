@@ -17,12 +17,35 @@ MonoBehaviour:
   chapterIndex: 1
   chapterTitle: Dessert Rescue
   displayTitle: Geyser Gulch
+  theme: 0
   openingStory: The cart tracks wobble into a bubbling mud field. Yellow bubbles
     are the jungle's polite way of saying move.
   successStory: Three eruptions dodged. Gassy Gorilla is muddy only in several unimportant
     places.
   lessonText: Yellow bubbles warn before a geyser erupts. Boost before the pulse
     ends.
+  failureHintText: The yellow bubble pulse is the countdown. Leave the lane before
+    it ends.
+  openingVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  lessonVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  successVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  failureHintVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
   objectiveType: 5
   objectiveText: Dodge 3 mud geysers, then reach the finish.
   targetCount: 3

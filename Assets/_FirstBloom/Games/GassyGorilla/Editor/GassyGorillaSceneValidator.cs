@@ -35,12 +35,14 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string MudGeyserPrefabPath = GameRoot + "/Prefabs/Hazard_MudGeyser.prefab";
         private const string StickySapPrefabPath = GameRoot + "/Prefabs/Hazard_StickySapBlob.prefab";
         private const string CanopyUpdraftPrefabPath = GameRoot + "/Prefabs/Interaction_CanopyUpdraft.prefab";
+        private const string BounceBloomPrefabPath = GameRoot + "/Prefabs/Interaction_BounceBloom.prefab";
         private const string RunChunkFolder = GameRoot + "/ScriptableObjects/RunChunks";
         private const string DifficultyProfilePath = GameRoot + "/ScriptableObjects/GG_RunDifficulty.asset";
         private const string AudioLibraryPath = GameRoot + "/ScriptableObjects/GG_AudioLibrary.asset";
         private const string ExpeditionCatalogPath = GameRoot + "/ScriptableObjects/GG_ExpeditionCatalog.asset";
         private const string VoiceRoot = GameRoot + "/Audio/Voice";
         private const string IosHapticsPluginPath = "Assets/_FirstBloom/ArcadeFramework/Plugins/iOS/FirstBloomHaptics.mm";
+        private const string TintedBackdropShaderPath = "Assets/_FirstBloom/ArcadeFramework/Shaders/ArcadeUnlitTintedTexture.shader";
         private const float MinimumAuthoredVineGrabY = 1.25f;
 
         [MenuItem("First Bloom/Gassy Gorilla/Validate Built Scenes")]
@@ -58,7 +60,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 throw new InvalidOperationException("Gassy Gorilla scene validation failed:\n - " + string.Join("\n - ", errors));
             }
 
-            Debug.Log("Gassy Gorilla scene validation passed. Endless Run, ten finite story Expeditions across two chapters, lesson interactions, pause, accessibility, Jungle Badges, authored routes, textured 3D world art, audio, camera, and game loop are wired.");
+            Debug.Log("Gassy Gorilla scene validation passed. Endless Run, fifteen finite story Expeditions across three chapters, adaptive narration, lesson interactions, pause, accessibility, Jungle Badges, authored routes, textured 3D world art, audio, camera, and game loop are wired.");
         }
 
         private static void ValidateRequiredAssets(List<string> errors)
@@ -68,10 +70,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireAsset(PaintedJungleTexturePath, errors);
             RequireAsset(CrocodileAmbushPrefabPath, errors);
             RequireAsset(CrocodileAmbushChunkPath, errors);
+            RequireAsset(BounceBloomPrefabPath, errors);
             RequireAsset(DifficultyProfilePath, errors);
             RequireAsset(AudioLibraryPath, errors);
             RequireAsset(ExpeditionCatalogPath, errors);
             RequireAsset(IosHapticsPluginPath, errors);
+            RequireAsset(TintedBackdropShaderPath, errors);
             ValidateExpeditionCatalog(errors);
             ValidateBadgeContract(errors);
             ValidateCrocodileAssets(errors);
@@ -530,7 +534,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             if (menuController != null && !menuController.IsExpeditionUiConfigured)
             {
-                errors.Add("Main menu Expedition selector is not fully wired to its ten-level, two-chapter catalog.");
+                errors.Add("Main menu Expedition selector is not fully wired to its fifteen-level, three-chapter catalog.");
             }
 
             if (menuController != null && !menuController.IsBadgeUiConfigured)
@@ -540,7 +544,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             if (settingsMenu != null && !settingsMenu.HasAccessibilityControls)
             {
-                errors.Add("Main menu settings must expose Reduced Motion and Haptics.");
+                errors.Add("Main menu settings must expose Reduced Motion, Haptics, and Subtitles.");
             }
 
             ValidateToggleVisuals("Main menu", errors);
@@ -603,7 +607,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             if (settingsMenu != null && !settingsMenu.HasAccessibilityControls)
             {
-                errors.Add("Game settings must expose Reduced Motion and Haptics.");
+                errors.Add("Game settings must expose Reduced Motion, Haptics, and Subtitles.");
             }
 
             ValidateToggleVisuals("Game", errors);
@@ -666,6 +670,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             RequireSceneObject("BadgeToast", errors);
             RequireSceneObject("Director_Feedback", errors);
             RequireSceneObject("Manager_JungleBadges", errors);
+            RequireSceneObject("Director_ExpeditionTheme", errors);
+            RequireSceneObject("Director_ExpeditionNarration", errors);
+            RequireSceneObject("UI_Subtitles", errors);
+            RequireSceneObject("ReplayVoiceButton", errors);
             RequireSceneObjectAbsent("Ground_3D", errors);
             RequireSceneObjectAbsent("Distant_MeshyForestDepth_3D", errors);
             RequireSceneObjectAbsent("Foreground_3DDecor", errors);
@@ -755,9 +763,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         {
             ArcadeToggleVisual[] visuals =
                 UnityEngine.Object.FindObjectsByType<ArcadeToggleVisual>(FindObjectsInactive.Include);
-            if (visuals.Length != 2)
+            if (visuals.Length != 3)
             {
-                errors.Add(sceneLabel + " scene must contain exactly two accessible switch visuals.");
+                errors.Add(sceneLabel + " scene must contain exactly three accessible switch visuals.");
                 return;
             }
 
@@ -1094,6 +1102,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 MudGeyserPrefabPath,
                 StickySapPrefabPath,
                 CanopyUpdraftPrefabPath,
+                BounceBloomPrefabPath,
                 CrocodileAmbushPrefabPath
             };
 
@@ -1192,6 +1201,23 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     current.LiftVelocity > 6.2f)
                 {
                     errors.Add("Canopy updraft is missing its bounded lift, trigger, glow, or mobile leaf budget.");
+                }
+            }
+
+            GameObject bounceBloom = AssetDatabase.LoadAssetAtPath<GameObject>(
+                BounceBloomPrefabPath);
+            if (bounceBloom != null)
+            {
+                GassyBounceBloom bloom =
+                    bounceBloom.GetComponent<GassyBounceBloom>();
+                if (bloom == null ||
+                    !bloom.IsConfigured ||
+                    bloom.LiftVelocity < 5f ||
+                    bloom.LiftVelocity > 6.8f ||
+                    bloom.ForwardKick < 0f ||
+                    bloom.ForwardKick > 1.5f)
+                {
+                    errors.Add("Bounce bloom is missing its bounded launch, trigger, leaf animation, or lesson wiring.");
                 }
             }
         }

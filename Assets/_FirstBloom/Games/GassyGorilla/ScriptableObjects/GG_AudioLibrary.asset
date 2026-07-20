@@ -264,3 +264,16 @@ MonoBehaviour:
     voiceLimitMode: 0
     rareClipIndex: -1
     rareClipCooldownPlays: 0
+  - type: 20
+    clips:
+    - {fileID: 8300000, guid: 6ff6cef8657d32041b5734510e732990, type: 3}
+    - {fileID: 8300000, guid: 65bf51b2a4ead7643a41566575dab0df, type: 3}
+    - {fileID: 8300000, guid: eeadef2e6361bce42bba2c56d36597da, type: 3}
+    volume: 0.46
+    pitchRange: {x: 0.97, y: 1.05}
+    loop: 0
+    maximumSimultaneousVoices: 1
+    minimumRetriggerInterval: 0.08
+    voiceLimitMode: 0
+    rareClipIndex: -1
+    rareClipCooldownPlays: 0

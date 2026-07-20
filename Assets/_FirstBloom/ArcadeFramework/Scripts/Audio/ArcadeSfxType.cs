@@ -21,6 +21,7 @@ namespace FirstBloom.ArcadeFramework.Audio
         GeyserBurst,
         SapCatch,
         SapPop,
-        Updraft
+        Updraft,
+        BounceBloom
     }
 }

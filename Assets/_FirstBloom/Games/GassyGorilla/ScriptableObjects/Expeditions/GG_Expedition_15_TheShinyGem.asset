@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9868dc9a516eae45932b63c1c76328d, type: 3}
+  m_Name: GG_Expedition_15_TheShinyGem
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
+  expeditionId: the-shiny-gem
+  orderIndex: 14
+  chapterIndex: 2
+  chapterTitle: Moonlit Ruins
+  displayTitle: The Shiny Gem
+  theme: 1
+  openingStory: The gem waits at the heart of the ruins behind every lesson the jungle
+    has taught. Gassy Gorilla has a plan, which is mostly all of them.
+  successStory: The shiny gem comes home as a family lantern. Gassy Gorilla requests
+    that history record the landing from his best side.
+  lessonText: Complete all five environmental skills in order, then reach the gem
+    gate.
+  failureHintText: Read one interaction at a time. Every challenge has recovery room
+    after it.
+  openingVoice:
+    clip: {fileID: 8300000, guid: 5a270b47838d77d42b7e203d53bffcb4, type: 3}
+    subtitle: Shiny gem!
+    volume: 0.9
+    textDuration: 2.4
+  lessonVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  successVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  failureHintVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  objectiveType: 6
+  objectiveText: Master all 5 moonlit skills and recover the gem.
+  targetCount: 0
+  targetFuel: 0
+  targetInteraction: 0
+  requiredInteractions: 31
+  route:
+  - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: c4e16c1a69c9b8d48945a3461fbe1db5, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: 21e2df6db0918964c98289f81ac78040, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: a413cb2c033b01440946ebadf9fa031d, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: 7903a5ef0a7ef014e811d5f30a1cdb0f, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  - {fileID: 11400000, guid: 51b1360552a5d5547a8b8ca1c698339c, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  finishInset: 1.2
+  twoStarFuel: 56
+  threeStarFuel: 80

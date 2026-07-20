@@ -1,6 +1,7 @@
 using System;
 using FirstBloom.ArcadeFramework.Audio;
 using FirstBloom.ArcadeFramework.Core;
+using FirstBloom.ArcadeFramework.Input;
 using FirstBloom.ArcadeFramework.Save;
 using FirstBloom.ArcadeFramework.UI;
 using FirstBloom.ArcadeFramework.VFX;
@@ -107,6 +108,33 @@ namespace FirstBloom.Games.GassyGorilla
                 expeditionPanel.Show();
                 SetMainActionsVisible(false);
             }
+        }
+
+        private void Update()
+        {
+            if (!OneTouchInput.WasPausePressedThisFrame())
+            {
+                return;
+            }
+
+            if (settingsMenu != null && settingsMenu.IsVisible)
+            {
+                CloseSettings();
+            }
+            else if (expeditionPanel != null && expeditionPanel.IsVisible)
+            {
+                CloseExpeditions();
+            }
+            else if (badgePanel != null && badgePanel.IsVisible)
+            {
+                CloseBadges();
+            }
+#if UNITY_ANDROID && !UNITY_EDITOR
+            else
+            {
+                Application.Quit();
+            }
+#endif
         }
 
         public void Play()

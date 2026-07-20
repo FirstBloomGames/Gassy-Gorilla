@@ -17,11 +17,34 @@ MonoBehaviour:
   chapterIndex: 1
   chapterTitle: Dessert Rescue
   displayTitle: Stump Jump
+  theme: 0
   openingStory: The dessert cart has rolled straight through a thorn-stump patch.
     The tracks continue, but so do several extremely pointy opinions.
   successStory: Three stumps cleared and no heroic bottom punctures. The dessert
     trail is fresh.
   lessonText: Read the low thorn silhouette and tap shortly before contact.
+  failureHintText: Boost shortly before the stump, while its full silhouette is still
+    visible.
+  openingVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  lessonVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  successVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  failureHintVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
   objectiveType: 5
   objectiveText: Clear 3 thorn stumps, then reach the finish.
   targetCount: 3

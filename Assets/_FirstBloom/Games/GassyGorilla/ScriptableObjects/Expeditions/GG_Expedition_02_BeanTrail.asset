@@ -17,11 +17,34 @@ MonoBehaviour:
   chapterIndex: 0
   chapterTitle: Home for Dinner
   displayTitle: The Bean Trail
+  theme: 0
   openingStory: A suspiciously perfect trail of beans leads deeper into the jungle.
     Heroism says hurry home. Hunger has filed an appeal.
   successStory: Every bean accounted for. Mostly. Gassy Gorilla feels magnificently
     overqualified for the road ahead.
   lessonText: Food refills fart fuel. Follow the snack trail.
+  failureHintText: Follow the nearest reachable food arc instead of chasing every
+    snack.
+  openingVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  lessonVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  successVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  failureHintVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
   objectiveType: 1
   objectiveText: Collect 10 foods, then reach the finish.
   targetCount: 10

@@ -25,6 +25,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             "FirstBloom.GassyCommercialVerification.OriginalReducedMotion";
         private const string OriginalHapticsKey =
             "FirstBloom.GassyCommercialVerification.OriginalHaptics";
+        private const string OriginalSubtitlesKey =
+            "FirstBloom.GassyCommercialVerification.OriginalSubtitles";
         private const string AchievementScopeKey =
             "FirstBloom.GassyCommercialVerification.AchievementScope";
 
@@ -58,6 +60,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SessionState.SetBool(
                 OriginalHapticsKey,
                 ArcadeAccessibilitySettings.HapticsEnabled);
+            SessionState.SetBool(
+                OriginalSubtitlesKey,
+                ArcadeAccessibilitySettings.SubtitlesEnabled);
             SessionState.SetString(AchievementScopeKey, string.Empty);
             stageStartedAt = EditorApplication.timeSinceStartup;
             exitRequested = false;
@@ -165,6 +170,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             ArcadeAccessibilitySettings.SetReducedMotion(true);
             ArcadeAccessibilitySettings.SetHapticsEnabled(false);
+            ArcadeAccessibilitySettings.SetSubtitlesEnabled(false);
             ArcadeAccessibilitySettings.Reload();
             Require(
                 ArcadeAccessibilitySettings.ReducedMotion,
@@ -172,12 +178,15 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             Require(
                 !ArcadeAccessibilitySettings.HapticsEnabled,
                 "Haptics preference did not persist.");
+            Require(
+                !ArcadeAccessibilitySettings.SubtitlesEnabled,
+                "Subtitles preference did not persist.");
 
             settings.Open();
             ArcadeToggleVisual[] toggleVisuals =
                 UnityEngine.Object.FindObjectsByType<ArcadeToggleVisual>(
                     FindObjectsInactive.Include);
-            Require(toggleVisuals.Length == 2, "Menu accessibility switches are missing.");
+            Require(toggleVisuals.Length == 3, "Menu accessibility switches are missing.");
             for (int i = 0; i < toggleVisuals.Length; i++)
             {
                 Require(
@@ -315,7 +324,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             Debug.Log(
                 "Gassy Gorilla commercial foundation Play Mode verification passed: " +
-                "badges, accessibility persistence, pause/settings return, audio pause mix, " +
+                "badges, motion, haptics, subtitle persistence, pause/settings return, audio pause mix, " +
                 "resume, and achievement persistence are working.");
             Finish(0);
         }
@@ -365,6 +374,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 SessionState.GetBool(OriginalReducedMotionKey, false));
             ArcadeAccessibilitySettings.SetHapticsEnabled(
                 SessionState.GetBool(OriginalHapticsKey, true));
+            ArcadeAccessibilitySettings.SetSubtitlesEnabled(
+                SessionState.GetBool(OriginalSubtitlesKey, true));
             ArcadeAccessibilitySettings.Reload();
         }
 

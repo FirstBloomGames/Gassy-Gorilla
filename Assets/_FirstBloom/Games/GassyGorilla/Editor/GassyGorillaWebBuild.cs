@@ -238,43 +238,61 @@ body.gg-portrait-active #unity-container {
 
             Directory.CreateDirectory(outputPath);
 
-            PlayerSettings.companyName = "First Bloom Games";
-            PlayerSettings.productName = "Gassy Gorilla";
-            PlayerSettings.defaultScreenWidth = 1280;
-            PlayerSettings.defaultScreenHeight = 720;
-            PlayerSettings.runInBackground = true;
-            PlayerSettings.SplashScreen.show = false;
-            PlayerSettings.SetManagedStrippingLevel(NamedBuildTarget.WebGL, ManagedStrippingLevel.High);
-            PlayerSettings.SetIl2CppCodeGeneration(NamedBuildTarget.WebGL, Il2CppCodeGeneration.OptimizeSize);
-            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
-            PlayerSettings.WebGL.decompressionFallback = true;
-            PlayerSettings.WebGL.dataCaching = true;
-            PlayerSettings.WebGL.memorySize = 256;
-            PlayerSettings.WebGL.initialMemorySize = 256;
-            PlayerSettings.WebGL.maximumMemorySize = 1024;
-            PlayerSettings.WebGL.memoryGrowthMode = WebGLMemoryGrowthMode.Geometric;
-            PlayerSettings.WebGL.nameFilesAsHashes = true;
-
-            BuildPlayerOptions options = new BuildPlayerOptions
+            bool previousRunInBackground = PlayerSettings.runInBackground;
+            bool previousSplash = PlayerSettings.SplashScreen.show;
+            try
             {
-                scenes = scenes,
-                locationPathName = outputPath,
-                target = BuildTarget.WebGL,
-                options = BuildOptions.None
-            };
+                PlayerSettings.companyName = "First Bloom Games";
+                PlayerSettings.productName = "Gassy Gorilla";
+                PlayerSettings.defaultScreenWidth = 1280;
+                PlayerSettings.defaultScreenHeight = 720;
+                PlayerSettings.runInBackground = true;
+                PlayerSettings.SplashScreen.show = false;
+                PlayerSettings.SetManagedStrippingLevel(
+                    NamedBuildTarget.WebGL,
+                    ManagedStrippingLevel.High);
+                PlayerSettings.SetIl2CppCodeGeneration(
+                    NamedBuildTarget.WebGL,
+                    Il2CppCodeGeneration.OptimizeSize);
+                PlayerSettings.WebGL.compressionFormat =
+                    WebGLCompressionFormat.Brotli;
+                PlayerSettings.WebGL.decompressionFallback = true;
+                PlayerSettings.WebGL.dataCaching = true;
+                PlayerSettings.WebGL.memorySize = 256;
+                PlayerSettings.WebGL.initialMemorySize = 256;
+                PlayerSettings.WebGL.maximumMemorySize = 1024;
+                PlayerSettings.WebGL.memoryGrowthMode =
+                    WebGLMemoryGrowthMode.Geometric;
+                PlayerSettings.WebGL.nameFilesAsHashes = true;
 
-            BuildReport report = BuildPipeline.BuildPlayer(options);
-            if (report.summary.result != BuildResult.Succeeded)
-            {
-                throw new InvalidOperationException(
-                    "Gassy Gorilla phone preview build failed with result " + report.summary.result + ".");
+                BuildPlayerOptions options = new BuildPlayerOptions
+                {
+                    scenes = scenes,
+                    locationPathName = outputPath,
+                    target = BuildTarget.WebGL,
+                    options = BuildOptions.None
+                };
+
+                BuildReport report = BuildPipeline.BuildPlayer(options);
+                if (report.summary.result != BuildResult.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        "Gassy Gorilla phone preview build failed with result " +
+                        report.summary.result + ".");
+                }
+
+                OptimizeGeneratedPageForPhone(outputPath);
+                Debug.Log(
+                    "Gassy Gorilla phone preview built at " + outputPath +
+                    " (" + report.summary.totalSize + " bytes).");
             }
-
-            OptimizeGeneratedPageForPhone(outputPath);
-            Debug.Log(
-                "Gassy Gorilla phone preview built at " + outputPath
-                + " (" + report.summary.totalSize + " bytes)."
-            );
+            finally
+            {
+                PlayerSettings.runInBackground =
+                    previousRunInBackground;
+                PlayerSettings.SplashScreen.show = previousSplash;
+                AssetDatabase.SaveAssets();
+            }
         }
 
         private static void OptimizeGeneratedPageForPhone(string outputPath)

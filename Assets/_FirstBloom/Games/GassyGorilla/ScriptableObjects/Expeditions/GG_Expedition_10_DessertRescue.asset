@@ -17,12 +17,35 @@ MonoBehaviour:
   chapterIndex: 1
   chapterTitle: Dessert Rescue
   displayTitle: Dessert Rescue
+  theme: 0
   openingStory: The runaway dessert is in sight. One compact stretch of jungle stands
     between Gassy Gorilla and the most important rescue of his career.
   successStory: Dessert rescued. Family impressed. Jungle confused. Gassy Gorilla
     requests the largest slice for entirely aerodynamic reasons.
   lessonText: Clear one stump, dodge one geyser, escape one sap trap, and ride one
     updraft.
+  failureHintText: Take each lesson one at a time. Recovery space follows every new
+    interaction.
+  openingVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  lessonVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  successVoice:
+    clip: {fileID: 8300000, guid: 676f01ec26499c842b8ae7d21e834701, type: 3}
+    subtitle: Perfect food!
+    volume: 0.9
+    textDuration: 2.4
+  failureHintVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
   objectiveType: 6
   objectiveText: Complete all 4 jungle skills, then rescue dessert.
   targetCount: 0

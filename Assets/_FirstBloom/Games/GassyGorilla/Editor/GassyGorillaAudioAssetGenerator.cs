@@ -54,6 +54,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GenerateSfxFamily("SapCatch", 2, SfxKind.SapCatch);
             GenerateSfxFamily("SapPop", 3, SfxKind.SapPop);
             GenerateSfxFamily("Updraft", 2, SfxKind.Updraft);
+            GenerateSfxFamily("BounceBloom", 3, SfxKind.BounceBloom);
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             ConfigureMusicImporter(MusicRoot + "/GG_Music_JungleStride_Base.wav");
@@ -140,7 +141,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 Entry(ArcadeSfxType.GeyserBurst, "GeyserBurst", 2, 0.56f, 0.96f, 1.02f),
                 Entry(ArcadeSfxType.SapCatch, "SapCatch", 2, 0.4f, 0.97f, 1.03f),
                 Entry(ArcadeSfxType.SapPop, "SapPop", 3, 0.48f, 0.97f, 1.05f),
-                Entry(ArcadeSfxType.Updraft, "Updraft", 2, 0.44f, 0.97f, 1.04f)
+                Entry(ArcadeSfxType.Updraft, "Updraft", 2, 0.44f, 0.97f, 1.04f),
+                Entry(
+                    ArcadeSfxType.BounceBloom,
+                    "BounceBloom",
+                    3,
+                    0.46f,
+                    0.97f,
+                    1.05f,
+                    false,
+                    1,
+                    0.08f,
+                    ArcadeSfxVoiceLimitMode.ReplaceOldest)
             };
         }
 
@@ -337,6 +349,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     return GenerateSapPop(variant, random);
                 case SfxKind.Updraft:
                     return GenerateUpdraft(variant, random);
+                case SfxKind.BounceBloom:
+                    return GenerateBounceBloom(variant, random);
                 default:
                     return GenerateGameOver();
             }
@@ -588,6 +602,50 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 0.12f,
                 0f);
             AddBell(data, 1, 0.22f, 0.36f, 690f + variant * 90f, 0.07f, 0f);
+            return data;
+        }
+
+        private static float[] GenerateBounceBloom(
+            int variant,
+            System.Random random)
+        {
+            float[] data = NewBuffer(0.52f + variant * 0.025f, 1);
+            AddPitchSweep(
+                data,
+                1,
+                0f,
+                0.38f,
+                118f + variant * 12f,
+                360f + variant * 38f,
+                0.24f,
+                0f);
+            AddWoodClick(
+                data,
+                1,
+                0.015f,
+                0.11f,
+                280f + variant * 36f,
+                0.17f,
+                random,
+                0f);
+            AddNoiseBurst(
+                data,
+                1,
+                0.04f,
+                0.32f,
+                0.09f,
+                random,
+                0.25f,
+                0f);
+            AddBell(
+                data,
+                1,
+                0.17f,
+                0.28f,
+                510f + variant * 52f,
+                0.055f,
+                0f);
+            ApplyEdgeFade(data, 1, 0.004f);
             return data;
         }
 
@@ -1094,7 +1152,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GeyserBurst,
             SapCatch,
             SapPop,
-            Updraft
+            Updraft,
+            BounceBloom
         }
     }
 }

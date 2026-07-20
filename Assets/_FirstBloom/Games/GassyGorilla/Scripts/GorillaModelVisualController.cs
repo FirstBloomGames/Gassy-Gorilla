@@ -177,8 +177,17 @@ namespace FirstBloom.Games.GassyGorilla
                     PlayStateWithFallback(swingState, boostState, false, swingAnimationSpeed);
                 }
 
-                float swingPulse = Mathf.Sin(Time.time * 5.8f) * swingPosePulseDegrees;
-                SetPoseTarget(swingScale, swingLeanDegrees + swingPulse, swingYawDegrees);
+                float swingPulse =
+                    Mathf.Sin(Time.time * 5.8f) *
+                    swingPosePulseDegrees;
+                float pendulumBank = Mathf.Clamp(
+                    gorilla.CurrentSwingAngleDegrees * 0.12f,
+                    -5.5f,
+                    5.5f);
+                SetPoseTarget(
+                    swingScale,
+                    swingLeanDegrees + pendulumBank + swingPulse,
+                    swingYawDegrees);
                 ApplySmoothedPose();
                 return;
             }

@@ -66,11 +66,16 @@ namespace FirstBloom.Games.GassyGorilla
         [Header("Expedition Run")]
         [SerializeField] private GassyExpeditionCatalog expeditionCatalog;
         [SerializeField] private GassyExpeditionRunController expeditionRunController;
+        [SerializeField] private GassyExpeditionNarrationDirector
+            expeditionNarrationDirector;
+        [SerializeField] private GassyExpeditionThemeDirector
+            expeditionThemeDirector;
         [SerializeField] private CanvasGroupPanel expeditionStoryPanel;
         [SerializeField] private Text expeditionStoryTitleText;
         [SerializeField] private Text expeditionStoryBodyText;
         [SerializeField] private Text expeditionStoryObjectiveText;
         [SerializeField] private Text expeditionStoryLessonText;
+        [SerializeField] private Button expeditionStoryReplayButton;
         [SerializeField] private CanvasGroupPanel expeditionSuccessPanel;
         [SerializeField] private Text expeditionSuccessTitleText;
         [SerializeField] private Text expeditionSuccessObjectiveText;
@@ -103,11 +108,16 @@ namespace FirstBloom.Games.GassyGorilla
                 return expeditionCatalog != null &&
                     expeditionCatalog.Count == GassyExpeditionCatalog.VersionOneExpeditionCount &&
                     expeditionRunController != null && expeditionRunController.IsConfigured &&
+                    expeditionNarrationDirector != null &&
+                    expeditionNarrationDirector.IsConfigured &&
+                    expeditionThemeDirector != null &&
+                    expeditionThemeDirector.IsConfigured &&
                     expeditionStoryPanel != null &&
                     expeditionStoryTitleText != null &&
                     expeditionStoryBodyText != null &&
                     expeditionStoryObjectiveText != null &&
                     expeditionStoryLessonText != null &&
+                    expeditionStoryReplayButton != null &&
                     expeditionSuccessPanel != null &&
                     expeditionSuccessTitleText != null &&
                     expeditionSuccessObjectiveText != null &&
@@ -123,6 +133,7 @@ namespace FirstBloom.Games.GassyGorilla
         private bool crocodileQaMode;
         private float nextCrocodileQaSafetyRefresh;
         private GassyExpeditionDefinition currentExpedition;
+        private string pendingAdaptiveHint;
 
         protected override void Awake()
         {
@@ -211,6 +222,11 @@ namespace FirstBloom.Games.GassyGorilla
                 if (expeditionStoryPanel != null)
                 {
                     expeditionStoryPanel.Show();
+                }
+
+                if (expeditionNarrationDirector != null)
+                {
+                    expeditionNarrationDirector.PlayOpeningIfNew();
                 }
 
                 if (ShouldAutoStartQaExpedition())
@@ -463,12 +479,23 @@ namespace FirstBloom.Games.GassyGorilla
             float finishFuel = player != null ? player.CurrentFuel : 0f;
             int stars = currentExpedition.CalculateStars(finishFuel);
             int catalogCount = expeditionCatalog != null ? expeditionCatalog.Count : 0;
+            bool storyComplete =
+                expeditionCatalog != null &&
+                expeditionCatalog.IndexOf(currentExpedition) ==
+                    expeditionCatalog.Count - 1;
             GassyExpeditionProgressStore.Complete(currentExpedition, stars, catalogCount);
+            if (expeditionNarrationDirector != null)
+            {
+                expeditionNarrationDirector.ClearFailureCount();
+            }
+
             GassyBadgeService.Reconcile(expeditionCatalog, true);
 
             if (expeditionSuccessTitleText != null)
             {
-                expeditionSuccessTitleText.text = "EXPEDITION COMPLETE";
+                expeditionSuccessTitleText.text = storyComplete
+                    ? "STORY COMPLETE"
+                    : "EXPEDITION COMPLETE";
             }
 
             if (expeditionSuccessObjectiveText != null)
@@ -541,6 +568,11 @@ namespace FirstBloom.Games.GassyGorilla
             if (expeditionSuccessPanel != null)
             {
                 expeditionSuccessPanel.Show();
+            }
+
+            if (expeditionNarrationDirector != null)
+            {
+                expeditionNarrationDirector.PlaySuccessIfNew();
             }
 
             Debug.Log(
@@ -675,6 +707,14 @@ namespace FirstBloom.Games.GassyGorilla
 
         private void ConfigureSelectedRun()
         {
+            if (expeditionThemeDirector != null)
+            {
+                expeditionThemeDirector.Apply(
+                    IsExpedition
+                        ? currentExpedition.Theme
+                        : GassyExpeditionTheme.DayJungle);
+            }
+
             if (IsExpedition)
             {
                 if (runChunkDirector != null)
@@ -735,6 +775,26 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 expeditionStoryLessonText.text = "LESSON  " + currentExpedition.LessonText;
             }
+
+            if (expeditionStoryReplayButton != null)
+            {
+                expeditionStoryReplayButton.gameObject.SetActive(
+                    currentExpedition.OpeningVoice != null &&
+                    currentExpedition.OpeningVoice.HasClip);
+            }
+
+            if (expeditionNarrationDirector != null)
+            {
+                expeditionNarrationDirector.Configure(currentExpedition);
+            }
+        }
+
+        public void ReplayExpeditionStoryVoice()
+        {
+            if (expeditionNarrationDirector != null)
+            {
+                expeditionNarrationDirector.ReplayOpening();
+            }
         }
 
         public void BeginExpeditionFromStory()
@@ -748,6 +808,11 @@ namespace FirstBloom.Games.GassyGorilla
             {
                 ArcadeAudioManager.Instance.NotifyUserGesture();
                 ArcadeAudioManager.Instance.PlaySfx(ArcadeSfxType.UiClick);
+            }
+
+            if (expeditionNarrationDirector != null)
+            {
+                expeditionNarrationDirector.PlayLessonIfNew();
             }
 
             if (expeditionStoryPanel != null)
@@ -890,6 +955,11 @@ namespace FirstBloom.Games.GassyGorilla
 
             SetState(ArcadeGameState.GameOver);
             SetSpawnersActive(false);
+            pendingAdaptiveHint = IsExpedition &&
+                expeditionNarrationDirector != null
+                    ? expeditionNarrationDirector
+                        .RecordFailureAndGetAdaptiveHint()
+                    : string.Empty;
 
             if (gameOverTitleText != null)
             {
@@ -898,7 +968,10 @@ namespace FirstBloom.Games.GassyGorilla
 
             if (gameOverReasonText != null)
             {
-                gameOverReasonText.text = reason;
+                gameOverReasonText.text =
+                    string.IsNullOrWhiteSpace(pendingAdaptiveHint)
+                        ? reason
+                        : reason + "\nTIP  " + pendingAdaptiveHint;
             }
 
             if (tutorialPrompt != null)
@@ -1151,6 +1224,12 @@ namespace FirstBloom.Games.GassyGorilla
             if (gameOverPanel != null)
             {
                 gameOverPanel.Show();
+            }
+
+            if (!string.IsNullOrWhiteSpace(pendingAdaptiveHint) &&
+                expeditionNarrationDirector != null)
+            {
+                expeditionNarrationDirector.PlayAdaptiveFailureHint();
             }
         }
 

@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f915c77b168390345ac76493f6849360, type: 3}
+  m_Name: GG_RunChunk_BounceBloom
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.RunChunkDefinition
+  chunkId: BounceBloom
+  tags: 102
+  allowInMainPool: 1
+  length: 10.5
+  selectionWeight: 0.72
+  minimumDifficulty: 1
+  maximumDifficulty: 4
+  blockedPreviousTags: 144
+  blockedNextTags: 144
+  entryHeightRange: {x: -0.4, y: 2.4}
+  exitHeightRange: {x: 1, y: 4.2}
+  entryFuelRange: {x: 0, y: 100}
+  exitFuelRange: {x: 42, y: 100}
+  minimumReactionDistance: 4.4
+  spawns:
+  - prefab: {fileID: 6224503674251131827, guid: 9e1b26558741d87469832ed2d4038da5, type: 3}
+    kind: 0
+    localPosition: {x: 1.45, y: 0.55, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: -6}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 3435326503295153740, guid: 779f11ec6cf488843b0bb27a2aca055e, type: 3}
+    kind: 3
+    localPosition: {x: 5.2, y: -0.92, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 2487999869850025639, guid: 17c15824d3657f045af979c96fc73a22, type: 3}
+    kind: 0
+    localPosition: {x: 8.55, y: 3.15, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 7}
+    localScale: {x: 1, y: 1, z: 1}

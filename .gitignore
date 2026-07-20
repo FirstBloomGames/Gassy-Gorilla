@@ -43,8 +43,12 @@ sysinfo.txt
 *.zip
 *.zip.meta
 
+# Native release signing stays outside source control.
+*.keystore
+*.jks
+keystore.properties
+
 # Operating-system files
 .DS_Store
 Thumbs.db
 Desktop.ini
-

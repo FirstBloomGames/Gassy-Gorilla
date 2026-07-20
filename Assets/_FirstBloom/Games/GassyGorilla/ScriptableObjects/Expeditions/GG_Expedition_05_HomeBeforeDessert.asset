@@ -17,11 +17,34 @@ MonoBehaviour:
   chapterIndex: 0
   chapterTitle: Home for Dinner
   displayTitle: Home Before Dessert
+  theme: 0
   openingStory: The home clearing is close, dessert is closer, and the whole jungle
     has arranged one final objection. Save enough fuel for the last heroic push.
   successStory: Home before dessert. Barely. The family agrees this was a completely
     normal way to arrive.
   lessonText: Mix every skill and save at least 45 fuel for the final push.
+  failureHintText: Use vines and food for free distance so the final boost still
+    has fuel.
+  openingVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  lessonVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  successVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  failureHintVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
   objectiveType: 4
   objectiveText: Reach home with at least 45 fuel.
   targetCount: 0

@@ -17,11 +17,34 @@ MonoBehaviour:
   chapterIndex: 0
   chapterTitle: Home for Dinner
   displayTitle: Canopy Shortcut
+  theme: 0
   openingStory: The ground route is blocked, but the glowing vines form a swinging
     highway. Hold tight, choose the arc, and release like a legend.
   successStory: Three clean releases and only one deeply questionable noise. The
     canopy shortcut officially works.
   lessonText: Vines catch you magnetically. Hold on, then tap to release.
+  failureHintText: Stay attached until the vine is rising toward the right, then
+    tap once.
+  openingVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  lessonVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  successVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  failureHintVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
   objectiveType: 2
   objectiveText: Release from 3 vines, then reach the finish.
   targetCount: 3

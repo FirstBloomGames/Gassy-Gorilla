@@ -60,6 +60,7 @@ namespace FirstBloom.ArcadeFramework.VFX
                 ? targetCamera.orthographicSize * targetCamera.aspect
                 : tileWidth * 0.75f;
             float viewportLeft = target.position.x - halfViewWidth;
+            float viewportRight = target.position.x + halfViewWidth;
             float cycleWidth = tileWidth * tiles.Length;
 
             for (int i = 0; i < tiles.Length; i++)
@@ -73,6 +74,15 @@ namespace FirstBloom.ArcadeFramework.VFX
                 while (tiles[i].position.x + tileWidth * 0.5f < viewportLeft - 0.05f && safety < 2)
                 {
                     tiles[i].position += Vector3.right * cycleWidth;
+                    safety++;
+                }
+
+                safety = 0;
+                while (tiles[i].position.x - tileWidth * 0.5f >
+                    viewportRight + 0.05f &&
+                    safety < 2)
+                {
+                    tiles[i].position += Vector3.left * cycleWidth;
                     safety++;
                 }
             }

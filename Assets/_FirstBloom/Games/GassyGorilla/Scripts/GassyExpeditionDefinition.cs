@@ -24,11 +24,22 @@ namespace FirstBloom.Games.GassyGorilla
         [Min(0)] [SerializeField] private int chapterIndex;
         [SerializeField] private string chapterTitle = "Chapter";
         [SerializeField] private string displayTitle = "Expedition";
+        [SerializeField] private GassyExpeditionTheme theme =
+            GassyExpeditionTheme.DayJungle;
 
         [Header("Story")]
         [TextArea(2, 4)] [SerializeField] private string openingStory;
         [TextArea(2, 4)] [SerializeField] private string successStory;
         [TextArea(1, 3)] [SerializeField] private string lessonText;
+        [TextArea(1, 3)] [SerializeField] private string failureHintText;
+        [SerializeField] private GassyExpeditionVoiceMoment openingVoice =
+            new GassyExpeditionVoiceMoment();
+        [SerializeField] private GassyExpeditionVoiceMoment lessonVoice =
+            new GassyExpeditionVoiceMoment();
+        [SerializeField] private GassyExpeditionVoiceMoment successVoice =
+            new GassyExpeditionVoiceMoment();
+        [SerializeField] private GassyExpeditionVoiceMoment failureHintVoice =
+            new GassyExpeditionVoiceMoment();
 
         [Header("Objective")]
         [SerializeField] private GassyExpeditionObjectiveType objectiveType;
@@ -51,9 +62,27 @@ namespace FirstBloom.Games.GassyGorilla
         public int ChapterIndex { get { return chapterIndex; } }
         public string ChapterTitle { get { return chapterTitle; } }
         public string DisplayTitle { get { return displayTitle; } }
+        public GassyExpeditionTheme Theme { get { return theme; } }
         public string OpeningStory { get { return openingStory; } }
         public string SuccessStory { get { return successStory; } }
         public string LessonText { get { return lessonText; } }
+        public string FailureHintText { get { return failureHintText; } }
+        public GassyExpeditionVoiceMoment OpeningVoice
+        {
+            get { return openingVoice; }
+        }
+        public GassyExpeditionVoiceMoment LessonVoice
+        {
+            get { return lessonVoice; }
+        }
+        public GassyExpeditionVoiceMoment SuccessVoice
+        {
+            get { return successVoice; }
+        }
+        public GassyExpeditionVoiceMoment FailureHintVoice
+        {
+            get { return failureHintVoice; }
+        }
         public GassyExpeditionObjectiveType ObjectiveType { get { return objectiveType; } }
         public string ObjectiveText { get { return objectiveText; } }
         public int TargetCount { get { return targetCount; } }
@@ -123,6 +152,30 @@ namespace FirstBloom.Games.GassyGorilla
             finishInset = Mathf.Max(0.5f, inset);
             twoStarFuel = Mathf.Clamp(silverFuel, 0f, 100f);
             threeStarFuel = Mathf.Clamp(goldFuel, twoStarFuel, 100f);
+        }
+
+        public void ConfigureStorySupport(
+            string adaptiveFailureHint,
+            AudioClip openingClip = null,
+            string openingSubtitle = "",
+            AudioClip lessonClip = null,
+            string lessonSubtitle = "",
+            AudioClip successClip = null,
+            string successSubtitle = "",
+            AudioClip hintClip = null,
+            string hintSubtitle = "")
+        {
+            failureHintText = adaptiveFailureHint;
+            EnsureVoiceMoments();
+            openingVoice.Configure(openingClip, openingSubtitle);
+            lessonVoice.Configure(lessonClip, lessonSubtitle);
+            successVoice.Configure(successClip, successSubtitle);
+            failureHintVoice.Configure(hintClip, hintSubtitle);
+        }
+
+        public void ConfigureTheme(GassyExpeditionTheme expeditionTheme)
+        {
+            theme = expeditionTheme;
         }
 
         public int CalculateStars(float finishFuel)
@@ -245,9 +298,10 @@ namespace FirstBloom.Games.GassyGorilla
                 string.IsNullOrWhiteSpace(openingStory) ||
                 string.IsNullOrWhiteSpace(successStory) ||
                 string.IsNullOrWhiteSpace(lessonText) ||
+                string.IsNullOrWhiteSpace(failureHintText) ||
                 string.IsNullOrWhiteSpace(objectiveText))
             {
-                errors.Add(label + " is missing player-facing chapter, title, story, lesson, success, or objective copy.");
+                errors.Add(label + " is missing player-facing chapter, title, story, lesson, hint, success, or objective copy.");
             }
 
             if (route == null || route.Length < 4)
@@ -333,6 +387,77 @@ namespace FirstBloom.Games.GassyGorilla
             if (twoStarFuel > threeStarFuel)
             {
                 errors.Add(label + " has reversed star thresholds.");
+            }
+
+            if (chapterIndex >= 2 &&
+                theme != GassyExpeditionTheme.MoonlitRuins)
+            {
+                errors.Add(
+                    label +
+                    " belongs to Moonlit Ruins but has no moonlit theme.");
+            }
+
+            if (chapterIndex < 2 &&
+                theme != GassyExpeditionTheme.DayJungle)
+            {
+                errors.Add(
+                    label +
+                    " must retain the established daytime jungle theme.");
+            }
+
+            ValidateVoiceMoment(openingVoice, "opening", label, errors);
+            ValidateVoiceMoment(lessonVoice, "lesson", label, errors);
+            ValidateVoiceMoment(successVoice, "success", label, errors);
+            ValidateVoiceMoment(
+                failureHintVoice,
+                "failure hint",
+                label,
+                errors);
+        }
+
+        private void EnsureVoiceMoments()
+        {
+            if (openingVoice == null)
+            {
+                openingVoice = new GassyExpeditionVoiceMoment();
+            }
+
+            if (lessonVoice == null)
+            {
+                lessonVoice = new GassyExpeditionVoiceMoment();
+            }
+
+            if (successVoice == null)
+            {
+                successVoice = new GassyExpeditionVoiceMoment();
+            }
+
+            if (failureHintVoice == null)
+            {
+                failureHintVoice = new GassyExpeditionVoiceMoment();
+            }
+        }
+
+        private static void ValidateVoiceMoment(
+            GassyExpeditionVoiceMoment moment,
+            string momentLabel,
+            string expeditionLabel,
+            List<string> errors)
+        {
+            if (moment == null)
+            {
+                errors.Add(
+                    expeditionLabel + " has no " +
+                    momentLabel + " voice data.");
+                return;
+            }
+
+            if (moment.HasClip &&
+                string.IsNullOrWhiteSpace(moment.Subtitle))
+            {
+                errors.Add(
+                    expeditionLabel + " has an " +
+                    momentLabel + " voice clip without subtitles.");
             }
         }
     }

@@ -78,11 +78,14 @@ MonoBehaviour:
   settingsMenu: {fileID: 0}
   expeditionCatalog: {fileID: 0}
   expeditionRunController: {fileID: 0}
+  expeditionNarrationDirector: {fileID: 0}
+  expeditionThemeDirector: {fileID: 0}
   expeditionStoryPanel: {fileID: 0}
   expeditionStoryTitleText: {fileID: 0}
   expeditionStoryBodyText: {fileID: 0}
   expeditionStoryObjectiveText: {fileID: 0}
   expeditionStoryLessonText: {fileID: 0}
+  expeditionStoryReplayButton: {fileID: 0}
   expeditionSuccessPanel: {fileID: 0}
   expeditionSuccessTitleText: {fileID: 0}
   expeditionSuccessObjectiveText: {fileID: 0}

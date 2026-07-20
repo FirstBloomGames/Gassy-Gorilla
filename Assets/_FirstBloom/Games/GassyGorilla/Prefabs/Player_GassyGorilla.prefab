@@ -20213,19 +20213,19 @@ MonoBehaviour:
   idleAnimationSpeed: 0.95
   cruiseAnimationSpeed: 1.08
   boostAnimationSpeed: 1.3
-  swingAnimationSpeed: 0.46
-  releaseAnimationSpeed: 1.5
+  swingAnimationSpeed: 0.72
+  releaseAnimationSpeed: 1.8
   boostStartTime: 0.1
-  swingStartTime: 0.38
-  releaseStartTime: 0.2
-  lockSwingPose: 1
+  swingStartTime: 0.18
+  releaseStartTime: 0.08
+  lockSwingPose: 0
   swingGripPoseNormalizedTime: 0.38
   leftHandBoneName: LeftHand
   rightHandBoneName: RightHand
   gripTargetOffset: {x: 0, y: 0}
   gripReleasePositionBlendSpeed: 18
   boostPoseHold: 0.24
-  releasePoseHold: 0.42
+  releasePoseHold: 0.28
   failedPoseHold: 0.1
   scaleBlendSpeed: 14
   leanBlendSpeed: 11

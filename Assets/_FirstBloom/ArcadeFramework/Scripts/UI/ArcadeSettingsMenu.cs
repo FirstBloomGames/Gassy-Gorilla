@@ -14,6 +14,7 @@ namespace FirstBloom.ArcadeFramework.UI
         [SerializeField] private Slider voiceSlider;
         [SerializeField] private Toggle reducedMotionToggle;
         [SerializeField] private Toggle hapticsToggle;
+        [SerializeField] private Toggle subtitlesToggle;
         [SerializeField] private bool startClosed = true;
 
         private bool initialized;
@@ -25,7 +26,12 @@ namespace FirstBloom.ArcadeFramework.UI
 
         public bool HasAccessibilityControls
         {
-            get { return reducedMotionToggle != null && hapticsToggle != null; }
+            get
+            {
+                return reducedMotionToggle != null &&
+                    hapticsToggle != null &&
+                    subtitlesToggle != null;
+            }
         }
 
         private void Awake()
@@ -85,6 +91,12 @@ namespace FirstBloom.ArcadeFramework.UI
             if (hapticsToggle != null)
             {
                 hapticsToggle.onValueChanged.AddListener(SetHapticsEnabled);
+            }
+
+            if (subtitlesToggle != null)
+            {
+                subtitlesToggle.onValueChanged.AddListener(
+                    SetSubtitlesEnabled);
             }
         }
 
@@ -155,6 +167,13 @@ namespace FirstBloom.ArcadeFramework.UI
                     hapticsToggle,
                     ArcadeAccessibilitySettings.HapticsEnabled);
             }
+
+            if (subtitlesToggle != null)
+            {
+                SyncToggle(
+                    subtitlesToggle,
+                    ArcadeAccessibilitySettings.SubtitlesEnabled);
+            }
         }
 
         private static void SyncToggle(Toggle toggle, bool value)
@@ -220,6 +239,11 @@ namespace FirstBloom.ArcadeFramework.UI
         private static void SetHapticsEnabled(bool value)
         {
             ArcadeAccessibilitySettings.SetHapticsEnabled(value);
+        }
+
+        private static void SetSubtitlesEnabled(bool value)
+        {
+            ArcadeAccessibilitySettings.SetSubtitlesEnabled(value);
         }
     }
 }

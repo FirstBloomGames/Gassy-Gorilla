@@ -17,11 +17,33 @@ MonoBehaviour:
   chapterIndex: 0
   chapterTitle: Home for Dinner
   displayTitle: Crocodile Crossing
+  theme: 0
   openingStory: The lagoon is awake. Watch the warning ripples, keep one boost ready,
     and do not accept dinner invitations from anything with that many teeth.
   successStory: Two crocodiles dodged. Neither is impressed. Gassy Gorilla is extremely
     impressed with himself.
   lessonText: Warning ripples mean crocodile. Keep one boost ready and dodge high.
+  failureHintText: Wait for the warning ripple, then boost above the bite lane.
+  openingVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  lessonVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  successVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  failureHintVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
   objectiveType: 3
   objectiveText: Dodge 2 crocodile ambushes, then finish.
   targetCount: 2

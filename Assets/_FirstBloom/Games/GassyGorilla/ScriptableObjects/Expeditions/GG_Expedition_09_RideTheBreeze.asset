@@ -17,12 +17,35 @@ MonoBehaviour:
   chapterIndex: 1
   chapterTitle: Dessert Rescue
   displayTitle: Ride The Breeze
+  theme: 0
   openingStory: Spiraling leaves reveal a canopy shortcut. The breeze smells like
     mango, victory, and a questionable amount of gorilla.
   successStory: Three currents caught. Free lift is officially Gassy Gorilla's second-favorite
     kind of propulsion.
   lessonText: Drift into a green leaf spiral for free lift and conserve your fart
     fuel.
+  failureHintText: Enter the green leaf spiral and let it lift you before using another
+    boost.
+  openingVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  lessonVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  successVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  failureHintVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
   objectiveType: 5
   objectiveText: Ride 3 canopy updrafts, then reach the finish.
   targetCount: 3

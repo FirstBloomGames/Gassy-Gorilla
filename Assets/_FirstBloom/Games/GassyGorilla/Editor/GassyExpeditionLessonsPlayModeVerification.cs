@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace FirstBloom.Games.GassyGorilla.EditorTools
 {
@@ -16,6 +17,12 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             "Assets/_FirstBloom/Games/GassyGorilla/ScriptableObjects/GG_ExpeditionCatalog.asset";
         private const string UnlockKey = "GassyGorilla_Expedition_UnlockedIndex";
         private const string StarsPrefix = "GassyGorilla_Expedition_Stars_";
+        private const string FailurePrefix =
+            "GassyGorilla_Expedition_Failures_";
+        private const string VoicePrefix =
+            "GassyGorilla_Expedition_Voice_";
+        private static readonly string[] VoiceMoments =
+            { "opening", "lesson", "success", "hint" };
         private const string StatePrefix = "FirstBloom.GassyExpeditionLessonsVerification.";
         private const string ActiveKey = StatePrefix + "Active";
         private const string IndexKey = StatePrefix + "Index";
@@ -46,11 +53,16 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GassyExpeditionCatalog catalog = LoadCatalog();
             Require(
                 catalog.Count == GassyExpeditionCatalog.VersionOneExpeditionCount,
-                "The runtime verifier requires the complete ten-Expedition catalog.");
+                "The runtime verifier requires the complete fifteen-Expedition catalog.");
+            Require(
+                catalog.ChapterCount == 3,
+                "The runtime verifier requires all three Expedition chapters.");
 
             BackupProgress(catalog);
             GassyExpeditionProgressStore.ResetAll(catalog);
             VerifyLegacyChapterUnlockMigration(catalog);
+            GassyExpeditionProgressStore.ResetAll(catalog);
+            VerifyAdaptiveFailureHints(catalog);
             GassyExpeditionProgressStore.ResetAll(catalog);
             SessionState.SetBool(ActiveKey, true);
             SessionState.SetInt(IndexKey, 0);
@@ -60,7 +72,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             phaseStartedAt = EditorApplication.timeSinceStartup;
 
             EditorSceneManager.OpenScene(GameScenePath, OpenSceneMode.Single);
-            Debug.Log("Gassy Gorilla ten-Expedition Play Mode verification started.");
+            Debug.Log("Gassy Gorilla fifteen-Expedition Play Mode verification started.");
             EditorApplication.isPlaying = true;
         }
 
@@ -81,6 +93,65 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             Require(
                 GassyExpeditionProgressStore.IsUnlocked(GassyExpeditionCatalog.LevelsPerChapter),
                 "Dessert Rescue remained locked after legacy save migration.");
+
+            GassyExpeditionProgressStore.ResetAll(catalog);
+            int secondChapterFinalIndex =
+                GassyExpeditionCatalog.LevelsPerChapter * 2 - 1;
+            GassyExpeditionDefinition secondChapterFinal =
+                catalog.GetByIndex(secondChapterFinalIndex);
+            Require(
+                secondChapterFinal != null,
+                "Existing ten-Expedition campaign finale is missing.");
+            PlayerPrefs.SetInt(UnlockKey, secondChapterFinalIndex);
+            PlayerPrefs.SetInt(
+                StarsPrefix + secondChapterFinal.ExpeditionId,
+                3);
+            PlayerPrefs.Save();
+
+            int moonlitIndex =
+                GassyExpeditionProgressStore.ReconcileUnlocks(catalog);
+            Require(
+                moonlitIndex == secondChapterFinalIndex + 1,
+                "A completed ten-Expedition save did not unlock Moonlit Ruins.");
+            Require(
+                GassyExpeditionProgressStore.IsUnlocked(moonlitIndex),
+                "Bounce By Moonlight remained locked after save migration.");
+        }
+
+        private static void VerifyAdaptiveFailureHints(
+            GassyExpeditionCatalog catalog)
+        {
+            GassyExpeditionDefinition definition = catalog.GetByIndex(0);
+            Require(
+                definition != null &&
+                !string.IsNullOrWhiteSpace(definition.FailureHintText),
+                "Adaptive hint verification requires authored hint copy.");
+
+            GameObject root =
+                new GameObject("QA_ExpeditionNarrationDirector");
+            try
+            {
+                GassyExpeditionNarrationDirector director =
+                    root.AddComponent<GassyExpeditionNarrationDirector>();
+                director.Configure(definition);
+                Require(
+                    string.IsNullOrEmpty(
+                        director.RecordFailureAndGetAdaptiveHint()),
+                    "Adaptive help appeared before the second failure.");
+                Require(
+                    director.RecordFailureAndGetAdaptiveHint() ==
+                        definition.FailureHintText,
+                    "Adaptive help did not appear on the second failure.");
+                director.ClearFailureCount();
+                Require(
+                    GassyExpeditionProgressStore.GetFailureCount(
+                        definition) == 0,
+                    "Adaptive failure count did not clear.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
         }
 
         private static void Tick()
@@ -144,6 +215,31 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             }
 
             Require(manager.IsExpeditionConfigured, "Expedition runtime UI is incomplete.");
+            GassyExpeditionThemeDirector themeDirector =
+                UnityEngine.Object
+                    .FindAnyObjectByType<GassyExpeditionThemeDirector>();
+            Require(
+                themeDirector != null &&
+                themeDirector.IsConfigured &&
+                themeDirector.ActiveTheme == expected.Theme,
+                expected.DisplayTitle +
+                " did not apply its authored Expedition theme.");
+            Button replayButton = FindButton("ReplayVoiceButton");
+            bool hasOpeningVoice =
+                expected.OpeningVoice != null &&
+                expected.OpeningVoice.HasClip;
+            Require(
+                replayButton != null &&
+                replayButton.gameObject.activeSelf == hasOpeningVoice,
+                expected.DisplayTitle +
+                " did not present the correct replay-voice state.");
+            Require(
+                !hasOpeningVoice ||
+                GassyExpeditionProgressStore.HasHeardVoice(
+                    expected,
+                    "opening"),
+                expected.DisplayTitle +
+                " did not record its opening voice playback.");
             manager.BeginExpeditionFromStory();
             AdvancePhase(1);
         }
@@ -196,6 +292,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 ExerciseInteraction(player, GassyInteractionType.GeyserDodge);
                 ExerciseInteraction(player, GassyInteractionType.SapEscape);
                 ExerciseInteraction(player, GassyInteractionType.UpdraftRide);
+                ExerciseInteraction(player, GassyInteractionType.BounceBloom);
                 return;
             }
 
@@ -222,6 +319,19 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             if (interactionType == GassyInteractionType.UpdraftRide)
             {
                 Require(player.ApplyUpdraft(5.2f), "Player rejected a valid canopy updraft.");
+            }
+            else if (interactionType == GassyInteractionType.BounceBloom)
+            {
+                float fuelBefore = player.CurrentFuel;
+                Require(
+                    player.ApplyBounceBloom(6.1f, 0.9f),
+                    "Player rejected a valid bounce bloom launch.");
+                Require(
+                    player.GetComponent<Rigidbody2D>().linearVelocity.y >= 6f,
+                    "Bounce bloom did not apply its authored vertical launch.");
+                Require(
+                    Mathf.Abs(player.CurrentFuel - fuelBefore) < 0.01f,
+                    "Bounce bloom consumed fart fuel.");
             }
 
             GassyRunEvents.RaiseInteractionCompleted(interactionType);
@@ -259,8 +369,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 }
 
                 Debug.Log(
-                    "Gassy Gorilla ten-Expedition Play Mode verification passed: " +
-                    "all objectives, interaction events, sap fuel safety, stars, and unlocks work in sequence.");
+                    "Gassy Gorilla fifteen-Expedition Play Mode verification passed: " +
+                    "all objectives, interaction events, sap fuel safety, bounce launch, stars, and unlocks work in sequence.");
                 Finish(0);
                 return;
             }
@@ -283,6 +393,23 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             return catalog;
         }
 
+        private static Button FindButton(string objectName)
+        {
+            Button[] buttons =
+                UnityEngine.Object.FindObjectsByType<Button>(
+                    FindObjectsInactive.Include);
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                if (buttons[i] != null &&
+                    buttons[i].gameObject.name == objectName)
+                {
+                    return buttons[i];
+                }
+            }
+
+            return null;
+        }
+
         private static void BackupProgress(GassyExpeditionCatalog catalog)
         {
             BackupInt(UnlockKey, "Unlock");
@@ -292,6 +419,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 if (definition != null)
                 {
                     BackupInt(StarsPrefix + definition.ExpeditionId, "Stars." + i);
+                    BackupInt(
+                        FailurePrefix + definition.ExpeditionId,
+                        "Failures." + i);
+                    for (int momentIndex = 0;
+                        momentIndex < VoiceMoments.Length;
+                        momentIndex++)
+                    {
+                        BackupInt(
+                            VoicePrefix + definition.ExpeditionId + "_" +
+                                VoiceMoments[momentIndex],
+                            "Voice." + i + "." + momentIndex);
+                    }
                 }
             }
         }
@@ -306,6 +445,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 if (definition != null)
                 {
                     RestoreInt(StarsPrefix + definition.ExpeditionId, "Stars." + i);
+                    RestoreInt(
+                        FailurePrefix + definition.ExpeditionId,
+                        "Failures." + i);
+                    for (int momentIndex = 0;
+                        momentIndex < VoiceMoments.Length;
+                        momentIndex++)
+                    {
+                        RestoreInt(
+                            VoicePrefix + definition.ExpeditionId + "_" +
+                                VoiceMoments[momentIndex],
+                            "Voice." + i + "." + momentIndex);
+                    }
                 }
             }
 
@@ -344,7 +495,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private static void Fail(Exception exception)
         {
             Debug.LogError(
-                "Gassy Gorilla ten-Expedition Play Mode verification failed: " +
+                "Gassy Gorilla fifteen-Expedition Play Mode verification failed: " +
                 exception);
             Finish(1);
         }

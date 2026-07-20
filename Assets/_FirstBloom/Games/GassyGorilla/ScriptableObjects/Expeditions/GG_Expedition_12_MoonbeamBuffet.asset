@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9868dc9a516eae45932b63c1c76328d, type: 3}
+  m_Name: GG_Expedition_12_MoonbeamBuffet
+  m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.GassyExpeditionDefinition
+  expeditionId: moonbeam-buffet
+  orderIndex: 11
+  chapterIndex: 2
+  chapterTitle: Moonlit Ruins
+  displayTitle: Moonbeam Buffet
+  theme: 1
+  openingStory: The moonlit road is lined with snacks, which is either an ancient
+    test or excellent hospitality. Both deserve complete attention.
+  successStory: The moonbeam buffet has been respectfully investigated. Several crumbs
+    remain for historical accuracy.
+  lessonText: Chain bounce leaves and updrafts through the high snack arcs to save
+    fuel.
+  failureHintText: Take free lift first, then spend fuel only to correct toward the
+    next food arc.
+  openingVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  lessonVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  successVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  failureHintVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  objectiveType: 1
+  objectiveText: Collect 12 foods, then reach the ruins.
+  targetCount: 12
+  targetFuel: 0
+  targetInteraction: 0
+  requiredInteractions: 0
+  route:
+  - {fileID: 11400000, guid: 3de5d4b2d9dfa5646863fba561249601, type: 2}
+  - {fileID: 11400000, guid: 31a70f162b2f0c94dbf402f4050bb569, type: 2}
+  - {fileID: 11400000, guid: 51b1360552a5d5547a8b8ca1c698339c, type: 2}
+  - {fileID: 11400000, guid: 7903a5ef0a7ef014e811d5f30a1cdb0f, type: 2}
+  - {fileID: 11400000, guid: ab175b48be1537d4a84c3d19c2bf5c68, type: 2}
+  - {fileID: 11400000, guid: cbee68788218d854cae29299bff96fe0, type: 2}
+  finishInset: 1.2
+  twoStarFuel: 50
+  threeStarFuel: 76

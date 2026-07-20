@@ -8,7 +8,7 @@ namespace FirstBloom.Games.GassyGorilla
     public sealed class GassyExpeditionCatalog : ScriptableObject
     {
         public const int LevelsPerChapter = 5;
-        public const int VersionOneExpeditionCount = 10;
+        public const int VersionOneExpeditionCount = 15;
 
         [SerializeField] private GassyExpeditionDefinition[] expeditions = Array.Empty<GassyExpeditionDefinition>();
 
@@ -83,7 +83,7 @@ namespace FirstBloom.Games.GassyGorilla
         {
             if (expeditions == null || expeditions.Length != VersionOneExpeditionCount)
             {
-                errors.Add("Gassy Gorilla needs exactly ten Version 1.0 Expeditions in two chapters.");
+                errors.Add("Gassy Gorilla needs exactly fifteen Version 1.0 Expeditions in three chapters.");
                 return;
             }
 

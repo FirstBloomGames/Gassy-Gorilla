@@ -431,6 +431,42 @@ namespace FirstBloom.Games.GassyGorilla
             return true;
         }
 
+        public bool ApplyBounceBloom(
+            float liftVelocity,
+            float forwardVelocity)
+        {
+            if (IsSwinging || isStickySap || !inputEnabled ||
+                gameManager == null || !gameManager.IsRunActive)
+            {
+                return false;
+            }
+
+            Vector2 velocity = GetVelocity();
+            velocity.x = Mathf.Max(
+                velocity.x,
+                EffectiveForwardSpeed + Mathf.Max(0f, forwardVelocity));
+            velocity.y = Mathf.Clamp(
+                Mathf.Max(velocity.y, liftVelocity),
+                -maxVerticalSpeed,
+                maxVerticalSpeed);
+            SetVelocity(velocity);
+            forwardKickTimer = Mathf.Max(forwardKickTimer, 0.16f);
+            bufferedBoostUntil = 0f;
+
+            GassyRunEvents.RaiseInteractionStarted(
+                GassyInteractionType.BounceBloom);
+            PlaySpeedLines();
+            PlaySquash(new Vector3(1.12f, 0.86f, 1.03f), 0.14f);
+            if (cameraFollow != null)
+            {
+                cameraFollow.AddActionLookahead(
+                    new Vector2(0.28f, 0.34f),
+                    0.2f);
+            }
+
+            return true;
+        }
+
         private void HandleBoostFailed()
         {
             if (Time.time < nextFailedBoostFeedbackTime)

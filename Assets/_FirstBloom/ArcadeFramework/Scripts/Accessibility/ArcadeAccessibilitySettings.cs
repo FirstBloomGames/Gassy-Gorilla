@@ -7,10 +7,12 @@ namespace FirstBloom.ArcadeFramework.Accessibility
     {
         private const string ReducedMotionKey = "FirstBloom_ReducedMotion";
         private const string HapticsEnabledKey = "FirstBloom_HapticsEnabled";
+        private const string SubtitlesEnabledKey = "FirstBloom_SubtitlesEnabled";
 
         private static bool loaded;
         private static bool reducedMotion;
         private static bool hapticsEnabled;
+        private static bool subtitlesEnabled;
 
         public static event Action SettingsChanged;
 
@@ -29,6 +31,15 @@ namespace FirstBloom.ArcadeFramework.Accessibility
             {
                 EnsureLoaded();
                 return hapticsEnabled;
+            }
+        }
+
+        public static bool SubtitlesEnabled
+        {
+            get
+            {
+                EnsureLoaded();
+                return subtitlesEnabled;
             }
         }
 
@@ -58,6 +69,19 @@ namespace FirstBloom.ArcadeFramework.Accessibility
             SaveAndNotify();
         }
 
+        public static void SetSubtitlesEnabled(bool value)
+        {
+            EnsureLoaded();
+            if (subtitlesEnabled == value)
+            {
+                return;
+            }
+
+            subtitlesEnabled = value;
+            PlayerPrefs.SetInt(SubtitlesEnabledKey, value ? 1 : 0);
+            SaveAndNotify();
+        }
+
         public static void Reload()
         {
             loaded = false;
@@ -75,6 +99,8 @@ namespace FirstBloom.ArcadeFramework.Accessibility
             loaded = true;
             reducedMotion = PlayerPrefs.GetInt(ReducedMotionKey, 0) != 0;
             hapticsEnabled = PlayerPrefs.GetInt(HapticsEnabledKey, 1) != 0;
+            subtitlesEnabled =
+                PlayerPrefs.GetInt(SubtitlesEnabledKey, 1) != 0;
         }
 
         private static void SaveAndNotify()

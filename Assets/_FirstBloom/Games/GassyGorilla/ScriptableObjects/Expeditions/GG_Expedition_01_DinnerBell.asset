@@ -17,11 +17,34 @@ MonoBehaviour:
   chapterIndex: 0
   chapterTitle: Home for Dinner
   displayTitle: The Dinner Bell
+  theme: 0
   openingStory: The dinner bell is echoing through the canopy. Gassy Gorilla has
     one heroic shortcut and absolutely no time for dignity.
   successStory: The banyan gate! Dinner is still warm, and the jungle now knows exactly
     who is coming through.
   lessonText: Tap anywhere to boost. Reach the glowing finish gate.
+  failureHintText: Tap once as the gorilla begins to fall, then let the boost arc
+    carry forward.
+  openingVoice:
+    clip: {fileID: 8300000, guid: bcf895413d0ff324e833e6b3e2953bb2, type: 3}
+    subtitle: Home for dinner!
+    volume: 0.9
+    textDuration: 2.4
+  lessonVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  successVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
+  failureHintVoice:
+    clip: {fileID: 0}
+    subtitle: 
+    volume: 0.9
+    textDuration: 2.4
   objectiveType: 0
   objectiveText: Reach the old banyan gate.
   targetCount: 0
