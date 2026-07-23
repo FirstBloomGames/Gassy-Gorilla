@@ -84,13 +84,13 @@
         updateBannerVisibility();
       }
 
-      var buildUrl = "https://cdn.jsdelivr.net/gh/FirstBloomGames/Gassy-Gorilla@5f1427ba86ca1ac746cc75dcf6a204fa20a32dfe/Build";
-      var loaderUrl = buildUrl + "/4d45ba6953be451cdd4ce9b5aa8558a4.loader.js";
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/24e530b2abd1df0f866264568e276e53.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/4ebb2163817e17f92658fb99ae69a00e.data.unityweb",
+        dataUrl: buildUrl + "/58e6a7b1a45c2cfee7548cb32db935f2.data.unityweb",
         frameworkUrl: buildUrl + "/adc44899308e0619d3d3f6ea9b746b7e.framework.js.unityweb",
-        codeUrl: buildUrl + "/7af96e48d54dc658d831c5d1c9533dfa.wasm.unityweb",
+        codeUrl: buildUrl + "/94ee430f4ee66094d9f73f3a01f72cbb.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "First Bloom Games",
         productName: "Gassy Gorilla",
@@ -158,7 +158,8 @@
                 var ggQaVineRun = ggQaParameters.has("qa-vine");
                 var ggQaCrocHitRun = ggQaParameters.has("qa-croc-hit");
                 var ggQaCrocRun = ggQaParameters.has("qa-croc") || ggQaCrocHitRun;
-                var ggQaAutomatedRun = ggQaSmokeRun || ggQaCrocRun;
+                var ggQaDistanceRun = ggQaParameters.has("qa-distance");
+                var ggQaAutomatedRun = ggQaSmokeRun || ggQaCrocRun || ggQaDistanceRun;
                 if (ggQaParameters.has("qa-autoplay") || ggQaAutomatedRun || ggQaVineRun) {
                   window.setTimeout(() => unityInstance.SendMessage("Manager_MainMenu", "Play"), 250);
                 }
@@ -178,6 +179,10 @@
                     };
                     ggQaTap();
                   }, 1650);
+                }
+                if (ggQaDistanceRun) {
+                  window.setTimeout(() => unityInstance.SendMessage("Director_RunChunks", "ReportQaState"), 3200);
+                  window.setTimeout(() => unityInstance.SendMessage("Director_RunChunks", "ReportQaState"), 6200);
                 }
                 document.querySelector("#unity-loading-bar").style.display = "none";
                 document.querySelector("#unity-fullscreen-button").onclick = () => {
