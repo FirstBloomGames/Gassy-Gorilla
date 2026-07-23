@@ -20,7 +20,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 var ggQaVineRun = ggQaParameters.has(""qa-vine"");
                 var ggQaCrocHitRun = ggQaParameters.has(""qa-croc-hit"");
                 var ggQaCrocRun = ggQaParameters.has(""qa-croc"") || ggQaCrocHitRun;
-                var ggQaAutomatedRun = ggQaSmokeRun || ggQaCrocRun;
+                var ggQaDistanceRun = ggQaParameters.has(""qa-distance"");
+                var ggQaAutomatedRun = ggQaSmokeRun || ggQaCrocRun || ggQaDistanceRun;
                 if (ggQaParameters.has(""qa-autoplay"") || ggQaAutomatedRun || ggQaVineRun) {
                   window.setTimeout(() => unityInstance.SendMessage(""Manager_MainMenu"", ""Play""), 250);
                 }
@@ -40,6 +41,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     };
                     ggQaTap();
                   }, 1650);
+                }
+                if (ggQaDistanceRun) {
+                  window.setTimeout(() => unityInstance.SendMessage(""Director_RunChunks"", ""ReportQaState""), 3200);
+                  window.setTimeout(() => unityInstance.SendMessage(""Director_RunChunks"", ""ReportQaState""), 6200);
                 }";
 
         private const string MobileOrientationMarkup = @"    <div id=""gg-orientation-gate"" aria-hidden=""true"">

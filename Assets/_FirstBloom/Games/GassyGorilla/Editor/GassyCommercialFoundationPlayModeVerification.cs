@@ -219,8 +219,71 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 FindSceneComponent<GassyFeedbackDirector>().IsConfigured,
                 "Haptic feedback director did not initialize.");
 
+            RunChunkDirector runDirector = FindSceneComponent<RunChunkDirector>();
+            Require(
+                runDirector != null && runDirector.DifficultyProfile != null,
+                "Endless difficulty profile did not initialize.");
+            VerifyEndlessPressureContract(runDirector.DifficultyProfile);
+
             manager.PauseRun();
             AdvanceTo(4);
+        }
+
+        private static void VerifyEndlessPressureContract(RunDifficultyProfile profile)
+        {
+            float[] distances = { 90f, 400f, 800f, 1600f, 3000f };
+            float previousRetention = profile.EvaluatePickupRetention(distances[0]);
+            float previousSpeed = profile.EvaluateSpeedMultiplier(distances[1]);
+            float previousHazardWeight =
+                profile.EvaluateContinuousTagWeight(distances[1], RunChunkTag.Hazard);
+            float previousGauntletWeight =
+                profile.EvaluateContinuousTagWeight(distances[1], RunChunkTag.Gauntlet);
+
+            Require(
+                Mathf.Approximately(previousRetention, 1f),
+                "Endless mode thinned food before the protected opening ended.");
+
+            for (int i = 1; i < distances.Length; i++)
+            {
+                float retention = profile.EvaluatePickupRetention(distances[i]);
+                Require(
+                    retention < previousRetention,
+                    "Endless food retention did not decrease at " + distances[i] + "m.");
+                previousRetention = retention;
+
+                if (i == 1)
+                {
+                    continue;
+                }
+
+                float speed = profile.EvaluateSpeedMultiplier(distances[i]);
+                float hazardWeight =
+                    profile.EvaluateContinuousTagWeight(distances[i], RunChunkTag.Hazard);
+                float gauntletWeight =
+                    profile.EvaluateContinuousTagWeight(distances[i], RunChunkTag.Gauntlet);
+                Require(speed > previousSpeed, "Endless speed plateaued at " + distances[i] + "m.");
+                Require(
+                    hazardWeight > previousHazardWeight &&
+                    gauntletWeight > previousGauntletWeight,
+                    "Endless obstacle pressure plateaued at " + distances[i] + "m.");
+                previousSpeed = speed;
+                previousHazardWeight = hazardWeight;
+                previousGauntletWeight = gauntletWeight;
+            }
+
+            Require(
+                profile.EvaluateSpeedMultiplier(100000f) <= 1.2001f,
+                "Endless speed exceeded the readable 1.20x cap.");
+            Require(
+                profile.EvaluatePickupRetention(100000f) >=
+                    profile.MinimumPickupRetention - 0.001f,
+                "Endless food retention fell below its configured floor.");
+            Require(
+                RunChunkDirector.CalculateRetainedPickupCount(2, 0.34f, false, 0.99d) == 0,
+                "Late normal chunks cannot produce a meaningful no-food beat.");
+            Require(
+                RunChunkDirector.CalculateRetainedPickupCount(2, 0.34f, true, 0.99d) == 1,
+                "Low-fuel recovery did not preserve one guaranteed pickup.");
         }
 
         private static void VerifyPauseAndOpenSettings()
@@ -324,8 +387,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             Debug.Log(
                 "Gassy Gorilla commercial foundation Play Mode verification passed: " +
-                "badges, motion, haptics, subtitle persistence, pause/settings return, audio pause mix, " +
-                "resume, and achievement persistence are working.");
+                "badges, Endless pressure, food scarcity, low-fuel rescue, motion, haptics, " +
+                "subtitle persistence, pause/settings return, audio pause mix, resume, and " +
+                "achievement persistence are working.");
             Finish(0);
         }
 

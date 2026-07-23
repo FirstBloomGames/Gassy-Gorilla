@@ -34,6 +34,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string SwingableVinePrefabPath = GameRoot + "/Prefabs/Vine_Swingable.prefab";
         private const string MudGeyserPrefabPath = GameRoot + "/Prefabs/Hazard_MudGeyser.prefab";
         private const string StickySapPrefabPath = GameRoot + "/Prefabs/Hazard_StickySapBlob.prefab";
+        private const string StickySapChunkPath = GameRoot + "/ScriptableObjects/RunChunks/GG_RunChunk_SapEscape.asset";
         private const string CanopyUpdraftPrefabPath = GameRoot + "/Prefabs/Interaction_CanopyUpdraft.prefab";
         private const string BounceBloomPrefabPath = GameRoot + "/Prefabs/Interaction_BounceBloom.prefab";
         private const string RunChunkFolder = GameRoot + "/ScriptableObjects/RunChunks";
@@ -1191,21 +1192,47 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 {
                     BoxCollider2D sapTrigger = trap.Trigger as BoxCollider2D;
                     if (sapTrigger == null ||
-                        sapTrigger.size.x < 2.5f ||
-                        sapTrigger.size.y < 1.15f ||
+                        sapTrigger.size.x < 3.5f ||
+                        sapTrigger.size.y < 2f ||
                         trap.SupportRoot == null ||
                         trap.CatchAnchor == null ||
+                        Mathf.Abs(trap.CatchAnchor.localPosition.x) > 0.1f ||
+                        trap.CatchAnchor.localPosition.y < 0.18f ||
+                        trap.CatchAnchor.localPosition.y > 0.35f ||
                         trap.StrandCount < 5 ||
                         trap.SupportRoot.Find("RootedBranchShelf_3D") == null)
                     {
-                        errors.Add("Sticky sap must provide a broad supported catch bed, magnetic anchor, and at least five elastic strands.");
+                        errors.Add("Sticky sap must provide a broad supported catch bed, foot-level magnetic anchor, and at least five elastic strands.");
                     }
 
                     Transform sapSurface =
                         sap.transform.Find("StickySapSurface_3D");
+                    Transform sapCore =
+                        sapSurface != null
+                            ? sapSurface.Find("AmberSapPoolCore_3D")
+                            : null;
+                    Transform sapRim =
+                        sapSurface != null
+                            ? sapSurface.Find("AmberSapRim_3D")
+                            : null;
+                    Renderer sapCoreRenderer =
+                        sapCore != null ? sapCore.GetComponent<Renderer>() : null;
+                    Renderer sapRimRenderer =
+                        sapRim != null ? sapRim.GetComponent<Renderer>() : null;
                     Bounds sapBounds;
                     if (sapSurface == null ||
-                        sapSurface.Find("AmberSapPoolCore_3D") == null ||
+                        sapCore == null ||
+                        sapRim == null ||
+                        sapCore.localPosition.z > -0.25f ||
+                        sapRim.localPosition.z > -0.15f ||
+                        sapCoreRenderer == null ||
+                        sapCoreRenderer.sharedMaterial == null ||
+                        sapCoreRenderer.sharedMaterial.renderQueue >=
+                            (int)UnityEngine.Rendering.RenderQueue.Transparent ||
+                        sapRimRenderer == null ||
+                        sapRimRenderer.sharedMaterial == null ||
+                        sapRimRenderer.sharedMaterial.renderQueue >=
+                            (int)UnityEngine.Rendering.RenderQueue.Transparent ||
                         sapSurface.Find("AmberPuddleLobe_3") == null ||
                         sapSurface.Find("SapBubble_2") == null ||
                         sapSurface.Find("HangingSapDrip_1") == null ||
@@ -1214,9 +1241,37 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                             out sapBounds) ||
                         sapBounds.size.x < 2.9f ||
                         sapBounds.size.y < 0.45f ||
-                        sapBounds.size.y > 1.15f)
+                        sapBounds.size.y > 1.15f ||
+                        sapTrigger == null ||
+                        sapTrigger.size.x < sapBounds.size.x + 0.3f)
                     {
-                        errors.Add("Sticky sap must remain a low, wide, bubbling 3D amber bed with visible drips instead of a floating dot or mushroom stack.");
+                        errors.Add("Sticky sap must remain a low, wide, camera-facing opaque amber bed with a dark rim, bubbles, and visible drips instead of a floating dot or hidden mushroom stack.");
+                    }
+
+                    RunChunkDefinition sapChunk =
+                        AssetDatabase.LoadAssetAtPath<RunChunkDefinition>(StickySapChunkPath);
+                    RunChunkSpawn sapSpawn = null;
+                    if (sapChunk != null && sapChunk.Spawns != null)
+                    {
+                        for (int spawnIndex = 0;
+                            spawnIndex < sapChunk.Spawns.Length;
+                            spawnIndex++)
+                        {
+                            RunChunkSpawn candidate = sapChunk.Spawns[spawnIndex];
+                            if (candidate != null && candidate.Prefab == sap)
+                            {
+                                sapSpawn = candidate;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (sapChunk == null ||
+                        sapSpawn == null ||
+                        sapSpawn.LocalPosition.y < 0.75f ||
+                        sapChunk.EntryHeightRange.x < 0f)
+                    {
+                        errors.Add("SapEscape must place its sap on a visible canopy branch above the lagoon with a reachable entry envelope.");
                     }
                 }
             }

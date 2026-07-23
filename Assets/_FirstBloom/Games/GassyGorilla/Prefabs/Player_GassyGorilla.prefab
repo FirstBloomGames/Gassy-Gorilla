@@ -30890,6 +30890,7 @@ MonoBehaviour:
   swingCameraSmoothingMultiplier: 1.85
   vineSlowMoScale: 0.93
   vineSlowMoDuration: 0.06
+  stickySapMinimumHoldDuration: 0.16
   visualRoot: {fileID: 1416821914066181379}
   fartPuff: {fileID: 2928445171271908969}
   fartShockwaveBurst: {fileID: 4897818945428173817}

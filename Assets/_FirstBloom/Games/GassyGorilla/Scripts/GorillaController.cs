@@ -57,6 +57,10 @@ namespace FirstBloom.Games.GassyGorilla
         [SerializeField] private float vineSlowMoScale = 0.88f;
         [SerializeField] private float vineSlowMoDuration = 0.07f;
 
+        [Header("Sticky Sap")]
+        [Range(0.1f, 0.3f)]
+        [SerializeField] private float stickySapMinimumHoldDuration = 0.16f;
+
         [Header("Polish")]
         [SerializeField] private Transform visualRoot;
         [SerializeField] private ParticleSystem fartPuff;
@@ -430,7 +434,10 @@ namespace FirstBloom.Games.GassyGorilla
 
         public bool TryEscapeStickySap()
         {
-            if (!isStickySap || gameManager == null || !gameManager.IsRunActive)
+            if (!isStickySap ||
+                Time.time - stickySapCapturedAt < stickySapMinimumHoldDuration ||
+                gameManager == null ||
+                !gameManager.IsRunActive)
             {
                 return false;
             }

@@ -1550,7 +1550,17 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             profile.Configure(
                 stages,
                 550f,
-                1.14f,
+                1.2f,
+                400f,
+                900f,
+                500f,
+                90f,
+                0.62f,
+                0.34f,
+                450f,
+                0.35f,
+                2.1f,
+                3.6f,
                 90f,
                 3,
                 4,
@@ -1933,15 +1943,15 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 4,
                 RunChunkTag.Hazard | RunChunkTag.Predator,
                 RunChunkTag.Hazard | RunChunkTag.Predator,
-                new Vector2(-0.3f, 2.8f),
-                new Vector2(0.5f, 3.5f),
+                new Vector2(0.2f, 3.1f),
+                new Vector2(0.7f, 3.5f),
                 new Vector2(0f, 100f),
                 new Vector2(38f, 100f),
                 4.6f,
                 new[]
                 {
                     ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 1.55f, 0.9f, -6f),
-                    ChunkSpawn(prefabs.StickySapObstacle, RunChunkSpawnKind.Hazard, 5.35f, -0.42f),
+                    ChunkSpawn(prefabs.StickySapObstacle, RunChunkSpawnKind.Hazard, 5.35f, 0.9f),
                     ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 8.65f, 2.05f, 7f)
                 });
 
@@ -2051,6 +2061,50 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 11.45f, 3.05f, 7f)
                 });
 
+            RunChunkDefinition doubleThornGauntlet = CreateOrUpdateRunChunk(
+                "DoubleThornGauntlet",
+                RunChunkTag.Hazard | RunChunkTag.Boost | RunChunkTag.NoVine | RunChunkTag.Gauntlet,
+                true,
+                14.5f,
+                0.42f,
+                4,
+                4,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                new Vector2(0.1f, 3.8f),
+                new Vector2(0.5f, 4f),
+                new Vector2(30f, 100f),
+                new Vector2(0f, 100f),
+                5.2f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.Bean, RunChunkSpawnKind.Pickup, 2f, 1.25f, -7f),
+                    ChunkSpawn(prefabs.SpikyStumpObstacle, RunChunkSpawnKind.Hazard, 5.35f, -0.92f),
+                    ChunkSpawn(prefabs.SpikyStumpObstacle, RunChunkSpawnKind.Hazard, 10.85f, -0.92f)
+                });
+
+            RunChunkDefinition geyserThornGauntlet = CreateOrUpdateRunChunk(
+                "GeyserThornGauntlet",
+                RunChunkTag.Hazard | RunChunkTag.Boost | RunChunkTag.NoVine | RunChunkTag.Gauntlet,
+                true,
+                15.2f,
+                0.38f,
+                4,
+                4,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                RunChunkTag.Hazard | RunChunkTag.Predator,
+                new Vector2(0.1f, 3.8f),
+                new Vector2(0.6f, 4.1f),
+                new Vector2(28f, 100f),
+                new Vector2(0f, 100f),
+                5.3f,
+                new[]
+                {
+                    ChunkSpawn(prefabs.MudGeyserObstacle, RunChunkSpawnKind.Hazard, 5.6f, -0.88f),
+                    ChunkSpawn(prefabs.SpikyStumpObstacle, RunChunkSpawnKind.Hazard, 11.1f, -0.92f),
+                    ChunkSpawn(prefabs.BananaBunch, RunChunkSpawnKind.Pickup, 13.75f, 2.75f, 7f)
+                });
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
@@ -2074,6 +2128,8 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             bounceBloom = LoadRunChunk("BounceBloom");
             postPredatorFeast = LoadRunChunk("PostPredatorFeast");
             crocodileBaitLift = LoadRunChunk("CrocodileBaitLift");
+            doubleThornGauntlet = LoadRunChunk("DoubleThornGauntlet");
+            geyserThornGauntlet = LoadRunChunk("GeyserThornGauntlet");
 
             return new RunChunkSet
             {
@@ -2098,7 +2154,9 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     canopyCurrent,
                     bounceBloom,
                     postPredatorFeast,
-                    crocodileBaitLift
+                    crocodileBaitLift,
+                    doubleThornGauntlet,
+                    geyserThornGauntlet
                 },
                 Opening = new[] { openingBoost, safeVine, recovery, hazardIntroduction }
             };
@@ -2957,6 +3015,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             SetFloat(controller, "boostInputBuffer", 0.1f);
             SetFloat(controller, "boostFallRecovery", 0.36f);
             SetFloat(controller, "maxBoostVerticalBonus", 1.15f);
+            SetFloat(controller, "stickySapMinimumHoldDuration", 0.16f);
             SetFloat(controller, "fuelDrainPerBoost", 17.5f);
             SetFloat(controller, "swingAngleDegrees", 26f);
             SetFloat(controller, "swingSpeed", 2.35f);
@@ -3514,26 +3573,38 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GameObject sapSurface = new GameObject("StickySapSurface_3D");
             sapSurface.transform.SetParent(root.transform, false);
             ModelVisualAsset sapAsset = meshyAssets.StickySapBlob;
+            Material sapRimMaterial = CreateColorMaterial(
+                "GG_StickySapRim_3D",
+                new Color(0.62f, 0.16f, 0.018f, 1f),
+                false);
             Material sapPoolMaterial = CreateColorMaterial(
                 "GG_StickySapPoolCore_3D",
-                new Color(0.94f, 0.37f, 0.045f, 0.9f),
-                true);
+                new Color(1f, 0.38f, 0.025f, 1f),
+                false);
+            CreatePrimitiveVisual(
+                "AmberSapRim_3D",
+                PrimitiveType.Sphere,
+                sapSurface.transform,
+                new Vector3(0f, 0.15f, -0.2f),
+                new Vector3(3.24f, 0.43f, 0.9f),
+                sapRimMaterial,
+                3);
             CreatePrimitiveVisual(
                 "AmberSapPoolCore_3D",
                 PrimitiveType.Sphere,
                 sapSurface.transform,
-                new Vector3(0f, 0.17f, 0.1f),
-                new Vector3(3.04f, 0.36f, 0.92f),
+                new Vector3(0f, 0.2f, -0.32f),
+                new Vector3(3.02f, 0.34f, 0.82f),
                 sapPoolMaterial,
                 4);
 
             Vector3[] puddlePositions =
             {
-                new Vector3(-1.04f, 0.18f, 0.02f),
-                new Vector3(-0.46f, 0.23f, 0.08f),
-                new Vector3(0.18f, 0.21f, 0.02f),
-                new Vector3(0.8f, 0.19f, 0.07f),
-                new Vector3(1.18f, 0.15f, 0f)
+                new Vector3(-1.04f, 0.2f, -0.35f),
+                new Vector3(-0.46f, 0.25f, -0.38f),
+                new Vector3(0.18f, 0.23f, -0.36f),
+                new Vector3(0.8f, 0.21f, -0.37f),
+                new Vector3(1.18f, 0.17f, -0.34f)
             };
             Vector3[] puddleScales =
             {
@@ -3566,7 +3637,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     new GameObject("SuppliedResinKnot_3D");
                 resinKnot.transform.SetParent(sapSurface.transform, false);
                 resinKnot.transform.localPosition =
-                    new Vector3(-1.12f, 0.23f, -0.08f);
+                    new Vector3(-1.12f, 0.25f, -0.42f);
                 CreateModelVisualInstance(
                     sapAsset,
                     "TexturedResinKnot_3D",
@@ -3581,10 +3652,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
             Vector3[] bubblePositions =
             {
-                new Vector3(-0.7f, 0.4f, 0.2f),
-                new Vector3(-0.12f, 0.45f, 0.16f),
-                new Vector3(0.54f, 0.39f, 0.22f),
-                new Vector3(1f, 0.32f, 0.16f)
+                new Vector3(-0.7f, 0.42f, -0.48f),
+                new Vector3(-0.12f, 0.47f, -0.5f),
+                new Vector3(0.54f, 0.41f, -0.47f),
+                new Vector3(1f, 0.34f, -0.45f)
             };
             float[] bubbleSizes = { 0.2f, 0.27f, 0.18f, 0.14f };
             for (int i = 0; i < bubblePositions.Length; i++)
@@ -3611,15 +3682,15 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                 "SapSurfaceGlint_3D",
                 PrimitiveType.Sphere,
                 sapSurface.transform,
-                new Vector3(-0.06f, 0.34f, 0.25f),
+                new Vector3(-0.06f, 0.36f, -0.56f),
                 new Vector3(2.72f, 0.1f, 0.72f),
                 glowMaterial,
                 8);
 
             Vector3[] dripPositions =
             {
-                new Vector3(-1.16f, -0.24f, 0.12f),
-                new Vector3(1.08f, -0.2f, 0.1f)
+                new Vector3(-1.16f, -0.22f, -0.34f),
+                new Vector3(1.08f, -0.18f, -0.32f)
             };
             for (int i = 0; i < dripPositions.Length; i++)
             {
@@ -3639,7 +3710,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             GameObject anchorObject = new GameObject("SapCatchAnchor");
             anchorObject.transform.SetParent(sapSurface.transform, false);
             anchorObject.transform.localPosition =
-                new Vector3(0f, 0.62f, 0f);
+                new Vector3(0f, 0.24f, -0.12f);
 
             Material strandMaterial = CreateColorMaterial(
                 "GG_StickySapStrand_3D",
@@ -3652,7 +3723,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     "ElasticSapStrand_" + (i + 1),
                     PrimitiveType.Capsule,
                     root.transform,
-                    new Vector3(-1f + i * 0.5f, 0.36f, 0.09f),
+                    new Vector3(-1f + i * 0.5f, 0.36f, -0.44f),
                     new Vector3(0.14f, 0.25f, 0.14f),
                     strandMaterial,
                     10 + i);
@@ -3663,18 +3734,18 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             ParticleSystem catchBurst = CreateSapBurst(
                 "SapCatchBurst_3D",
                 root.transform,
-                new Vector3(0f, 0.54f, 0.06f),
+                new Vector3(0f, 0.54f, -0.46f),
                 false);
             ParticleSystem escapeBurst = CreateSapBurst(
                 "SapEscapeBurst_3D",
                 root.transform,
-                new Vector3(0f, 0.58f, 0.04f),
+                new Vector3(0f, 0.58f, -0.48f),
                 true);
 
             BoxCollider2D trigger = root.AddComponent<BoxCollider2D>();
             trigger.isTrigger = true;
-            trigger.size = new Vector2(2.9f, 1.3f);
-            trigger.offset = new Vector2(0f, 0.14f);
+            trigger.size = new Vector2(3.65f, 2.05f);
+            trigger.offset = new Vector2(0f, 0.4f);
 
             GassyInteractionMarker marker =
                 root.AddComponent<GassyInteractionMarker>();

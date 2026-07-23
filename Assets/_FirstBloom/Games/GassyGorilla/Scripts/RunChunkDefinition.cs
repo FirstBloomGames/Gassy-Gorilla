@@ -15,7 +15,8 @@ namespace FirstBloom.Games.GassyGorilla
         Hazard = 1 << 4,
         Recovery = 1 << 5,
         NoVine = 1 << 6,
-        Predator = 1 << 7
+        Predator = 1 << 7,
+        Gauntlet = 1 << 8
     }
 
     public enum RunChunkSpawnKind
@@ -106,6 +107,25 @@ namespace FirstBloom.Games.GassyGorilla
         public bool SupportsDifficulty(int difficulty)
         {
             return difficulty >= minimumDifficulty && difficulty <= maximumDifficulty;
+        }
+
+        public int CountSpawns(RunChunkSpawnKind kind)
+        {
+            if (spawns == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int i = 0; i < spawns.Length; i++)
+            {
+                if (spawns[i] != null && spawns[i].Prefab != null && spawns[i].Kind == kind)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         public bool CanFollow(RunChunkDefinition previous)

@@ -638,12 +638,19 @@ namespace FirstBloom.Games.GassyGorilla
             bool crocodileHitQa = absoluteUrl.IndexOf("qa-croc-hit", StringComparison.OrdinalIgnoreCase) >= 0;
             bool crocodileQa = crocodileHitQa ||
                 absoluteUrl.IndexOf("qa-croc", StringComparison.OrdinalIgnoreCase) >= 0;
-            if (!vineQa && !crocodileQa)
+            string requestedDistance = GetQueryValue(absoluteUrl, "qa-distance");
+            bool distanceQa = !string.IsNullOrWhiteSpace(requestedDistance);
+            if (!vineQa && !crocodileQa && !distanceQa)
             {
                 return;
             }
 
             RunChunkDirector runDirector = FindAnyObjectByType<RunChunkDirector>();
+            if (distanceQa && runDirector != null)
+            {
+                runDirector.ConfigureDistanceForQa(requestedDistance);
+            }
+
             if (vineQa)
             {
                 IsVineQaMode = true;
@@ -652,6 +659,11 @@ namespace FirstBloom.Games.GassyGorilla
                     runDirector.ConfigureOpeningForQa("LowVineRescue");
                 }
 
+                return;
+            }
+
+            if (!crocodileQa)
+            {
                 return;
             }
 

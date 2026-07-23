@@ -48,6 +48,8 @@ namespace FirstBloom.Games.GassyGorilla
         private Vector3 initialLocalScale;
         private bool hasSpawnPose;
 
+        public float RefillAmount { get { return Mathf.Max(0f, refillAmount); } }
+
         private void Awake()
         {
             pickupCollider = GetComponent<Collider2D>();

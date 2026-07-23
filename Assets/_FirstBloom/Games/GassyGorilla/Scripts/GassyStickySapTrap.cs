@@ -53,8 +53,8 @@ namespace FirstBloom.Games.GassyGorilla
                     activeMarker.InteractionType == GassyInteractionType.SapEscape &&
                     box != null &&
                     box.isTrigger &&
-                    box.size.x >= 2.5f &&
-                    box.size.y >= 1.15f &&
+                    box.size.x >= 3.5f &&
+                    box.size.y >= 2f &&
                     catchAnchor != null &&
                     supportRoot != null &&
                     visualRoot != null &&
@@ -115,6 +115,16 @@ namespace FirstBloom.Games.GassyGorilla
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (other == null)
+            {
+                return;
+            }
+
+            TryCapture(other.GetComponentInParent<GorillaController>());
+        }
+
+        private void OnTriggerStay2D(Collider2D other)
+        {
+            if (other == null || consumed || occupiedPlayer != null)
             {
                 return;
             }

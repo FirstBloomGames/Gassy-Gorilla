@@ -48,6 +48,7 @@ namespace FirstBloom.Games.GassyGorilla
         private bool finiteRoute;
         private bool finiteRouteExhausted;
         private float configuredFiniteRouteEndX;
+        private bool preserveAllPickupsForNextChunk;
 
         public event Action<float, int> DifficultyChanged;
 
@@ -65,6 +66,9 @@ namespace FirstBloom.Games.GassyGorilla
         public bool IsFiniteRoute { get { return finiteRoute; } }
         public bool IsFiniteRouteExhausted { get { return finiteRouteExhausted; } }
         public float ConfiguredFiniteRouteEndX { get { return configuredFiniteRouteEndX; } }
+        public float CurrentPickupRetention { get; private set; } = 1f;
+        public int LastAuthoredPickupCount { get; private set; }
+        public int LastSpawnedPickupCount { get; private set; }
 
         private void Start()
         {
@@ -122,6 +126,10 @@ namespace FirstBloom.Games.GassyGorilla
             chunkIndex = 0;
             nextChunkStartX = firstChunkStartX;
             finiteRouteExhausted = false;
+            preserveAllPickupsForNextChunk = false;
+            CurrentPickupRetention = 1f;
+            LastAuthoredPickupCount = 0;
+            LastSpawnedPickupCount = 0;
             lastReportedIntensity = -1f;
             lastReportedStage = -1;
             random = null;
@@ -151,6 +159,53 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             ConfigureSeed(seed, false);
+        }
+
+        public bool ConfigureDistanceForQa(string distanceValue)
+        {
+            int requestedDistance;
+            if (!int.TryParse(distanceValue, out requestedDistance))
+            {
+                Debug.LogWarning("Ignoring invalid Gassy Gorilla QA distance: " + distanceValue, this);
+                return false;
+            }
+
+            if (distanceSource == null)
+            {
+                Debug.LogWarning("Cannot configure Gassy Gorilla QA distance without a distance source.", this);
+                return false;
+            }
+
+            int safeDistance = Mathf.Clamp(requestedDistance, 0, 5000);
+            Vector3 position = distanceSource.position;
+            position.x = firstChunkStartX + safeDistance;
+            distanceSource.position = position;
+            ResetDirector();
+            openingIndex = openingSequence != null ? openingSequence.Length : 0;
+            nextChunkStartX = distanceSource.position.x + 6f;
+            preserveAllPickupsForNextChunk = false;
+            UpdateDifficulty(true);
+
+            Debug.Log(
+                "[GG_QA] Endless distance set to " + safeDistance + "m, retention=" +
+                (difficultyProfile != null
+                    ? difficultyProfile.EvaluatePickupRetention(safeDistance).ToString("P0")
+                    : "n/a") + ", speed=" +
+                (difficultyProfile != null
+                    ? difficultyProfile.EvaluateSpeedMultiplier(safeDistance).ToString("F2") + "x"
+                    : "n/a") + ".",
+                this);
+            return true;
+        }
+
+        public void ReportQaState()
+        {
+            Debug.Log(
+                "[GG_QA] Endless state distance=" + CurrentRunDistance.ToString("F0") +
+                "m retention=" + CurrentPickupRetention.ToString("P0") +
+                " pickups=" + LastSpawnedPickupCount + "/" + LastAuthoredPickupCount +
+                " pressure=" + CurrentPressure + ".",
+                this);
         }
 
         public bool ConfigureOpeningForQa(string primaryChunkId)
@@ -256,6 +311,7 @@ namespace FirstBloom.Games.GassyGorilla
             bool hasRecovery = false;
             bool hasHazard = false;
             bool hasPredator = false;
+            int gauntletCount = 0;
 
             for (int i = 0; i < chunkDefinitions.Length; i++)
             {
@@ -282,6 +338,20 @@ namespace FirstBloom.Games.GassyGorilla
                 hasRecovery |= (definition.Tags & RunChunkTag.Recovery) != 0;
                 hasHazard |= (definition.Tags & RunChunkTag.Hazard) != 0;
                 hasPredator |= (definition.Tags & RunChunkTag.Predator) != 0;
+
+                if ((definition.Tags & RunChunkTag.Gauntlet) != 0)
+                {
+                    gauntletCount++;
+                    if (definition.CountSpawns(RunChunkSpawnKind.Hazard) < 2)
+                    {
+                        errors.Add(definition.ChunkId + " must contain at least two spaced obstacles.");
+                    }
+
+                    if (definition.MinimumDifficulty < 4)
+                    {
+                        errors.Add(definition.ChunkId + " must remain locked to the Legend stage.");
+                    }
+                }
             }
 
             if (mainPoolCount < 12)
@@ -297,6 +367,11 @@ namespace FirstBloom.Games.GassyGorilla
             if (!hasPredator)
             {
                 errors.Add("Run chunk library must include a spaced predator beat.");
+            }
+
+            if (gauntletCount < 2)
+            {
+                errors.Add("Run chunk library must include at least two Legend-only obstacle gauntlets.");
             }
 
             ValidateOpeningSequence(errors);
@@ -330,11 +405,13 @@ namespace FirstBloom.Games.GassyGorilla
 
         private RunChunkDefinition GetNextDefinition()
         {
+            preserveAllPickupsForNextChunk = false;
             if (openingSequence != null && openingIndex < openingSequence.Length)
             {
                 RunChunkDefinition openingDefinition = openingSequence[openingIndex++];
                 if (openingDefinition != null)
                 {
+                    preserveAllPickupsForNextChunk = true;
                     Remember(openingDefinition, fairnessState, GetFuelNormalized());
                     return openingDefinition;
                 }
@@ -416,6 +493,7 @@ namespace FirstBloom.Games.GassyGorilla
             root.name = "RunChunk_" + chunkIndex.ToString("D3") + "_" + definition.ChunkId;
             root.transform.position = new Vector3(nextChunkStartX, 0f, 0f);
             ActivatePoolables(root);
+            ApplyPickupAvailability(root, definition, preserveAllPickupsForNextChunk);
             root.SetActive(true);
             NotifyPoolables(root, true);
 
@@ -559,6 +637,148 @@ namespace FirstBloom.Games.GassyGorilla
                     behaviour.gameObject.SetActive(true);
                 }
             }
+        }
+
+        private void ApplyPickupAvailability(
+            GameObject root,
+            RunChunkDefinition definition,
+            bool preserveAll)
+        {
+            IArcadePoolable[] poolables = GetPoolables(root);
+            int authoredCount = 0;
+            int strongestPickupIndex = -1;
+            float strongestRefill = float.NegativeInfinity;
+            for (int i = 0; i < poolables.Length; i++)
+            {
+                if (poolables[i] is FartFuelPickup pickup && pickup != null)
+                {
+                    if (pickup.RefillAmount > strongestRefill)
+                    {
+                        strongestRefill = pickup.RefillAmount;
+                        strongestPickupIndex = authoredCount;
+                    }
+
+                    authoredCount++;
+                }
+            }
+
+            LastAuthoredPickupCount = authoredCount;
+            CurrentPickupRetention = preserveAll || difficultyProfile == null
+                ? 1f
+                : difficultyProfile.EvaluatePickupRetention(
+                    Mathf.Max(0f, nextChunkStartX - firstChunkStartX));
+
+            if (authoredCount <= 0)
+            {
+                LastSpawnedPickupCount = 0;
+                return;
+            }
+
+            bool guaranteesPickup =
+                HasTag(definition, RunChunkTag.Recovery) ||
+                (fairnessState.LowFuelRescueActive &&
+                    (HasTag(definition, RunChunkTag.Fuel) ||
+                     HasTag(definition, RunChunkTag.Recovery)));
+
+            EnsureRandom();
+            int retainedCount = preserveAll
+                ? authoredCount
+                : CalculateRetainedPickupCount(
+                    authoredCount,
+                    CurrentPickupRetention,
+                    guaranteesPickup,
+                    random.NextDouble());
+
+            LastSpawnedPickupCount = retainedCount;
+            if (retainedCount >= authoredCount)
+            {
+                return;
+            }
+
+            for (int i = 0; i < authoredCount; i++)
+            {
+                FartFuelPickup pickup = GetPickupAt(poolables, i);
+                if (pickup != null)
+                {
+                    pickup.gameObject.SetActive(false);
+                }
+            }
+
+            int activated = 0;
+            if (guaranteesPickup && strongestPickupIndex >= 0)
+            {
+                FartFuelPickup strongest = GetPickupAt(poolables, strongestPickupIndex);
+                if (strongest != null)
+                {
+                    strongest.gameObject.SetActive(true);
+                    activated = 1;
+                }
+            }
+
+            int startIndex = authoredCount > 1 ? random.Next(authoredCount) : 0;
+            for (int offset = 0; offset < authoredCount && activated < retainedCount; offset++)
+            {
+                int pickupIndex = (startIndex + offset) % authoredCount;
+                FartFuelPickup pickup = GetPickupAt(poolables, pickupIndex);
+                if (pickup != null && !pickup.gameObject.activeSelf)
+                {
+                    pickup.gameObject.SetActive(true);
+                    activated++;
+                }
+            }
+
+            LastSpawnedPickupCount = activated;
+        }
+
+        public static int CalculateRetainedPickupCount(
+            int authoredCount,
+            float retention,
+            bool guaranteeOne,
+            double stochasticRoll)
+        {
+            int safeAuthoredCount = Mathf.Max(0, authoredCount);
+            if (safeAuthoredCount == 0)
+            {
+                return 0;
+            }
+
+            float expected = safeAuthoredCount * Mathf.Clamp01(retention);
+            int retained = Mathf.FloorToInt(expected);
+            float fractional = expected - retained;
+            if (Math.Max(0d, Math.Min(1d, stochasticRoll)) < fractional)
+            {
+                retained++;
+            }
+
+            if (guaranteeOne)
+            {
+                retained = Mathf.Max(1, retained);
+            }
+
+            return Mathf.Clamp(retained, 0, safeAuthoredCount);
+        }
+
+        private static FartFuelPickup GetPickupAt(
+            IArcadePoolable[] poolables,
+            int pickupIndex)
+        {
+            int currentIndex = 0;
+            for (int i = 0; i < poolables.Length; i++)
+            {
+                if (!(poolables[i] is FartFuelPickup pickup) || pickup == null)
+                {
+                    continue;
+                }
+
+                if (currentIndex == pickupIndex)
+                {
+                    return pickup;
+                }
+
+                currentIndex++;
+            }
+
+            return null;
         }
 
         private void NotifyPoolables(GameObject root, bool spawned)
@@ -780,6 +1000,8 @@ namespace FirstBloom.Games.GassyGorilla
                 Debug.Log(
                     "[GG_DIFFICULTY] " + difficultyProfile.GetStageName(stage) +
                     " hazard=" + metrics.HazardRate.ToString("P1") +
+                    " obstacles/chunk=" + metrics.AverageObstacleCount.ToString("F2") +
+                    " food/chunk=" + metrics.AveragePickupCount.ToString("F2") +
                     " predator=" + metrics.PredatorRate.ToString("P1") +
                     " recovery=" + metrics.RecoveryRate.ToString("P1") +
                     " maxPressure=" + metrics.MaximumPressure + ".",
@@ -796,23 +1018,113 @@ namespace FirstBloom.Games.GassyGorilla
                 errors.Add("Final difficulty simulation does not introduce a measurable predator cadence.");
             }
 
+            float[] lateDistances =
+            {
+                difficultyProfile.EndlessPressureStartDistance,
+                difficultyProfile.EndlessPressureStartDistance + 400f,
+                difficultyProfile.EndlessPressureStartDistance + 1200f,
+                difficultyProfile.EndlessPressureStartDistance + 2600f
+            };
+            int finalStage = Mathf.Max(0, difficultyProfile.StageCount - 1);
+            int lateTransitionCount = Mathf.Max(1000, transitionsPerStage);
+            RunSimulationMetrics legendMetrics = default;
+            RunSimulationMetrics farRunMetrics = default;
+            RunSimulationMetrics previousLateMetrics = default;
+            for (int i = 0; i < lateDistances.Length; i++)
+            {
+                RunSimulationMetrics metrics = SimulateAtDistance(
+                    errors,
+                    finalStage,
+                    lateDistances[i],
+                    lateTransitionCount,
+                    910001);
+                if (i > 0)
+                {
+                    if (metrics.AverageObstacleCount + 0.002f <
+                        previousLateMetrics.AverageObstacleCount ||
+                        metrics.GauntletRate + 0.002f <
+                        previousLateMetrics.GauntletRate)
+                    {
+                        errors.Add("Endless obstacle density regressed between late-run checkpoints.");
+                    }
+
+                    if (metrics.AveragePickupCount >=
+                        previousLateMetrics.AveragePickupCount - 0.015f)
+                    {
+                        errors.Add("Endless food availability did not keep decreasing between late-run checkpoints.");
+                    }
+                }
+
+                previousLateMetrics = metrics;
+                if (i == 0)
+                {
+                    legendMetrics = metrics;
+                }
+
+                if (i == lateDistances.Length - 1)
+                {
+                    farRunMetrics = metrics;
+                }
+
+                Debug.Log(
+                    "[GG_ENDLESS] " + lateDistances[i].ToString("F0") + "m" +
+                    " obstacles/chunk=" + metrics.AverageObstacleCount.ToString("F2") +
+                    " food/chunk=" + metrics.AveragePickupCount.ToString("F2") +
+                    " gauntlet=" + metrics.GauntletRate.ToString("P1") + ".",
+                    this);
+            }
+
+            if (farRunMetrics.AverageObstacleCount <= legendMetrics.AverageObstacleCount + 0.05f)
+            {
+                errors.Add("Deep Endless simulation does not increase obstacle density beyond Legend.");
+            }
+
+            if (farRunMetrics.AveragePickupCount >= legendMetrics.AveragePickupCount - 0.2f)
+            {
+                errors.Add("Deep Endless simulation does not reduce food availability beyond Legend.");
+            }
+
+            if (farRunMetrics.GauntletRate <= legendMetrics.GauntletRate + 0.02f)
+            {
+                errors.Add("Deep Endless simulation does not increase late gauntlet cadence.");
+            }
+
             ValidateLowFuelRecovery(errors);
         }
 
         private RunSimulationMetrics SimulateStage(List<string> errors, int stage, int count)
         {
-            System.Random simulationRandom = new System.Random(8675309 + stage * 7919);
+            return SimulateAtDistance(
+                errors,
+                stage,
+                difficultyProfile.GetStageRepresentativeDistance(stage),
+                count,
+                8675309 + stage * 7919);
+        }
+
+        private RunSimulationMetrics SimulateAtDistance(
+            List<string> errors,
+            int stage,
+            float distance,
+            int count,
+            int seed)
+        {
+            System.Random simulationRandom = new System.Random(seed);
             List<RunChunkDefinition> history = new List<RunChunkDefinition>();
             FairnessState state = new FairnessState();
             RunChunkDefinition previous = openingSequence != null && openingSequence.Length > 0
                 ? openingSequence[openingSequence.Length - 1]
                 : null;
-            float distance = difficultyProfile.GetStageRepresentativeDistance(stage);
             const float fuelNormalized = 0.72f;
             int hazards = 0;
             int predators = 0;
             int recoveries = 0;
             int maxPressureSeen = 0;
+            int obstacleCount = 0;
+            float expectedPickupCount = 0f;
+            int gauntlets = 0;
+            string simulationLabel =
+                difficultyProfile.GetStageName(stage) + " at " + distance.ToString("F0") + "m";
 
             for (int i = 0; i < count; i++)
             {
@@ -865,38 +1177,40 @@ namespace FirstBloom.Games.GassyGorilla
                 if (selected == null)
                 {
                     errors.Add("Difficulty simulation found no fair selection in " +
-                        difficultyProfile.GetStageName(stage) + " at transition " + i + ".");
+                        simulationLabel + " at transition " + i + ".");
                     break;
                 }
 
                 if (!selected.CanFollow(previous))
                 {
                     errors.Add("Difficulty simulation produced an incompatible transition from " +
-                        (previous != null ? previous.ChunkId : "Start") + " to " + selected.ChunkId + ".");
+                        (previous != null ? previous.ChunkId : "Start") + " to " +
+                        selected.ChunkId + " in " + simulationLabel + ".");
                     break;
                 }
 
                 bool isHazard = HasTag(selected, RunChunkTag.Hazard);
                 bool isPredator = HasTag(selected, RunChunkTag.Predator);
                 bool isRecovery = HasTag(selected, RunChunkTag.Recovery);
+                bool isGauntlet = HasTag(selected, RunChunkTag.Gauntlet);
                 if (isHazard && previous != null && HasTag(previous, RunChunkTag.Hazard))
                 {
                     errors.Add("Difficulty simulation selected consecutive hazards in " +
-                        difficultyProfile.GetStageName(stage) + ".");
+                        simulationLabel + ".");
                     break;
                 }
 
                 if (isPredator && state.PredatorCooldownRemaining > 0)
                 {
                     errors.Add("Difficulty simulation violated the predator cooldown in " +
-                        difficultyProfile.GetStageName(stage) + ".");
+                        simulationLabel + ".");
                     break;
                 }
 
                 if ((state.RecoveryRequired || state.Pressure >= difficultyProfile.MaximumPressure) && !isRecovery)
                 {
                     errors.Add("Difficulty simulation failed to force recovery after pressure in " +
-                        difficultyProfile.GetStageName(stage) + ".");
+                        simulationLabel + ".");
                     break;
                 }
 
@@ -905,24 +1219,37 @@ namespace FirstBloom.Games.GassyGorilla
                 if (state.Pressure > difficultyProfile.MaximumPressure)
                 {
                     errors.Add("Difficulty simulation exceeded its pressure limit in " +
-                        difficultyProfile.GetStageName(stage) + ".");
+                        simulationLabel + ".");
                     break;
                 }
 
                 hazards += isHazard ? 1 : 0;
                 predators += isPredator ? 1 : 0;
                 recoveries += isRecovery ? 1 : 0;
+                gauntlets += isGauntlet ? 1 : 0;
+                obstacleCount += selected.CountSpawns(RunChunkSpawnKind.Hazard);
+                expectedPickupCount += difficultyProfile.EvaluateExpectedPickupCount(
+                    selected.CountSpawns(RunChunkSpawnKind.Pickup),
+                    distance,
+                    isRecovery);
                 previous = selected;
                 RememberForSimulation(history, selected);
             }
 
-            return new RunSimulationMetrics(count, hazards, predators, recoveries, maxPressureSeen);
+            return new RunSimulationMetrics(
+                count,
+                hazards,
+                predators,
+                recoveries,
+                maxPressureSeen,
+                obstacleCount,
+                expectedPickupCount,
+                gauntlets);
         }
-
         private void ValidateLowFuelRecovery(List<string> errors)
         {
             int stage = Mathf.Max(0, difficultyProfile.StageCount - 1);
-            float distance = difficultyProfile.GetStageRepresentativeDistance(stage);
+            float distance = difficultyProfile.EndlessPressureStartDistance + 2600f;
             float fuelNormalized = Mathf.Max(0.01f, difficultyProfile.LowFuelThreshold * 0.65f);
             FairnessState state = new FairnessState();
             List<RunChunkDefinition> history = new List<RunChunkDefinition>();
@@ -970,6 +1297,16 @@ namespace FirstBloom.Games.GassyGorilla
                 }
 
                 offeredFuel = HasTag(selected, RunChunkTag.Fuel) || HasTag(selected, RunChunkTag.Recovery);
+                if (offeredFuel &&
+                    difficultyProfile.EvaluateExpectedPickupCount(
+                        selected.CountSpawns(RunChunkSpawnKind.Pickup),
+                        distance,
+                        true) < 0.99f)
+                {
+                    errors.Add("Deep Endless low-fuel recovery selected a chunk without a retained pickup.");
+                    break;
+                }
+
                 AdvanceFairnessState(difficultyProfile, state, selected, fuelNormalized);
                 previous = selected;
                 RememberForSimulation(history, selected);
@@ -1032,7 +1369,7 @@ namespace FirstBloom.Games.GassyGorilla
                     continue;
                 }
 
-                totalWeight += GetCandidateWeight(candidate, difficulty, profile, state);
+                totalWeight += GetCandidateWeight(candidate, difficulty, distance, profile, state);
             }
 
             if (totalWeight <= 0f)
@@ -1059,7 +1396,7 @@ namespace FirstBloom.Games.GassyGorilla
                     continue;
                 }
 
-                roll -= GetCandidateWeight(candidate, difficulty, profile, state);
+                roll -= GetCandidateWeight(candidate, difficulty, distance, profile, state);
                 if (roll <= 0d)
                 {
                     return candidate;
@@ -1149,6 +1486,7 @@ namespace FirstBloom.Games.GassyGorilla
         private static float GetCandidateWeight(
             RunChunkDefinition candidate,
             int difficulty,
+            float distance,
             RunDifficultyProfile profile,
             FairnessState state)
         {
@@ -1159,6 +1497,7 @@ namespace FirstBloom.Games.GassyGorilla
             }
 
             weight *= profile.EvaluateTagWeight(difficulty, candidate.Tags);
+            weight *= profile.EvaluateContinuousTagWeight(distance, candidate.Tags);
             if (state != null && state.LowFuelRescueActive)
             {
                 if (HasTag(candidate, RunChunkTag.Fuel))
@@ -1263,7 +1602,8 @@ namespace FirstBloom.Games.GassyGorilla
                 return 0;
             }
 
-            if (HasTag(definition, RunChunkTag.Predator))
+            if (HasTag(definition, RunChunkTag.Predator) ||
+                HasTag(definition, RunChunkTag.Gauntlet))
             {
                 return 2;
             }
@@ -1301,13 +1641,19 @@ namespace FirstBloom.Games.GassyGorilla
             public readonly float HazardRate;
             public readonly float PredatorRate;
             public readonly float RecoveryRate;
+            public readonly float AverageObstacleCount;
+            public readonly float AveragePickupCount;
+            public readonly float GauntletRate;
 
             public RunSimulationMetrics(
                 int count,
                 int hazards,
                 int predators,
                 int recoveries,
-                int maximumPressure)
+                int maximumPressure,
+                int obstacleCount,
+                float expectedPickupCount,
+                int gauntlets)
             {
                 int safeCount = Mathf.Max(1, count);
                 PredatorCount = predators;
@@ -1315,9 +1661,11 @@ namespace FirstBloom.Games.GassyGorilla
                 HazardRate = hazards / (float)safeCount;
                 PredatorRate = predators / (float)safeCount;
                 RecoveryRate = recoveries / (float)safeCount;
+                AverageObstacleCount = obstacleCount / (float)safeCount;
+                AveragePickupCount = expectedPickupCount / safeCount;
+                GauntletRate = gauntlets / (float)safeCount;
             }
         }
-
         private readonly struct ActiveChunk
         {
             public readonly GameObject Root;

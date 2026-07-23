@@ -35,6 +35,19 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
         private const string ExitCodeKey = StatePrefix + "ExitCode";
 
         private static double phaseStartedAt;
+        private static SapContactVerification sapContactVerification;
+
+        private sealed class SapContactVerification
+        {
+            public GameObject Instance;
+            public GassyStickySapTrap Trap;
+            public GorillaController Player;
+            public Rigidbody2D Body;
+            public Collider2D PlayerCollider;
+            public float FuelBefore;
+            public float PhaseStartedAt;
+            public int Phase;
+        }
 
         static GassyExpeditionLessonsPlayModeVerification()
         {
@@ -54,6 +67,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     "Expedition verification requires Unity to be out of Play Mode.");
             }
 
+            sapContactVerification = null;
             GassyExpeditionCatalog catalog = LoadCatalog();
             Require(
                 catalog.Count == GassyExpeditionCatalog.VersionOneExpeditionCount,
@@ -295,7 +309,10 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             Require(controller.Definition == expected, "Expedition controller loaded the wrong definition.");
             Require(player != null, "Expedition player is missing.");
 
-            ExerciseObjective(controller, player, expected);
+            if (!ExerciseObjective(controller, player, expected))
+            {
+                return;
+            }
             Require(
                 controller.IsObjectiveSatisfiedAtFinish(),
                 expected.DisplayTitle + " objective did not complete through its runtime contract.");
@@ -304,88 +321,45 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             AdvancePhase(2);
         }
 
-        private static void ExerciseObjective(
+        private static bool ExerciseObjective(
             GassyExpeditionRunController controller,
             GorillaController player,
             GassyExpeditionDefinition definition)
         {
             if (definition.ObjectiveType == GassyExpeditionObjectiveType.CompleteInteraction)
             {
-                for (int i = 0; i < definition.TargetCount; i++)
+                while (controller.CurrentCount < definition.TargetCount)
                 {
-                    ExerciseInteraction(player, definition.TargetInteraction);
+                    if (!ExerciseInteraction(player, definition.TargetInteraction))
+                    {
+                        return false;
+                    }
                 }
 
-                return;
+                return true;
             }
 
             if (definition.ObjectiveType == GassyExpeditionObjectiveType.CompleteInteractionSet)
             {
-                ExerciseInteraction(player, GassyInteractionType.ThornDodge);
-                ExerciseInteraction(player, GassyInteractionType.GeyserDodge);
-                ExerciseInteraction(player, GassyInteractionType.SapEscape);
-                ExerciseInteraction(player, GassyInteractionType.UpdraftRide);
-                ExerciseInteraction(player, GassyInteractionType.BounceBloom);
-                return;
+                return
+                    ExerciseInteraction(player, GassyInteractionType.ThornDodge) &&
+                    ExerciseInteraction(player, GassyInteractionType.GeyserDodge) &&
+                    ExerciseInteraction(player, GassyInteractionType.SapEscape) &&
+                    ExerciseInteraction(player, GassyInteractionType.UpdraftRide) &&
+                    ExerciseInteraction(player, GassyInteractionType.BounceBloom);
             }
 
             controller.CompleteObjectiveForQa();
+            return true;
         }
 
-        private static void ExerciseInteraction(
+        private static bool ExerciseInteraction(
             GorillaController player,
             GassyInteractionType interactionType)
         {
             if (interactionType == GassyInteractionType.SapEscape)
             {
-                GameObject sapInstance =
-                    InstantiateLessonPrefab(StickySapPrefabPath);
-                try
-                {
-                    GassyStickySapTrap trap =
-                        sapInstance.GetComponent<GassyStickySapTrap>();
-                    Require(
-                        trap != null && trap.IsConfigured,
-                        "The real sticky sap prefab is not configured.");
-                    AlignAnchorWithPlayer(
-                        sapInstance,
-                        trap.CatchAnchor,
-                        player);
-
-                    Rigidbody2D body = player.GetComponent<Rigidbody2D>();
-                    float fuelBefore = player.CurrentFuel;
-                    Require(
-                        trap.TryCapture(player),
-                        "The real sticky sap prefab could not catch the player.");
-                    Require(
-                        player.IsStickySap &&
-                        player.IsAnchoredLessonInteraction &&
-                        trap.IsOccupied,
-                        "Sticky sap did not hold the player at its authored anchor.");
-                    Require(
-                        body.bodyType == RigidbodyType2D.Kinematic &&
-                        Mathf.Abs(body.gravityScale) < 0.001f &&
-                        body.linearVelocity.sqrMagnitude < 0.01f,
-                        "Sticky sap did not stop gravity and motion while caught.");
-                    Require(
-                        player.TryEscapeStickySap(),
-                        "Player could not perform the sap breakout.");
-                    Require(
-                        !player.IsStickySap &&
-                        !trap.IsOccupied &&
-                        body.bodyType == RigidbodyType2D.Dynamic &&
-                        body.gravityScale > 0f,
-                        "Sticky sap did not release the player back to normal physics.");
-                    Require(
-                        Mathf.Abs(player.CurrentFuel - fuelBefore) < 0.01f,
-                        "Sticky sap breakout consumed fart fuel.");
-                }
-                finally
-                {
-                    DestroyLessonPrefab(sapInstance);
-                }
-
-                return;
+                return ExerciseStickySapContact(player);
             }
 
             if (interactionType == GassyInteractionType.UpdraftRide)
@@ -449,10 +423,120 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
                     DestroyLessonPrefab(bloomInstance);
                 }
 
-                return;
+                return true;
             }
 
             GassyRunEvents.RaiseInteractionCompleted(interactionType);
+            return true;
+        }
+
+        private static bool ExerciseStickySapContact(GorillaController player)
+        {
+            if (sapContactVerification == null)
+            {
+                GameObject instance = InstantiateLessonPrefab(StickySapPrefabPath);
+                GassyStickySapTrap trap =
+                    instance.GetComponent<GassyStickySapTrap>();
+                Require(
+                    trap != null && trap.IsConfigured,
+                    "The real sticky sap prefab is not configured.");
+                AlignAnchorWithPlayer(instance, trap.CatchAnchor, player);
+
+                Rigidbody2D body = player.GetComponent<Rigidbody2D>();
+                Collider2D playerCollider = player.GetComponent<Collider2D>();
+                Require(
+                    body != null && playerCollider != null && trap.Trigger != null,
+                    "Sticky sap contact verification is missing physics components.");
+
+                player.SetInputEnabled(false);
+                body.bodyType = RigidbodyType2D.Kinematic;
+                body.gravityScale = 0f;
+                body.linearVelocity = Vector2.zero;
+                Physics2D.SyncTransforms();
+                sapContactVerification = new SapContactVerification
+                {
+                    Instance = instance,
+                    Trap = trap,
+                    Player = player,
+                    Body = body,
+                    PlayerCollider = playerCollider,
+                    FuelBefore = player.CurrentFuel,
+                    PhaseStartedAt = Time.time,
+                    Phase = 0
+                };
+                return false;
+            }
+
+            SapContactVerification verification = sapContactVerification;
+            Require(
+                verification.Player == player &&
+                verification.Instance != null &&
+                verification.Trap != null,
+                "Sticky sap contact verification lost its runtime objects.");
+
+            if (verification.Phase == 0)
+            {
+                if (Time.time - verification.PhaseStartedAt < 0.08f)
+                {
+                    return false;
+                }
+
+                Require(
+                    !player.IsStickySap &&
+                    verification.Trap.Trigger.IsTouching(
+                        verification.PlayerCollider),
+                    "Sticky sap did not begin with a real, temporarily ineligible overlap.");
+                player.SetInputEnabled(true);
+                verification.Phase = 1;
+                verification.PhaseStartedAt = Time.time;
+                return false;
+            }
+
+            if (verification.Phase == 1)
+            {
+                if (!player.IsStickySap || !verification.Trap.IsOccupied)
+                {
+                    Require(
+                        Time.time - verification.PhaseStartedAt < 0.75f,
+                        "Sticky sap failed to recover a catch while the player remained overlapping.");
+                    return false;
+                }
+
+                Require(
+                    player.IsAnchoredLessonInteraction &&
+                    verification.Body.bodyType == RigidbodyType2D.Kinematic &&
+                    Mathf.Abs(verification.Body.gravityScale) < 0.001f &&
+                    verification.Body.linearVelocity.sqrMagnitude < 0.01f,
+                    "Sticky sap did not stop gravity and motion while caught.");
+                Require(
+                    !player.TryEscapeStickySap(),
+                    "Sticky sap accepted the contact tap as an immediate breakout.");
+                verification.Phase = 2;
+                verification.PhaseStartedAt = Time.time;
+                return false;
+            }
+
+            if (Time.time - verification.PhaseStartedAt < 0.2f)
+            {
+                return false;
+            }
+
+            Require(
+                player.TryEscapeStickySap(),
+                "Player could not perform the sap breakout after the hold beat.");
+            Require(
+                !player.IsStickySap &&
+                !verification.Trap.IsOccupied &&
+                verification.Body.bodyType == RigidbodyType2D.Dynamic &&
+                verification.Body.gravityScale > 0f,
+                "Sticky sap did not release the player back to normal physics.");
+            Require(
+                Mathf.Abs(player.CurrentFuel - verification.FuelBefore) < 0.01f,
+                "Sticky sap breakout consumed fart fuel.");
+
+            DestroyLessonPrefab(verification.Instance);
+            sapContactVerification = null;
+            return true;
         }
 
         private static GameObject InstantiateLessonPrefab(string path)
@@ -653,6 +737,7 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
 
         private static void Finish(int exitCode)
         {
+            CleanupSapContactVerification();
             RestoreProgress();
             ArcadeRunSession.SelectEndless();
             Time.timeScale = 1f;
@@ -668,6 +753,36 @@ namespace FirstBloom.Games.GassyGorilla.EditorTools
             {
                 ExitBatchModeIfReady();
             }
+        }
+
+        private static void CleanupSapContactVerification()
+        {
+            SapContactVerification verification = sapContactVerification;
+            sapContactVerification = null;
+            if (verification == null)
+            {
+                return;
+            }
+
+            if (verification.Player != null)
+            {
+                if (verification.Player.IsStickySap)
+                {
+                    verification.Player.CancelStickySap(verification.Trap);
+                }
+
+                verification.Player.SetInputEnabled(true);
+            }
+
+            if (verification.Body != null)
+            {
+                verification.Body.bodyType = RigidbodyType2D.Dynamic;
+                verification.Body.gravityScale = verification.Player != null
+                    ? verification.Player.GravityScale
+                    : 1f;
+            }
+
+            DestroyLessonPrefab(verification.Instance);
         }
 
         private static void HandlePlayModeStateChanged(PlayModeStateChange state)

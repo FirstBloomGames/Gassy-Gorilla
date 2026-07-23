@@ -114,7 +114,17 @@ MonoBehaviour:
     - tags: 128
       multiplier: 0.9
   maximumIntensityDistance: 550
-  maximumSpeedMultiplier: 1.14
+  maximumSpeedMultiplier: 1.2
+  endlessPressureStartDistance: 400
+  endlessPressureHalfLife: 900
+  lateSpeedHalfLife: 500
+  foodScarcityStartDistance: 90
+  legendPickupRetention: 0.62
+  minimumPickupRetention: 0.34
+  pickupScarcityHalfLife: 450
+  gauntletEntryWeightMultiplier: 0.35
+  maximumHazardWeightMultiplier: 2.1
+  maximumGauntletWeightMultiplier: 3.6
   predatorUnlockDistance: 90
   maximumPressure: 3
   predatorCooldownChunks: 4

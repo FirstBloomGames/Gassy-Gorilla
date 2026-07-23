@@ -10,35 +10,35 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f915c77b168390345ac76493f6849360, type: 3}
-  m_Name: GG_RunChunk_SapEscape
+  m_Name: GG_RunChunk_GeyserThornGauntlet
   m_EditorClassIdentifier: Assembly-CSharp::FirstBloom.Games.GassyGorilla.RunChunkDefinition
-  chunkId: SapEscape
-  tags: 52
+  chunkId: GeyserThornGauntlet
+  tags: 338
   allowInMainPool: 1
-  length: 10.5
-  selectionWeight: 0.66
-  minimumDifficulty: 2
+  length: 15.2
+  selectionWeight: 0.38
+  minimumDifficulty: 4
   maximumDifficulty: 4
   blockedPreviousTags: 144
   blockedNextTags: 144
-  entryHeightRange: {x: 0.2, y: 3.1}
-  exitHeightRange: {x: 0.7, y: 3.5}
-  entryFuelRange: {x: 0, y: 100}
-  exitFuelRange: {x: 38, y: 100}
-  minimumReactionDistance: 4.6
+  entryHeightRange: {x: 0.1, y: 3.8}
+  exitHeightRange: {x: 0.6, y: 4.1}
+  entryFuelRange: {x: 28, y: 100}
+  exitFuelRange: {x: 0, y: 100}
+  minimumReactionDistance: 5.3
   spawns:
-  - prefab: {fileID: 6224503674251131827, guid: 9e1b26558741d87469832ed2d4038da5, type: 3}
-    kind: 0
-    localPosition: {x: 1.55, y: 0.9, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: -6}
-    localScale: {x: 1, y: 1, z: 1}
-  - prefab: {fileID: 7332942912161796656, guid: e7793b164a1ad1a4298e2473586b9bfd, type: 3}
+  - prefab: {fileID: 1046403685389764913, guid: 72246635524b2c745ac60938bc314184, type: 3}
     kind: 1
-    localPosition: {x: 5.35, y: 0.9, z: 0}
+    localPosition: {x: 5.6, y: -0.88, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  - prefab: {fileID: 6978502189349949200, guid: aed27fba51e9fda49b453febc976e728, type: 3}
+    kind: 1
+    localPosition: {x: 11.1, y: -0.92, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     localScale: {x: 1, y: 1, z: 1}
   - prefab: {fileID: 2487999869850025639, guid: 17c15824d3657f045af979c96fc73a22, type: 3}
     kind: 0
-    localPosition: {x: 8.65, y: 2.05, z: 0}
+    localPosition: {x: 13.75, y: 2.75, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 7}
     localScale: {x: 1, y: 1, z: 1}
